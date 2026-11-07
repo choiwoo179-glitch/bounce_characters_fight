@@ -753,6 +753,63 @@ body.battle-theme {
   margin: 0 auto;
   filter: drop-shadow(0 8px 20px #0005);
 }
+.home-version {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px 12px;
+  width: min(960px, 95%);
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.home-version summary {
+  padding: 4px 0;
+  color: var(--lime);
+  cursor: pointer;
+}
+.home-version summary:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.home-patch-notes {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  width: min(320px, 100%);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px #0006;
+  text-align: start;
+  line-height: 1.55;
+}
+.home-patch-notes::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  inset-inline-end: 20px;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  transform: rotate(45deg);
+}
+.home-patch-notes p {
+  margin: 3px 0 10px;
+}
+.home-patch-notes p:last-child {
+  margin-bottom: 0;
+}
+.home-patch-notes strong {
+  color: #edf2f5;
+}
 #home .preview {
   width: 100%;
   height: 145px;
@@ -2654,7 +2711,23 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
     <div id="error" class="error hidden" role="alert"></div>
     <main>
       <section id="home">
-        <div class="home-stage"><img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" /><div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div><div class="home-controls"><div class="modes" id="modes"></div>
+        <div class="home-stage">
+          <img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
+          <div class="home-version" aria-label="버전 정보">
+            <span>최종 수정 <time datetime="2026-11-07">2026.11.07</time></span>
+            <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
+            <details>
+              <summary>세부 정보</summary>
+              <div class="home-patch-notes">
+                <strong>최신 패치 · 버전 안내</strong>
+                <p>모드 선택 화면에 최종 수정 날짜, 캐릭터 수, 최근 패치 요약을 추가했습니다.</p>
+                <strong>이전 패치 · 웹 배포</strong>
+                <p>이미지와 오디오를 분리하고 GitHub Pages에서 불러올 수 있도록 연결했습니다.</p>
+              </div>
+            </details>
+          </div>
+          <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
+          <div class="home-controls"><div class="modes" id="modes"></div>
             <div class="options">
               <label class="skill-mode-switch">
                 <input id="manual" type="checkbox" role="switch" checked aria-label="스킬 직접 사용 모드" aria-describedby="skillModeHint" />
@@ -18336,6 +18409,7 @@ function home() {
 }
 
 function initUI() {
+  $("homeCharacterCount").textContent = CHARACTER_DATABASE.length;
   (($("modes").innerHTML = [1, 2, 3, 4, 0]
     .map(
       (e) =>
