@@ -6616,33 +6616,61 @@ function gurashiDamage(e) {
   return 100 + 150 * Math.pow(Math.max(0, 1 - e / 40), 2);
 }
 
-function teachQuake(e) {
-  if (headless || !world) return;
-  const a = new THREE.Group(),
-    o = [];
-  for (let a = 0; a < 20; a++) {
-    const n = (a * Math.PI) / 10,
-      s = wallDistance(e, { x: Math.cos(n), z: Math.sin(n) }, Math.hypot(W, H));
-    for (let e = 0; e < 7; e++) {
-      const a = (e / 7) * s,
-        i = ((e + 1) / 7) * s,
-        r = e % 2 ? 0.7 : -0.7;
-      o.push(
-        Math.cos(n) * a,
-        0.15,
-        Math.sin(n) * a,
-        Math.cos(n) * i + Math.cos(n + Math.PI / 2) * r,
-        0.15,
-        Math.sin(n) * i + Math.sin(n + Math.PI / 2) * r,
-      );
+function teachGroundLightning(origin) {
+  const core = [], glow = [];
+  const point = (x, z) => [
+    Math.max(-W / 2 + 0.04, Math.min(W / 2 - 0.04, origin.x + x)) - origin.x,
+    Math.max(-H / 2 + 0.04, Math.min(H / 2 - 0.04, origin.z + z)) - origin.z,
+  ];
+  const bolt = (start, angle, length, steps, width, seed) => {
+    const dx = Math.cos(angle), dz = Math.sin(angle);
+    length = wallDistance({ x: origin.x + start[0], z: origin.z + start[1] }, { x: dx, z: dz }, length);
+    const points = [start];
+    for (let i = 1; i <= steps; i++) {
+      const distance = length * i / steps;
+      const kink = i === steps ? 0 : Math.min(1.4, length * 0.15) * Math.sin(i * 2.5 + seed);
+      points.push(point(start[0] + dx * distance - dz * kink, start[1] + dz * distance + dx * kink));
+    }
+    for (let i = 0; i < steps; i++) {
+      const [x, z] = points[i], [nx, nz] = points[i + 1];
+      const distance = Math.hypot(nx - x, nz - z);
+      if (distance < 0.001) continue;
+      for (const [vertices, scale, y] of [[glow, 3.5, 0.11], [core, 1, 0.12]]) {
+        const half = width * scale * (1 - 0.8 * i / steps);
+        const sx = (z - nz) / distance * half, sz = (nx - x) / distance * half;
+        const p = (x, z) => { const [px, pz] = point(x, z); return [px, y, pz]; };
+        const a = p(x + sx, z + sz), b = p(x - sx, z - sz);
+        const c = p(nx + sx * 0.8, nz + sz * 0.8), d = p(nx - sx * 0.8, nz - sz * 0.8);
+        vertices.push(...a, ...b, ...c, ...c, ...b, ...d);
+      }
+    }
+    return points;
+  };
+  for (let i = 0; i < 18; i++) {
+    const angle = i * Math.PI / 9 + Math.sin(i * 7) * 0.11;
+    const main = bolt([0, 0], angle, 16 + (i * 7 % 13), 10, 0.14, i);
+    for (const [step, turn] of [[3, 0.55], [6, -0.66]]) {
+      bolt(main[step], angle + turn, 4 + (i + step) % 5, 5, 0.075, i + step);
     }
   }
-  a.add(
-    new THREE.LineSegments(
-      new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(o, 3)),
-      new THREE.LineBasicMaterial({ color: 16721724, transparent: !0, opacity: 0.95 }),
-    ),
-  );
+  const lightning = new THREE.Group();
+  lightning.name = "teach-ground-lightning";
+  for (const [vertices, color, opacity] of [[glow, 0xff001d, 0.48], [core, 0xff5e67, 0.98]]) {
+    lightning.add(new THREE.Mesh(
+      new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3)),
+      new THREE.MeshBasicMaterial({
+        color, opacity, transparent: true, depthWrite: false,
+        side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+      }),
+    ));
+  }
+  return lightning;
+}
+
+function teachQuake(e) {
+  if (headless || !world) return;
+  const a = new THREE.Group();
+  a.add(teachGroundLightning(e));
   for (let e = 0; e < 16; e++) {
     const o = (e * Math.PI) / 8,
       n = teachDarkFlame(0.8);
