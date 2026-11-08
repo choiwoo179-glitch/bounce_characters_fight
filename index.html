@@ -25192,7 +25192,7 @@ function opmPunch(actor, serious = false) {
     if(damageQueue.length>queued){const hit=damageQueue[damageQueue.length-1];if(hit.a===actor&&hit.b===target)hit.opmPunchImpulse={x:d.x,z:d.z,speed:impulse};}
   }
   opmPunchVisual(actor,d,reach,6.8,0xcc1c24,false,serious);
-  opmWindVisual(actor,d,reach,windReach,width);
+  opmWindVisual(actor,d,reach,windReach,width,serious);
 }
 function useNormalPunch(actor) { opmPunch(actor); }
 function useSeriousPunch(actor) { const {charge}=OPM_BALANCE.seriousPunch; hold(actor,charge); schedule(actor,charge,()=>opmPunch(actor,true)); }
@@ -25361,23 +25361,105 @@ function opmPunchModel(length,width,color,metal=false){return reusableModel("opm
 
 ring.removeFromParent();const compact=batchStaticModel(group),impact=batchStaticModel(ring);impact.name="opm-fist-impact-ring";compact.add(impact);return compact;
 });}
+function createSeriousPunchRecoil(width) {
+  const positions = [], indices = [];
+  function addRibbon(steps, edges) {
+    const start = positions.length / 3;
+    for (let i = 0; i <= steps; i++) {
+      positions.push(...edges(i / steps, i));
+      if (i === 0) continue;
+      const previous = start + (i - 1) * 2;
+      indices.push(previous, previous + 1, previous + 2, previous + 1, previous + 3, previous + 2);
+    }
+  }
+
+  // Four pressure crests leave open gaps around the fist and break into pointed brush strokes.
+  for (let sector = 0; sector < 4; sector++) {
+    const center = (sector + .18) * Math.PI / 2;
+    addRibbon(34, (u, i) => {
+      const angle = center + (u - .5) * (1.28 + .12 * (sector % 2));
+      const taper = Math.sin(Math.PI * u) ** .7;
+      const ripple = .015 * Math.sin(i * 1.89 + sector) + .021 * Math.sin(i * .63 + sector * 2);
+      const radius = width * (.455 + ripple);
+      const serration = Math.max(0, Math.sin(i * 2.18 + sector)) ** 3;
+      const crest = Math.sin(Math.PI * u) ** 4;
+      const outer = radius + width * taper * (.043 + .10 * serration + .08 * crest);
+      const inner = radius - width * .017 * taper;
+      const x = Math.cos(angle), y = .84 * Math.sin(angle);
+      const z = width * (.022 + .055 * Math.sin(angle + sector * .4));
+      return [x * inner, y * inner, z, x * outer, y * outer, z - width * .09 * taper];
+    });
+  }
+
+  // Thin, tapered air streaks sweep backward along the punch rather than across the arena floor.
+  for (let i = 0; i < 30; i++) {
+    const angle = i * 2.399963;
+    const spread = (i * .618034) % 1;
+    const reach = width * (.30 + .80 * spread);
+    const startRadius = width * (.42 + .13 * ((i * .414214) % 1));
+    addRibbon(8, u => {
+      const bend = angle + u * (.13 + .18 * spread) * (i % 2 ? 1 : -1);
+      const radius = startRadius + width * u * (.08 + .18 * spread);
+      const x = Math.cos(bend) * radius, y = Math.sin(bend) * radius * .84;
+      const halfWidth = width * (.003 + .010 * spread) * Math.sin(Math.PI * u);
+      const z = -reach * u - width * .025 * (i % 6);
+      const sx = Math.sin(bend) * halfWidth, sy = Math.cos(bend) * halfWidth;
+      return [x - sx, y + sy, z, x + sx, y - sy, z];
+    });
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  const recoil = new THREE.Group();
+  recoil.name = 'saitama-serious-punch-recoil';
+  for (const [color, opacity, scale] of [[0xf9fdff, .97, 1], [0xcdeaff, .22, 1.055]]) {
+    const layer = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+      color, opacity: 0, transparent: true, side: THREE.DoubleSide,
+      depthWrite: false, toneMapped: false,
+    }));
+    layer.scale.set(scale, scale, 1);
+    layer.userData.peakOpacity = opacity;
+    recoil.add(layer);
+  }
+  return recoil;
+}
+
 function opmPunchVisual(actor,d,length,width,color,metal=false,serious=false,rush=false) {
   if(headless||!world)return;
   const group=opmPunchModel(length,width,color,metal),ring=group.getObjectByName('opm-fist-impact-ring');
   group.position.set(actor.x,0,actor.z);group.rotation.y=Math.atan2(d.x,d.z);world.add(group);
   const life=rush?.15:serious?.4:.23;
-  akiEffect(group,life,p=>{const expand=Math.min(1,p/.18);group.scale.set(1,1,.25+.75*expand);ring.scale.setScalar(.7+p*.8);});
+  const recoil = serious ? createSeriousPunchRecoil(width) : null;
+  if (recoil) {
+    recoil.position.set(0, 2.05, length + width * .17);
+    group.add(recoil);
+  }
+  akiEffect(group,life,p=>{
+    const expand = Math.min(1,p/.18);
+    group.scale.set(1,1,.25+.75*expand);
+    ring.scale.setScalar(.7+p*.8);
+    if (recoil) {
+      const outward = 1-(1-Math.min(1,p/.85))**2;
+      recoil.scale.set(.73+.49*outward,.71+.43*outward,.80+.53*outward);
+      recoil.rotation.z = .08+.22*p;
+      const opacity = Math.min(1,p/.095)*(1-p)**1.25;
+      for (const layer of recoil.children)
+        layer.userData.akiCustomOpacity = layer.userData.peakOpacity * opacity;
+    }
+  });
   return group;
 }
 
-function opmWindVisual(actor,d,start,length,width) {
+function opmWindVisual(actor,d,start,length,width,serious=false) {
   if(headless||!world)return;
   const group=new THREE.Group();group.name='saitama-pressure-smoke';
   const geometry=reuseEffectGeometry('opm-pressure-smoke',()=>new THREE.IcosahedronGeometry(1,2));
+  const smokeColors = serious ? [0xa6abb0, 0xc0c4c8] : [0xd4d6d7, 0xe9ebeb];
   // Staggered puffs travel behind the fist, away from the attacker.
   for(let i=0;i<24;i++){
     const lane=(i%5-2)/2,delay=(i%8)*.012;
-    const smoke=opmPart(group,geometry,i%3===0?0xd4d6d7:0xe9ebeb,0,0,0,.24);
+    const smoke=opmPart(group,geometry,smokeColors[i%3===0?0:1],0,0,0,.24);
     smoke.material.emissiveIntensity=.08;smoke.material.depthWrite=false;
     smoke.userData.smoke={lane,delay,phase:i*2.39996};group.add(smoke);
   }
@@ -26249,3 +26331,4 @@ try {
 </script>
   </body>
 </html>
+
