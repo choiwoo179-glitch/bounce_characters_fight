@@ -780,7 +780,9 @@ body.battle-theme {
   position: absolute;
   inset-inline-end: 0;
   top: calc(100% + 8px);
-  width: min(320px, 100%);
+  width: min(395px, 100%);
+  max-height: min(55vh, 420px);
+  overflow-y: auto;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -2714,12 +2716,18 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
         <div class="home-stage">
           <img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-08">2026.11.08</time></span>
+            <span>최종 수정 <time datetime="2026-11-09">2026.11.09</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 렌고쿠 돌진</strong>
+                <strong>최신 패치 · 강철의 연금술사</strong>
+                <p>에드워드, 알폰스, 로이, 스카의 3D 외형과 기술 이펙트를 개편했습니다.</p>
+                <p>에드워드의 돌기둥 폭이 2배로 커지고 4초간 유지됩니다. 오토메일 칼날은 거리 20을 돌진하며, 스페셜 대포가 바닥에서 솟아오릅니다.</p>
+                <p>알폰스의 어깨치기는 2회 돌진해 각각 60 피해를 줍니다. 갑옷 방어는 5초간 투사체를 반사하고 근접 피해를 40% 줄이며 70 피해로 반격합니다. 강철 연격에는 청회색 번개와 돌 파편이 튑니다.</p>
+                <p>로이의 점화가 상대 이동을 더 잘 예측합니다. 스페셜은 전방 100°를 쓸며 170 피해와 3초간 초당 15 화상을 줍니다.</p>
+                <p>스카의 돌진 거리가 50% 늘었습니다. 연쇄 분해는 첫 상대를 벽까지 끌고 가며, 충돌 지점에 균열을 남기고 상대를 0.5초간 멈춥니다.</p>
+                <strong>이전 패치 · 렌고쿠 돌진</strong>
                 <p>부지화, 상승염천, 연옥이 명중하기 전 전방 표적을 약하게 추적합니다.</p>
                 <strong>이전 패치 · 전투 조정</strong>
                 <p>사이타마 펀치 밀치기와 사이타마·실버 팽·동제의 능력치를 조정했습니다. 티치의 그러시 착지에 붉은 번개를 추가했습니다.</p>
@@ -3094,6 +3102,12 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   "ALPHONSE_SHOULDER": "./assets/skill-banners/alphonse-shoulder.webp",
   "ALPHONSE_GUARD": "./assets/skill-banners/alphonse-guard.webp",
   "ALPHONSE_COMBO": "./assets/skill-banners/alphonse-combo.webp",
+  "ROY_PRECISION": "./assets/skill-banners/roy-precision.webp",
+  "ROY_CHAIN": "./assets/skill-banners/roy-chain.webp",
+  "ROY_INFERNO": "./assets/skill-banners/roy-inferno.webp",
+  "SCAR_ARM": "./assets/skill-banners/scar-arm.webp",
+  "SCAR_GROUND": "./assets/skill-banners/scar-ground.webp",
+  "SCAR_CHAIN": "./assets/skill-banners/scar-chain.webp",
   "WATER_SLASH": "./assets/skill-banners/WATER_SLASH.webp",
   "HINOKAMI_ENBU": "./assets/skill-banners/HINOKAMI_ENBU.webp",
   "THUNDERCLAP_FLASH": "./assets/skill-banners/THUNDERCLAP_FLASH.webp",
@@ -3683,7 +3697,10 @@ function randomizeStartingCorners(e) {
 
 function clearBattleObjects() {
   clearAlchemyWalls();
+  clearAlchemyReflections();
   for (const actor of actors) {
+    actor.alchemyCarry=actor.alchemyCarriedBy=actor.royBurn=null;
+    actor.alchemyGuardUntil=actor.alchemyStoppedUntil=0;
     for (const field of actor.bleachFields || []) {
       field.active = false;
       removeMesh(field.mesh);
@@ -3885,6 +3902,10 @@ function advanceStoneFlail(shot, dt) {
       segmentDistance(enemy.x, enemy.z, fromX, fromZ, shot.x, shot.z) <=
         actorRadius(enemy) + shot.width / 2
     ) {
+      if (reflectAlchemyShot(shot,enemy,fromX,fromZ,shot.damage,shot.width/2)) {
+        removeMesh(shot.chain);
+        return false;
+      }
       shot.hit.add(enemy);
       hurt(shot.a, enemy, shot.damage);
       flailKnockback(shot, enemy, fromX, fromZ);
@@ -4483,12 +4504,12 @@ function updateTrioObjects(e) {
       n = a.z,
       s = Math.min(a.remaining, TRIO_CONFIG.purpleSpeed * e);
     ((a.x += a.dx * s), (a.z += a.dz * s), (a.remaining -= s));
-    for (const e of opmProjectileActors())
-      e !== a.owner &&
-        e.alive &&
-        !a.hit.has(e) &&
-        segmentDistance(e.x, e.z, o, n, a.x, a.z) <= actorRadius(e) + a.r &&
-        (a.hit.add(e), hurt(a.owner, e, 236, "rare"));
+    for (const e of opmProjectileActors()) {
+      if(e===a.owner||!e.alive||a.hit.has(e)||segmentDistance(e.x,e.z,o,n,a.x,a.z)>actorRadius(e)+a.r) continue;
+      if(reflectAlchemyShot(a,e,o,n,236,a.r,TRIO_CONFIG.purpleSpeed,"rare")) return false;
+      a.hit.add(e);
+      withAlchemyHitMode("ranged",()=>hurt(a.owner,e,236,"rare"));
+    }
     return (
       a.mesh && a.mesh.position.set(a.x, 1.3, a.z),
       !(a.remaining <= 1e-8 && (removeMesh(a.mesh), 1))
@@ -5960,10 +5981,11 @@ function updateKuzanObjects(e) {
         a.mesh && (a.mesh.position.set(a.x, 1.4, a.z), (a.mesh.rotation.y += 5 * e)),
         !(
           !opmPhasing(o) && segmentDistance(o.x, o.z, s, i, a.x, a.z) <= actorRadius(o) + 0.9 &&
-          (withDamageOrigin(a.owner, !0, () => hurt(a.owner, o, 80)),
+          (reflectAlchemyShot(a,o,s,i,80,.9,50,"special") ||
+            (withDamageOrigin(a.owner, !0, () => hurt(a.owner, o, 80)),
           freezeActor(a.owner, o, "ball"),
           removeMesh(a.mesh),
-          1)
+          1))
         )
       );
     })));
@@ -7057,6 +7079,7 @@ function advanceLightShot(e, a) {
       "mirror" === e.lightType && m > 1e-8 && beam(a, n, e.x, e.z, 16772710, 0.35, e.r),
       d)
     ) {
+      if (reflectAlchemyShot(e,d,a,n,e.lightType==="mirror"?100:e.damage,e.r)) return false;
       if (e.magma) queueMagmaHit(e.a, d, e.damage, e.magma.duration, e.magma.damage, e.magma.cap);
       else if ("radial" === e.lightType) {
         const a = damageQueue.length;
@@ -7169,7 +7192,7 @@ function boundedTravel(e, a, o, n = actorRadius(e)) {
 }
 
 function pushActor(e, a, o) {
-  if (!ballFrozen(e)) {
+  if (!ballFrozen(e) && !alchemyLocked(e)) {
     ((o = iceWallTravelLimit(e, a, o)),
       (e.x = Math.max(-W / 2 + actorRadius(e), Math.min(W / 2 - actorRadius(e), e.x + a.x * o))),
       (e.z = Math.max(-H / 2 + actorRadius(e), Math.min(H / 2 - actorRadius(e), e.z + a.z * o))),
@@ -7422,7 +7445,7 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
       a: e,
       b: a,
       damageKind: n,
-      hitMode: alchemyHitMode,
+      hitMode: alchemyHitMode || (e.dash ? "melee" : null),
       cinemaRush: !!cinematic?.rush,
       cinemaFinal: !!cinematic?.final,
       skillHit: "collision" !== n || i,
@@ -7548,7 +7571,7 @@ function wallDistance(e, a, o) {
   );
 }
 
-function punch(e, a, o, n, s = 16759960, i = null, r = 0.3) {
+function punch(e, a, o, n, s = 16759960, i = null, r = 0.3, hitMode = "melee") {
   const l = nearest(e);
   if (!l) return;
   const c = i || unit(l.x - e.x, l.z - e.z),
@@ -7561,7 +7584,7 @@ function punch(e, a, o, n, s = 16759960, i = null, r = 0.3) {
           a !== e && a.alive && segmentDistance(a.x, a.z, e.x, e.z, d, u) <= n / 2 + actorRadius(a),
       )
       .sort((a, o) => Math.hypot(a.x - e.x, a.z - e.z) - Math.hypot(o.x - e.x, o.z - e.z));
-  if ((m[0] && hurt(e, m[0], o), headless || !world)) return;
+  if ((m[0] && withAlchemyHitMode(hitMode,()=>hurt(e,m[0],o)), headless || !world)) return;
   const f = makePunchModel(n, h, s);
   return (
     posePunchModel(f, { x: e.x, z: e.z }, c, h, 1.3),
@@ -7614,6 +7637,7 @@ function applyQueuedDamage() {
       o > 0 && e.powerBloodHit && addPowerBlood(e.a, e.powerBloodHit.x, e.powerBloodHit.z),
       o > 0 && e.akiFoxHit && e.akiFoxHit(),
       o > 0 && e.opmPunchImpulse && launchOpmPunchTarget(e.b,e.opmPunchImpulse),
+      o > 0 && e.alchemyAfterHit?.(),
        o > 0 && e.zipHandHit && e.zipHandHit(),
        o > 0 && e.arrivederciStop && stopArrivederciTarget(e.b),
       o > 0 && e.teachGrab && startTeachGrab(e.teachGrab, e.b),
@@ -7793,7 +7817,7 @@ function oraHits(e, a, o, n = ORA_CONFIG.radius, s = ORA_CONFIG.halfAngleDegrees
 function oraPunch(e, a, o, n, s = null, i = null, r = ORA_CONFIG.hits) {
   for (const target of opmProjectileActors())
     target !== e && target.alive && oraHits(e, target, a) &&
-      (s ? s.set(target, (s.get(target) || 0) + o) : hurt(e, target, o, "skill", 0, {rush:true,final:n===r-1}));
+      (s ? s.set(target, (s.get(target) || 0) + o) : withAlchemyHitMode("melee",()=>hurt(e,target,o,"skill",0,{rush:true,final:n===r-1})));
   extraVisual(e, "oraFist", 0.22, {
     color: i,
     x: e.x,
@@ -8014,7 +8038,7 @@ function castShrine(e) {
 
 function castSkill(e, a) {
   if (!e) return false;
-  if (bleachLocked(e)) return false;
+  if (bleachLocked(e) || alchemyLocked(e)) return false;
   if (arrivederciStopped(e)) return false;
   if(!a && e?.d.skillType==="PAIN_CHOICE"){e.painPending??=(Math.random()<.6?"SHINRA_TENSEI":"BANSHO_TENIN");if(e.painPending==="SHINRA_TENSEI" && t<(e.shinraReady||0))return false;}
   if (e?.guyTransformUntil > t) return false;
@@ -9104,18 +9128,27 @@ function useAkiCurse(a, b) {
               Math.hypot(x.x - previous.x, x.z - previous.z) -
               Math.hypot(y.x - previous.x, y.z - previous.z),
           )[0];
+        const from=previous;
         previous = pos;
         if (!hit || triggered) return;
         done = true;
+        if (alchemyGuardActive(hit)) {
+          const nail={a,x:pos.x,z:pos.z,dx:d.x,dz:d.z,speed:60,specialSource:true,
+            mesh:headless||!world?null:akiMesh("nail",0x32313a)};
+          if(reflectAlchemyShot(nail,hit,from.x,from.z,15,.6,60,"special")){
+            if(mesh) mesh.visible=false;
+            return;
+          }
+        }
         triggered = true;
-        hurt(a, hit, 15);
+        withAlchemyHitMode("ranged",()=>hurt(a,hit,15));
         let moved = 0;
         const tick = () => {
           if (!a.alive || !hit.alive) return;
           const delta = unit(hit.x - a.x, hit.z - a.z),
             distance = Math.hypot(hit.x - a.x, hit.z - a.z);
           if (distance <= actorRadius(a) + actorRadius(hit) + 0.5) {
-            hurt(a, hit, 45);
+            withAlchemyHitMode("melee",()=>hurt(a,hit,45));
             akiMark(a, hit);
             a.rootUntil = t;
             a.busy = t;
@@ -9193,7 +9226,7 @@ function useWaterSlash(e, a, o) {
   ((e.busy = t + 4),
     buff(e, 4, { reduce: 0.2 }),
     schedule(e, 0.2, () => {
-      (area(e, e.x, e.z, 11, 170, 6474495), waterSlash(e));
+      (withAlchemyHitMode("melee",()=>area(e,e.x,e.z,11,170,6474495)), waterSlash(e));
     }));
 }
 
@@ -9201,7 +9234,7 @@ function useHinokamiEnbu(e, a, o) {
   ((e.busy = t + 0.35),
     schedule(e, 0.35, () =>
       dash(e, nearest(e) || o, 24, 44, 10.8, 200, 0, !1, () => {
-        (waterSlash(e, !0), area(e, e.x, e.z, 11, 100, 16724024));
+        (waterSlash(e, !0), withAlchemyHitMode("melee",()=>area(e,e.x,e.z,11,100,16724024)));
       }),
     ));
 }
@@ -9243,15 +9276,15 @@ function useThunderclapSixfold(e, a, o) {
 function useBeastFangSlash(e, a, o) {
   ((e.busy = t + 3),
     buff(e, 3, { speed: 28.8 }),
-    schedule(e, 0.2, () => area(e, e.x, e.z, 6, 100, 13819111)),
-    schedule(e, 0.45, () => area(e, e.x, e.z, 6, 100, 13819111)));
+    schedule(e, 0.2, () => withAlchemyHitMode("melee",()=>area(e,e.x,e.z,6,100,13819111))),
+    schedule(e, 0.45, () => withAlchemyHitMode("melee",()=>area(e,e.x,e.z,6,100,13819111))));
 }
 
 function useBeastSpatialRampage(e, a, o) {
   (hold(e, 0.5),
     schedule(e, 0.5, () => {
       (buff(e, 5, { speed: 37.5, damage: 110, spinBlades: !0 }), (e.busy = t + 5));
-      for (let a = 1; a <= 4; a++) schedule(e, 1.25 * a, () => area(e, e.x, e.z, 6, 80, 16777215));
+      for (let a = 1; a <= 4; a++) schedule(e, 1.25 * a, () => withAlchemyHitMode("melee",()=>area(e,e.x,e.z,6,80,16777215)));
     }));
 }
 
@@ -9483,7 +9516,7 @@ function useSmashKick(e, a, o) {
 function useDelawareSmash(e, a, o) {
   ((e.busy = t + 1),
     (e.rootUntil = t + 1),
-    punch(e, 40, 140, 6.6, 16720952, unit(o.x - e.x, o.z - e.z), 1));
+    punch(e, 40, 140, 6.6, 16720952, unit(o.x - e.x, o.z - e.z), 1, "ranged"));
 }
 
 function aimAsuraDash(actor,dt){const state=actor.dash;if(state?.extraType!=="asura"||state.hit.size>0)return;const target=state.asuraTarget?.alive?state.asuraTarget:nearest(actor);if(!target)return;state.asuraTarget=target;const dx=target.x-actor.x,dz=target.z-actor.z;if(Math.hypot(dx,dz)<1e-6)return;const current=Math.atan2(actor.dz,actor.dx),desired=Math.atan2(dz,dx),difference=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),angle=current+Math.max(-5*dt,Math.min(5*dt,difference));actor.dx=Math.cos(angle);actor.dz=Math.sin(angle);}
@@ -9644,7 +9677,14 @@ function updateExtraShots(e) {
         ) {
           a.hit.add(e);
           const o = a.cap?.get(e) || 0;
-          (!a.cap || o < a.hitLimit) && (hurt(a.a, e, a.damage), a.cap && a.cap.set(e, o + 1));
+          if (!a.cap || o < a.hitLimit) {
+            if (reflectAlchemyShot(a,e,s,i,a.damage,a.width/2)) {
+              removeMesh(a.chain);
+              return false;
+            }
+            hurt(a.a,e,a.damage);
+            if(a.cap) a.cap.set(e,o+1);
+          }
         }
       let r = !0;
       return (
@@ -9693,6 +9733,7 @@ function checkWallBounce(e) {
 
 function resolveBallCollision(e, a) {
   if (opmPhasing(e) || opmPhasing(a)) return;
+  if (e.alchemyCarriedBy?.alive || a.alchemyCarriedBy?.alive) return;
   if (e.guyTransformUntil > t || a.guyTransformUntil > t) return;
   if (e.teachHeldBy === a || a.teachHeldBy === e) return;
   if (e.zipGrab?.owner === a || a.zipGrab?.owner === e) return;
@@ -9704,8 +9745,8 @@ function resolveBallCollision(e, a) {
     return ((n.touch = !0), void pairs.set(o, n));
   const i = unit(a.x - e.x, a.z - e.z),
     r = Math.max(0, actorRadius(e) + actorRadius(a) - s),
-    l = e.rootUntil > t || ballFrozen(e) || teachLocked(e),
-    c = a.rootUntil > t || ballFrozen(a) || teachLocked(a),
+    l = e.rootUntil > t || ballFrozen(e) || teachLocked(e) || alchemyLocked(e),
+    c = a.rootUntil > t || ballFrozen(a) || teachLocked(a) || alchemyLocked(a),
     h = l ? 0 : c ? 1 : 0.5,
     d = c ? 0 : l ? 1 : 0.5;
   ((e.x -= i.x * r * h), (e.z -= i.z * r * h), (a.x += i.x * r * d), (a.z += i.z * r * d));
@@ -9785,6 +9826,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   updateStormSchedule();
   updateKuzanObjects(dt);
   applyBurnTicks();
+  updateRoyBurns();
   applyMagmaTicks();
   applyTeachBurnTicks();
   runDueEvents();
@@ -9798,6 +9840,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   constrainAlchemyActors();
   constrainActorsToBleachWalls();
   withAlchemyHitMode("ranged",()=>{
+    advanceAlchemyReflections(dt);
     advanceProjectiles(dt);
     updateExtraShots(dt);
   });
@@ -9903,7 +9946,8 @@ function runDueEvents() {
   for (let a = 0; a < e.length; a++) {
     const o = e[a],
       n = o.a.teachGrab?.until || o.a.teachHeldBy?.teachGrab?.until;
-    if (bleachLocked(o.a)) events.push({...o,at:o.a.bleachLockUntil});
+    if (alchemyLocked(o.a)) events.push({...o,at:Math.max(t+STEP,o.a.alchemyStoppedUntil||0)});
+    else if (bleachLocked(o.a)) events.push({...o,at:o.a.bleachLockUntil});
     else if (arrivederciStopped(o.a)) events.push({...o,at:o.a.arrivederciStopUntil});
     else if (n || o.a.teachThrown) events.push({ ...o, at: n ? Math.max(t + STEP, n) : t + 0.05 });
     else if (
@@ -9935,7 +9979,8 @@ function advanceActors(e) {
     if (!a.alive) continue;
     a.opmPrevious={x:a.x,z:a.z};
     a.bleachPrevious={x:a.x,z:a.z};
-    if (a.alchemyStoppedUntil > t) { mpGain(a,6*e); continue; }
+    if (alchemyLocked(a)) { mpGain(a,6*e); continue; }
+    if (a.alchemyCarry && advanceScarCarry(a,e)) { mpGain(a,6*e); continue; }
     if (bleachLocked(a)) { mpGain(a,6*e); continue; }
     if (advanceBleachDash(a,e)) continue;
     if (a.kamuiState && advanceKamui(a)) {mpGain(a,6*e);continue;}
@@ -10047,6 +10092,7 @@ function advanceProjectiles(e) {
               segmentDistance(e.x, e.z, o, n, a.x, a.z) <= actorRadius(e) + a.r,
           )
           .sort((e, a) => Math.hypot(e.x - o, e.z - n) - Math.hypot(a.x - o, a.z - n))[0];
+      if (r && reflectAlchemyShot(a,r,o,n,a.rezeEmber?160:a.damage,a.r,a.speed,a.powerWeapon?"powerWeapon":"skill")) return false;
       if (
         a.rezeEmber &&
         (r || a.remaining <= 0 || Math.abs(a.x) > W / 2 - a.r || Math.abs(a.z) > H / 2 - a.r)
@@ -11800,6 +11846,96 @@ function addAvatarAppearance(
       "glasses-bridge",
     );
   }
+  if (n === "edward") {
+    for (const side of [-1, 1]) {
+      for (let j=0;j<5;j++) {
+        const x=.12+j*.145;
+        lock(side*x,1.09-j*.06,.54,side*(x+.23),.63-j*.17,.93-j*.10,
+          .19,j%2?s.hair:s.tip);
+      }
+      const lapel=part(new THREE.BoxGeometry(.24,.78,.13),0xb42c38,side*.55,-.58,.82,"red-coat-lapel");
+      lapel.rotation.z=side*.48;
+      ell(0x962331,side*.91,-.58,-.08,.34,.46,.58,"red-coat-shoulder");
+    }
+    lock(-.04,1.13,-.02,-.42,1.69,.13,.12,0xffe399);
+    for (let j=0;j<8;j++) {
+      const side=j%2?1:-1;
+      ell(j%2?0xcf913a:0xf2be57,.34+side*.11+j*.046,.57-j*.207,-1.06-j*.026,
+        .205,.24,.20,"braided-ponytail").rotation.z=side*.53;
+    }
+    part(new THREE.BoxGeometry(.53,.64,.11),0x231f23,0,-.71,.96,"black-shirt");
+    part(new THREE.TorusGeometry(.19,.047,7,15),0xc6d0d5,0,-.56,1.06,"coat-clasp");
+    const sleeve=ell(0x838f9b,-1.03,-.56,.33,.38,.38,.58,"automail-shoulder");
+    sleeve.material=new THREE.MeshStandardMaterial({color:0x838f9b,metalness:.68,roughness:.34});
+    for(let j=0;j<3;j++) part(new THREE.BoxGeometry(.32,.09,.10),0xc9d6dc,-1.04,-.47-j*.14,.83,"automail-plate");
+  }
+  if (n === "alphonse") {
+    i.remove(h);h.geometry.dispose();h.material.dispose();
+    o.material.metalness=.45;
+    o.material.roughness=.39;
+    ell(0x3f4b58,0,.23,.88,.83,.65,.35,"helmet-shadow");
+    const crown=ell(0x879ca8,0,.79,.06,1.07,.47,.91,"steel-helmet-crown");
+    crown.material=new THREE.MeshStandardMaterial({color:0x879ca8,metalness:.51,roughness:.37});
+    for (const side of [-1,1]) {
+      ell(0x93aab5,side*.97,-.58,0,.47,.49,.63,"pauldron");
+      ell(0x526575,side*1.01,-.76,.14,.47,.26,.60,"pauldron-edge");
+      const spike=part(new THREE.ConeGeometry(.26,.74,5),0xc3d5da,side*1.21,-.04,-.04,"pauldron-spike");
+      spike.rotation.z=-side*.44;
+      patch([[side*.05,.42],[side*.65,.61],[side*.83,.29],[side*.31,.16]],0x8fa2ad,"steel-brow");
+      const eye=part(new THREE.BoxGeometry(.38,.086,.10),0xff94a5,side*.32,.22,1.22,"glowing-eye-slit");
+      eye.rotation.z=side*.24;
+      eye.material=new THREE.MeshStandardMaterial({color:0xff9cab,emissive:0xff3c69,emissiveIntensity:.85});
+      for(let j=0;j<3;j++) stroke([[side*.37,-.055-j*.12],[side*.64,.005-j*.12]],0x283645,.029,"helmet-vent");
+    }
+    const horn=part(new THREE.ConeGeometry(.21,.77,5),0xbdd1db,0,1.36,.53,"helmet-horn");
+    horn.rotation.x=-.38;
+    patch([[-.31,.08],[0,.39],[.31,.08],[.26,-.43],[0,-.54],[-.26,-.43]],0xa2b6bf,"steel-faceplate");
+    ell(0x8296a5,0,-.82,.78,.66,.30,.29,"armored-chest");
+    stroke([[-.57,-.68],[0,-.88],[.57,-.68]],0xb3c6cf,.047,"chest-plate-rim");
+  }
+  if (n === "roy") {
+    for(let j=0;j<8;j++){
+      const x=(j-3.6)*.225;
+      lock(x,1.03-.33*Math.abs(x),.62,x-.2,.30+(j%3)*.125,.99,.18,j%3?s.hair:s.tip);
+    }
+    for(const side of [-1,1]){
+      ell(0x142b4b,side*.89,-.60,.03,.39,.44,.60,"uniform-shoulder");
+      const collar=part(new THREE.BoxGeometry(.27,.34,.11),0x8f9eb3,side*.25,-.46,1.02,"standing-collar");
+      collar.rotation.z=side*.28;
+      part(new THREE.BoxGeometry(.42,.09,.28),0xd2ad62,side*.84,-.24,.43,"gold-epaulette");
+      stroke([[side*.24,.23],[side*.55,.28]],0x1f2028,.024,"stern-brow");
+      const cape=part(new THREE.SphereGeometry(R+.052,16,7,Math.PI*(side<0?.53:1.25),Math.PI*.28,1.83,1.12),
+        0x18212c,0,0,0,"dark-military-overcoat");
+      cape.scale.x=1.075;
+    }
+    stroke([[0,-.48],[.09,-.76],[.06,-1.05]],0x98aabe,.033,"uniform-seam");
+    for(let j=0;j<4;j++) part(new THREE.BoxGeometry(.10,.055,.075),[0xc45652,0xe4d7ba,0x638aba,0xc59d52][j],
+      -.51+j*.105,-.69,.93,"service-ribbon");
+    ell(0xf2f0e8,-1.1,-.53,.57,.26,.24,.31,"ignition-glove");
+    const seal=part(new THREE.TorusGeometry(.128,.016,5,18),0x97343e,-1.10,-.47,.857,"glove-transmutation-seal");
+    seal.scale.y=.81;
+  }
+  if (n === "scar") {
+    for(let j=0;j<17;j++) {
+      const q=j*2.39996,x=Math.cos(q)*.76,z=Math.sin(q)*.65;
+      lock(x,.86,z,x*1.26-.19,1.37+(j%4)*.105,z*1.24-.14,.20,j%3?s.hair:s.tip);
+    }
+    for(const side of [-1,1]) {
+      ell(0x3b3936,side*.96,.28,-.24,.22,.57,.64,"dark-undercut");
+      const lapel=part(new THREE.BoxGeometry(.26,.72,.16),0xd0c3a0,side*.5,-.63,.87,"tan-jacket-lapel");
+      lapel.rotation.z=side*.61;
+      ell(0x989479,side*.90,-.68,.04,.42,.43,.61,"field-jacket-shoulder");
+      stroke([[side*.13,.08],[side*.52,.25]],0x3a2826,.041,"angular-brow");
+    }
+    for(const points of [[[-.34,.87],[-.15,.59],[.29,.17]],[[.31,.84],[.11,.56],[-.32,.21]]])
+      scar(points,0xb36855,.038);
+    ell(0xa7795e,-1.08,-.72,.64,.37,.31,.37,"deconstruction-arm");
+    for(let j=0;j<3;j++){
+      const band=part(new THREE.TorusGeometry(.29-j*.024,.021,5,16),0x30272a,-1.09,-.54-j*.135,.65,"arm-tattoo-band");
+      band.rotation.x=Math.PI/2;
+    }
+  }
+
   if (n === "bucciarati") {
     for (const side of [-1,1]) {
       for(let j=0;j<10;j++) part(new THREE.BoxGeometry(.09,.06,.09),0xd6ad39,side*.58,-.15-j*.075,.99,"gold-zip-teeth");
@@ -13897,6 +14033,11 @@ function updateHawks(dt) {
         b.alive &&
         segmentDistance(b.x, b.z, ox, oz, f.x, f.z) <= actorRadius(b) + 0.23
       ) {
+        if (reflectAlchemyShot(f,b,ox,oz,f.kind==="rose"?60:35,.23,f.kind==="rose"?35:70,
+          f.kind==="rose"?"skill":"special")) {
+          remove=true;
+          break;
+        }
         if (f.kind === "rose") {
           const n = f.hits.get(b) || 0;
           if (n < 3) {
@@ -21283,9 +21424,8 @@ function runLegacyRegressionTests() {
     };
   try {
     (check(
-      54 === CHARACTER_DATABASE.length &&
-        54 === new Set(CHARACTER_DATABASE.map((e) => e.id)).size,
-      "54명 / 고유 캐릭터 ID",
+      CHARACTER_DATABASE.length === new Set(CHARACTER_DATABASE.map((e) => e.id)).size,
+      "고유 캐릭터 ID",
     ),
       check(3 === segmentDistance(2, 3, 0, 0, 4, 0), "고속 이동 선분 판정"));
     let [e, o] = setup();
@@ -23459,7 +23599,11 @@ function bleachSegmentRect(x,z,ex,ez,f,pad=0){const ux=f.nz,uz=-f.nx;let ax=(x-f
 function bleachWalls(){return actors.flatMap(a=>(a.bleachFields||[]).filter(f=>a.alive&&f.kind==='wall'&&t<f.until).map(f=>({a,f})));}
 function resolveBleachWalls(b,old={x:b.x,z:b.z}){for(const {a,f}of bleachWalls()){if(b===a||!bleachLive(b)||!bleachSegmentRect(old.x,old.z,b.x,b.z,f,actorRadius(b)))continue;const normal=(old.x-f.x)*f.nx+(old.z-f.z)*f.nz,side=Math.sign(normal)||-1,lat=(b.x-f.x)*f.nz-(b.z-f.z)*f.nx,r=actorRadius(b);b.x=f.x+Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nz+f.nx*side*(.75+r+.025);b.z=f.z-Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nx+f.nz*side*(.75+r+.025);const dot=b.dx*f.nx+b.dz*f.nz;if(dot*side<0){b.dx-=2*dot*f.nx;b.dz-=2*dot*f.nz;}const last=f.contacts?.get(b)??-99;if(t-last>=.3-1e-8){const first=!f.hits.has(b),stun=first?.3:.2;f.hits.add(b);(f.contacts??=new Map()).set(b,t);hurt(a,b,first?80:15);b.rootUntil=Math.max(b.rootUntil||0,t+stun);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+stun);}bleachClamp(b);}}
 function bleachBlockShots(list,dt){const walls=bleachWalls();return list.filter(s=>{if(!s.a)return true;const length=Math.min(s.remaining??Infinity,(s.speed||0)*dt);if(walls.some(({a,f})=>a!==s.a&&bleachSegmentRect(s.x,s.z,s.x+(s.dx||0)*length,s.z+(s.dz||0)*length,f,s.bleachKind==='getsuga'?5:(s.r??(s.width||.2)/2)))){removeMesh(s.mesh);removeMesh(s.chain);return false;}return true;});}
-function advanceBleachShot(s,dt){if(s.bleachKind==='kageBlade')return advanceKageBlade(s,dt);if(!s.a.alive||t>s.until)return removeMesh(s.mesh),false;const ox=s.x,oz=s.z;if(s.bleachKind==='petal'&&t<s.homeUntil&&s.target?.alive){const current=Math.atan2(s.dz,s.dx),desired=Math.atan2(s.target.z-s.z,s.target.x-s.x),diff=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),turn=Math.max(-4*dt,Math.min(4*dt,diff))+Math.sin(t*12+s.phase)*dt*.8;s.dx=Math.cos(current+turn);s.dz=Math.sin(current+turn);}const n=Math.min(s.remaining,s.speed*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;let impact=false;for(const b of opmProjectileActors()){if(b===s.a||!bleachLive(b)||s.hit?.has(b))continue;const dist=segmentDistance(b.x,b.z,ox,oz,s.x,s.z),r=s.bleachKind==='getsuga'?5:s.r;if(dist>r+actorRadius(b))continue;if(s.bleachKind==='getsuga'){const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);s.hit.add(b);hurt(s.a,b,lateral<=2?s.damage:s.edge);}else if(s.bleachKind==='petal'){const count=s.cast.counts.get(b)||0;if(count<5){s.cast.counts.set(b,count+1);hurt(s.a,b,34);}senbonzakuraImpactPetals(s.cast,b);impact=true;break;}else{impact=true;s.x=b.x;s.z=b.z;break;}}
+function advanceBleachShot(s,dt){if(s.bleachKind==='kageBlade')return advanceKageBlade(s,dt);if(!s.a.alive||t>s.until)return removeMesh(s.mesh),false;const ox=s.x,oz=s.z;if(s.bleachKind==='petal'&&t<s.homeUntil&&s.target?.alive){const current=Math.atan2(s.dz,s.dx),desired=Math.atan2(s.target.z-s.z,s.target.x-s.x),diff=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),turn=Math.max(-4*dt,Math.min(4*dt,diff))+Math.sin(t*12+s.phase)*dt*.8;s.dx=Math.cos(current+turn);s.dz=Math.sin(current+turn);}const n=Math.min(s.remaining,s.speed*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;let impact=false;for(const b of opmProjectileActors()){if(b===s.a||!bleachLive(b)||s.hit?.has(b))continue;const dist=segmentDistance(b.x,b.z,ox,oz,s.x,s.z),r=s.bleachKind==='getsuga'?5:s.r;if(dist>r+actorRadius(b))continue;
+const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);
+const impactDamage=s.bleachKind==='getsuga'?(lateral<=2?s.damage:s.edge):s.bleachKind==='petal'?34:125;
+if((s.bleachKind!=='petal'||(s.cast.counts.get(b)||0)<5)&&reflectAlchemyShot(s,b,ox,oz,impactDamage,r))return false;
+if(s.bleachKind==='getsuga'){const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);s.hit.add(b);hurt(s.a,b,lateral<=2?s.damage:s.edge);}else if(s.bleachKind==='petal'){const count=s.cast.counts.get(b)||0;if(count<5){s.cast.counts.set(b,count+1);hurt(s.a,b,34);}senbonzakuraImpactPetals(s.cast,b);impact=true;break;}else{impact=true;s.x=b.x;s.z=b.z;break;}}
 const expired=s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2;
 if(s.bleachKind==='sokatsui'&&(impact||expired)){area(s.a,s.x,s.z,4,125,0x408fff);bleachShards(s.x,s.z,0x3eaaff,14);bleachRing(s.x,s.z,4,0x6cd5ff,.4);}
 if(impact||expired){removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.4,s.z);if(s.bleachKind!=='getsuga')s.mesh.rotation.y+=dt*8;}return true;}
@@ -23632,7 +23776,7 @@ CHARACTER_DATABASE.push(...[
     "specialType": "EDWARD_CANNON",
     "skill": "지면 연성 / 오토메일 칼날",
     "special": "연쇄 연성-대포",
-    "desc": "일반기 각 50%. 지면 연성: 0.35초 뒤 상대 진행 방향 앞 반경 4에 105 피해. 돌기둥이 2초간 남아 이동 방향을 바꿉니다. 오토메일 칼날: 거리 12 돌진. 처음 만난 상대에게 115 피해를 주고 통과합니다.",
+    "desc": "일반기 각 50%. 지면 연성: 0.35초 뒤 상대 진행 방향 앞 반경 4에 105 피해. 폭이 2배 넓어진 돌기둥이 4초 동안 이동 방향을 바꿉니다. 오토메일 칼날: 거리 20을 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 통과합니다.",
     "spDesc": "0.5초 뒤 길이 12·간격 6의 돌벽 두 개를 세웁니다. 0.2초 뒤 대포 발사 순간 통로 안의 상대에게 200 피해를 주고, 포탄이 지나가면 벽이 부서집니다."
   },
   {
@@ -23653,7 +23797,7 @@ CHARACTER_DATABASE.push(...[
     "specialType": "ALPHONSE_COMBO",
     "skill": "강철 어깨치기 / 갑옷 방어",
     "special": "강철 연격",
-    "desc": "일반기 각 50%. 강철 어깨치기: 거리 11 돌진. 첫 상대에게 120 피해와 밀쳐내기. 돌진 중 피해 20% 감소. 갑옷 방어: 2.5초 내 첫 직접 공격 피해를 40% 줄입니다. 근접 공격에만 75 피해로 반격합니다.",
+    "desc": "일반기 각 50%. 강철 어깨치기: 거리 11을 두 번 돌진합니다. 1회당 60 피해와 밀쳐내기, 최대 120 피해. 돌진 중 받는 피해 20% 감소. 갑옷 방어: 5초 동안 투사체를 반사해 원래 피해를 돌려줍니다. 근접·돌진 피해를 40% 줄이고 70 피해로 반격합니다.",
     "spDesc": "첫 돌진이 명중하면 60×2 + 내려찍기 110, 최대 230 피해. 빗나가면 후속 공격이 없습니다."
   },
   {
@@ -23674,8 +23818,8 @@ CHARACTER_DATABASE.push(...[
     "specialType": "ROY_INFERNO",
     "skill": "화염 연성 — 정밀 점화 / 화염 연성 — 연쇄 점화",
     "special": "대규모 화염 연성",
-    "desc": "일반기 각 50%. 화염 연성 — 정밀 점화: 현재 상대 위치를 표시한 뒤 0.4초 후 반경 4에 125 피해. 화염 연성 — 연쇄 점화: 전방 직선의 3개 지점을 차례로 폭발시킵니다. 각 55 피해, 대상당 최대 110.",
-    "spDesc": "0.65초 뒤 반경 8에 70 피해. 0.28초 뒤 중심 반경 3.5에 170 추가 피해. 최대 240."
+    "desc": "일반기 각 50%. 화염 연성 — 정밀 점화: 상대 이동을 짧게 예측해 표시한 뒤 0.4초 후 반경 4.55에 125 피해. 화염 연성 — 연쇄 점화: 상대 이동을 짧게 예측해 전방의 세 지점을 차례로 폭발시킵니다. 각 55 피해, 대상당 최대 110.",
+    "spDesc": "0.65초 뒤 전방 −50°에서 +50°까지 거리 15의 불꽃을 휩씁니다. 적중 시 170 피해와 3초간 초당 15 화상을 줍니다."
   },
   {
     "id": "scar",
@@ -23695,8 +23839,8 @@ CHARACTER_DATABASE.push(...[
     "specialType": "SCAR_CHAIN",
     "skill": "분해의 오른팔 / 지면 분해",
     "special": "연쇄 분해",
-    "desc": "일반기 각 50%. 분해의 오른팔: 거리 10 돌진, 최초 상대에게 130 피해. 파괴 가능한 설치물에 먼저 닿으면 부수고 멈춥니다. 지면 분해: 전방 길이 13·폭 4의 지면을 연쇄 분해해 대상당 100 피해와 0.25초 이동 정지.",
-    "spDesc": "0.45초 준비 후 돌진. 처음 명중한 상대에게 접촉 150 + 붕괴 90. 빗나가면 붕괴가 발생하지 않습니다."
+    "desc": "일반기 각 50%. 분해의 오른팔: 거리 15를 돌진하며 표적을 약하게 추적해 최초 상대에게 130 피해. 파괴 가능한 설치물에 먼저 닿으면 부수고 멈춥니다. 지면 분해: 전방 길이 13·폭 4의 지면을 연쇄 분해해 대상당 100 피해와 0.25초 이동 정지.",
+    "spDesc": "0.45초 준비 후 거리 21을 돌진합니다. 첫 상대에게 150 피해를 주고 벽까지 끌고 갑니다. 벽 충돌 시 90 피해와 0.5초 정지."
   }
 ]);
 Object.assign(OPM_CHOICES,{
@@ -24036,6 +24180,10 @@ const sharedTextures = new WeakSet(),
   disposedResources = new WeakSet();
 
 const AVATAR_STYLES = {
+  edward:{skin:0xe9bd98,hair:0xe6ae46,tip:0xffd978,cut:"edwardBraid",coat:0xa22837,pattern:"plain",accent:0x231f23},
+  alphonse:{skin:0x687d8d,hair:0x879ca8,tip:0xc1d1da,cut:"steelHelmet",coat:0x526575,pattern:"plain",accent:0x9cabb3},
+  roy:{skin:0xefd0af,hair:0x1a202b,tip:0x333640,cut:"royFringe",coat:0x263d67,pattern:"plain",accent:0x9daabf},
+  scar:{skin:0xa77d63,hair:0xe1dfd8,tip:0xf4f1e8,cut:"scarCrop",coat:0xaaa389,pattern:"plain",accent:0x504b43},
   child_emperor:{skin:0xe9c5a2,hair:0xb88537,tip:0xddb566,cut:"childSculpted",coat:0xd9e6ef,pattern:"plain",accent:0x7190b0,collar:0xf3f1e7},
   metal_bat:{skin:0xd8ac90,hair:0x11151c,tip:0x303845,cut:"pompadour",coat:0xc52e43,pattern:"plain",accent:0x20212a,collar:0x20212a},
   saitama:{skin:0xe9c3a0,hair:0xe9c3a0,tip:0xe9c3a0,cut:"bald",coat:0xe9bd32,pattern:"zip",accent:0xd3d4cd,collar:0xf5f0e5},
@@ -24994,6 +25142,10 @@ function advanceZipHand(shot,dt) {
   const hit=opmProjectileActors().filter(b=>b!==a && b.alive &&
     segmentDistance(b.x,b.z,x,z,shot.x,shot.z)<=actorRadius(b)+shot.r)
     .sort((b,c)=>Math.hypot(b.x-x,b.z-z)-Math.hypot(c.x-x,c.z-z))[0];
+  if(hit && reflectAlchemyShot(shot,hit,x,z,30,shot.r)) {
+    a.busy=t;a.rootUntil=t;a.projectileBusy=false;
+    return false;
+  }
   if(hit) {
     const before=damageQueue.length;
     hurt(a,hit,30);
@@ -25202,7 +25354,7 @@ function runBleachTests(){return withIsolatedBattleState(()=>{
 });}
 
 
-function advanceKageBlade(s,dt){if(!s.a.alive)return removeMesh(s.mesh),false;const b=s.target?.alive?s.target:nearest(s.a);if(b){const q=Math.atan2(s.dz,s.dx),want=Math.atan2(b.z-s.z,b.x-s.x),diff=Math.atan2(Math.sin(want-q),Math.cos(want-q)),next=q+Math.max(-dt,Math.min(dt,diff));s.dx=Math.cos(next);s.dz=Math.sin(next);}const ox=s.x,oz=s.z,n=Math.min(s.remaining,50*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;const hit=opmProjectileActors().find(b=>b!==s.a&&bleachLive(b)&&segmentDistance(b.x,b.z,ox,oz,s.x,s.z)<=3+actorRadius(b));if(hit){const count=s.cast.counts.get(hit)||0;if(count<4){s.cast.counts.set(hit,count+1);hurt(s.a,hit,40,'special');}for(const enemy of opmProjectileActors())if(enemy!==s.a&&bleachLive(enemy)&&!s.cast.burst.has(enemy)&&Math.hypot(enemy.x-s.x,enemy.z-s.z)<=3+actorRadius(enemy)){s.cast.burst.add(enemy);hurt(s.a,enemy,60,'special');}bleachPetals(s.x,s.z,3,.5);removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.5,s.z);s.mesh.rotation.y=Math.atan2(s.dx,s.dz);}if(s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2){removeMesh(s.mesh);return false;}return true;}
+function advanceKageBlade(s,dt){if(!s.a.alive)return removeMesh(s.mesh),false;const b=s.target?.alive?s.target:nearest(s.a);if(b){const q=Math.atan2(s.dz,s.dx),want=Math.atan2(b.z-s.z,b.x-s.x),diff=Math.atan2(Math.sin(want-q),Math.cos(want-q)),next=q+Math.max(-dt,Math.min(dt,diff));s.dx=Math.cos(next);s.dz=Math.sin(next);}const ox=s.x,oz=s.z,n=Math.min(s.remaining,50*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;const hit=opmProjectileActors().find(b=>b!==s.a&&bleachLive(b)&&segmentDistance(b.x,b.z,ox,oz,s.x,s.z)<=3+actorRadius(b));if(hit){if(reflectAlchemyShot(s,hit,ox,oz,40,3,50,"special"))return false;const count=s.cast.counts.get(hit)||0;if(count<4){s.cast.counts.set(hit,count+1);hurt(s.a,hit,40,'special');}for(const enemy of opmProjectileActors())if(enemy!==s.a&&bleachLive(enemy)&&!s.cast.burst.has(enemy)&&Math.hypot(enemy.x-s.x,enemy.z-s.z)<=3+actorRadius(enemy)){s.cast.burst.add(enemy);hurt(s.a,enemy,60,'special');}bleachPetals(s.x,s.z,3,.5);removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.5,s.z);s.mesh.rotation.y=Math.atan2(s.dx,s.dz);}if(s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2){removeMesh(s.mesh);return false;}return true;}
 function coffinTrackingVisual(f){if(headless)return;const g=new THREE.Group();g.name='aizen-tracking-coffin';const ring=bleachPart(g,new THREE.RingGeometry(3.9,4,48),0xa77aff,0,.06,0,.7);ring.rotation.x=-Math.PI/2;const box=bleachPart(g,new THREE.BoxGeometry(6,7,6),0x060310,0,3.5,0,.7),spears=new THREE.Group();for(let i=0;i<12;i++){const q=i*Math.PI/6,m=bleachPart(spears,new THREE.ConeGeometry(.18,8,4),0x9d78c4,Math.cos(q)*4,1+i%4,Math.sin(q)*4);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(-Math.cos(q),0,-Math.sin(q)));}g.add(spears);bleachEffect(g,2.3,()=>{g.position.set(f.x,0,f.z);ring.visible=!f.captured;box.visible=f.captured;spears.visible=t>=f.until-.15;});}
 for(const d of CHARACTER_DATABASE){if(d.id==='toshiro')d.maxMp=77;if(d.id==='ichigo')d.speed=42;if(d.id==='aizen')d.maxMp=85;}
 const bleachUpdatedDescriptions={
@@ -25331,18 +25483,18 @@ for(const c of CHARACTER_DATABASE)if(friendlyBleachDescriptions[c.id])Object.ass
 
 
 const PRACTICE_DAMAGE_DETAILS = {...{
-  "EDWARD_GROUND": "0.35초 뒤 상대 진행 방향 앞 반경 4에 105 피해. 돌기둥이 2초간 남아 이동 방향을 바꿉니다.",
-  "EDWARD_BLADE": "거리 12 돌진. 처음 만난 상대에게 115 피해를 주고 통과합니다.",
+  "EDWARD_GROUND": "0.35초 뒤 상대 진행 방향 앞 반경 4에 105 피해. 폭이 2배 넓어진 돌기둥이 4초 동안 이동 방향을 바꿉니다.",
+  "EDWARD_BLADE": "거리 20을 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 통과합니다.",
   "EDWARD_CANNON": "0.5초 뒤 길이 12·간격 6의 돌벽 두 개를 세웁니다. 0.2초 뒤 대포 발사 순간 통로 안의 상대에게 200 피해를 주고, 포탄이 지나가면 벽이 부서집니다.",
-  "ALPHONSE_SHOULDER": "거리 11 돌진. 첫 상대에게 120 피해와 밀쳐내기. 돌진 중 피해 20% 감소.",
-  "ALPHONSE_GUARD": "2.5초 내 첫 직접 공격 피해를 40% 줄입니다. 근접 공격에만 75 피해로 반격합니다.",
+  "ALPHONSE_SHOULDER": "거리 11을 두 번 돌진합니다. 1회당 60 피해와 밀쳐내기, 최대 120 피해. 돌진 중 받는 피해 20% 감소.",
+  "ALPHONSE_GUARD": "5초 동안 투사체를 반사해 원래 피해를 돌려줍니다. 근접·돌진 피해를 40% 줄이고 70 피해로 반격합니다.",
   "ALPHONSE_COMBO": "첫 돌진이 명중하면 60×2 + 내려찍기 110, 최대 230 피해. 빗나가면 후속 공격이 없습니다.",
-  "ROY_PRECISION": "현재 상대 위치를 표시한 뒤 0.4초 후 반경 4에 125 피해.",
-  "ROY_CHAIN": "전방 직선의 3개 지점을 차례로 폭발시킵니다. 각 55 피해, 대상당 최대 110.",
-  "ROY_INFERNO": "0.65초 뒤 반경 8에 70 피해. 0.28초 뒤 중심 반경 3.5에 170 추가 피해. 최대 240.",
-  "SCAR_ARM": "거리 10 돌진, 최초 상대에게 130 피해. 파괴 가능한 설치물에 먼저 닿으면 부수고 멈춥니다.",
+  "ROY_PRECISION": "상대 이동을 짧게 예측해 표시한 뒤 0.4초 후 반경 4.55에 125 피해.",
+  "ROY_CHAIN": "상대 이동을 짧게 예측해 전방의 세 지점을 차례로 폭발시킵니다. 각 55 피해, 대상당 최대 110.",
+  "ROY_INFERNO": "0.65초 뒤 전방 −50°에서 +50°까지 거리 15의 불꽃을 휩씁니다. 적중 시 170 피해와 3초간 초당 15 화상을 줍니다.",
+  "SCAR_ARM": "거리 15를 돌진하며 표적을 약하게 추적해 최초 상대에게 130 피해. 파괴 가능한 설치물에 먼저 닿으면 부수고 멈춥니다.",
   "SCAR_GROUND": "전방 길이 13·폭 4의 지면을 연쇄 분해해 대상당 100 피해와 0.25초 이동 정지.",
-  "SCAR_CHAIN": "0.45초 준비 후 돌진. 처음 명중한 상대에게 접촉 150 + 붕괴 90. 빗나가면 붕괴가 발생하지 않습니다."
+  "SCAR_CHAIN": "0.45초 준비 후 거리 21을 돌진합니다. 첫 상대에게 150 피해를 주고 벽까지 끌고 갑니다. 벽 충돌 시 90 피해와 0.5초 정지."
 },NORMAL_PUNCH:`직접 펀치${OPM_BALANCE.normalPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.normalPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.normalPunch.impulse}으로 밀쳐냅니다.`,CONSECUTIVE_PUNCHES:"20×10회, 최대200 피해입니다.",SERIOUS_PUNCH:`직접 펀치${OPM_BALANCE.seriousPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.seriousPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.seriousPunch.impulse}으로 밀쳐냅니다.`,INCINERATION:`폭3→${OPM_BALANCE.incineration.width}·길이${OPM_BALANCE.incineration.reach}의 빔${OPM_BALANCE.incineration.damage} 피해입니다.`,MACHINEGUN_BLOW:`${OPM_BALANCE.machinegun.damage}×${OPM_BALANCE.machinegun.hits}회, 최대${OPM_BALANCE.machinegun.damage*OPM_BALANCE.machinegun.hits} 피해입니다.`,INCINERATION_UPGRADE:`후퇴${OPM_BALANCE.upgradedIncineration.retreat} 후 폭3→${OPM_BALANCE.upgradedIncineration.width}·길이${OPM_BALANCE.upgradedIncineration.reach}의 빔${OPM_BALANCE.upgradedIncineration.damage} 피해입니다.`,PSYCHIC_THROW:"돌35×6개, 최대210 피해입니다.",PSYCHIC_SPEED:"6초간 관통할 때마다40 피해. 몸과 투사체는 통과하고 빔·설치형·지속 피해는 받습니다.",PSYCHOKINESIS:"6초간 적 벽 충돌당15,2초 후 중앙 반경12 운석170입니다.",BANG_ASSAULT:`돌진당${OPM_BALANCE.bangAssault.damage}, 대상당 최대${OPM_BALANCE.bangAssault.maxHits}회 ${OPM_BALANCE.bangAssault.damage*OPM_BALANCE.bangAssault.maxHits} 피해입니다.`,BANG_WALL_ART:"10초간 벽 충돌3회까지25 관통 돌진37입니다.",BANG_GUARD:"8초간 초당HP·MP10 회복, 기본 충돌·스킬 피해20% 증가입니다.",ROBOT_ARMS:`${OPM_BALANCE.robotArms.duration}초간 반경${OPM_BALANCE.robotArms.radius}. 진입·재진입 및 체류 ${OPM_BALANCE.robotArms.repeat}초마다 ${OPM_BALANCE.robotArms.damage} 피해입니다.`,OCTOPUS_TANK:`${OPM_BALANCE.octopusTank.duration}초 설치. ${OPM_BALANCE.octopusTank.interval}초마다 유도 미사일${OPM_BALANCE.octopusTank.damage}를 발사합니다.`,BRAVE_GIANT:"2초 무적 조립 후10초 탑승. HP200 회복·피해감소20%·MP회복2배·SP최대80입니다.",DELTA_SCALE_SABER:`거리${OPM_BALANCE.deltaSaber.dash} 돌진 충돌${OPM_BALANCE.deltaSaber.collision} / 전방 반경${OPM_BALANCE.deltaSaber.reach}·${OPM_BALANCE.deltaSaber.halfAngle*2}도 검기${OPM_BALANCE.deltaSaber.slash}. 대상당 1회 피해입니다.`,MILLENNIUM_EMPEROR_NOVA:`${OPM_BALANCE.nova.charge}초 무적 준비 후 폭${OPM_BALANCE.nova.width}·벽까지 이어지는 초록 빔${OPM_BALANCE.nova.damage}입니다.`,BAT_SLAM:"돌진 충돌50, 수직으로 날린 뒤 벽에 충돌하면50 추가 피해(1회)입니다.",BAT_BARRAGE:"6초간 기본 충돌 피해25 증가입니다.",BAT_DRAGON:`약하게 추적하며 거리${OPM_BALANCE.batDragon.dash} 돌진 후 ${OPM_BALANCE.batDragon.hold}초 붙잡기. 총${OPM_BALANCE.batDragon.damage}+기백 중첩당${OPM_BALANCE.batDragon.perStack}, 최대${OPM_BALANCE.batDragon.damage+OPM_BALANCE.batDragon.perStack*OPM_BALANCE.spirit.cap}입니다.`,"WATER_SLASH": "주변을 한 번 베어 170 피해를 줍니다. 같은 기술로 같은 대상에게 추가 피해는 없습니다.", "BURNING_BONES": "불꽃 돌진이나 앞쪽 검기에 맞으면 160 피해. 두 판정이 겹쳐도 대상당 1회입니다.", "HINOKAMI_ENBU": "돌진 200 + 마지막 원형 검기 100. 둘 다 맞으면 총 300 피해입니다.", "THUNDERCLAP_FLASH": "돌진 경로에 맞으면 165 피해를 1회 줍니다.", "THUNDER_GOD": "번개 돌진에 맞으면 195 피해를 1회 줍니다.", "THUNDERCLAP_SIXFOLD": "돌진 1회당 70 피해. 6회 모두 맞으면 최대 420입니다.", "BEAST_FANG_SLASH": "주변 베기 1회당 100, 2회 모두 맞으면 총 200입니다.", "BEAST_SPATIAL_RAMPAGE": "주변 베기 80 × 4회 = 최대 320. 강화 중 충돌 피해는 1회당 110입니다.", "RASENGAN_AURA": "다음 충돌에 나선환 80 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SAGE_RASENSHURIKEN": "나선수리검 110 피해 1회. 강화 중 충돌 피해는 1회당 72입니다.", "KURAMA_RASENGAN": "나선환 투사체가 160 피해를 줍니다. 5초간 충돌 피해가 기본값보다 15 증가합니다.", "CHIDORI_AURA": "다음 충돌에 치도리 60 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SUSANOO": "주변 공격 75 × 3회 = 최대 225. 5초간 받는 피해도 50% 줄어듭니다.", "AMATERASU": "매초 지속 피해를 줍니다. 흑염 1중첩 4, 2중첩 11, 3중첩 18이며 중첩마다 초당 7씩 증가합니다.", "GUM_GUM_GATLING": "주먹 1회당 30, 5회 모두 맞으면 최대 150입니다.", "GEAR_THIRD_GIANT_PISTOL": "거대한 주먹 110 × 2회 = 최대 220입니다.", "DESTRUCTIVE_DEATH_AIR_TYPE": "충격파 1개당 50. 같은 대상은 최대 3번 맞아 총 150 피해를 받습니다.", "COMPASS_NEEDLE_DISORDER": "주변 충격파 25 × 4회 = 100. 돌진 70 × 3회 = 210. 모두 맞으면 최대 310입니다.", "BLUE_SILVER_CHAOTIC_AFTERGLOW": "전방 연타 1회당 25, 10회 모두 맞으면 총 250입니다.", "CHAINSAW_RUSH": "돌진 적중 70. 출혈은 초당 3씩 3초간 추가됩니다. 연속 접촉 시 출혈 시간이 갱신됩니다.", "SHARK_RIDER": "충돌 1회당 90, 대상당 최대 4회로 직접 피해는 최대 360. 적중하면 출혈 피해가 추가됩니다.", "SMASH_KICK": "공기탄 45 × 4발 = 최대 180입니다. 각 탄환을 맞아야 피해가 들어갑니다.", "DELAWARE_SMASH": "길게 뻗는 충격파에 맞으면 140 피해를 1회 줍니다.", "BLACK_FLASH": "다음 충돌 피해가 2배가 됩니다. 적중하면 강화가 소모되며 중첩되지 않습니다.", "MALEVOLENT_SHRINE": "검기에 맞으면 170 피해. 검기 여러 개가 겹쳐도 같은 대상은 1회만 맞습니다.", "BOOGIE_WOOGIE": "위치 교환 경로의 잔상 110 × 3회 = 최대 330입니다. 이동 거리가 없으면 피해도 없습니다.", "BOOGIE_BLACK_FLASH": "잔상 1회당 90, 같은 대상 최대 4회로 총 360입니다.", "DIVINE_DOG": "옥견 두 마리가 각각 접촉할 때마다 30 피해를 줍니다. 다시 닿으면 재공격할 수 있습니다.", "NUE": "접촉 피해 30, 번개 1회당 25. 번개는 1.5초 간격으로 공격합니다.", "RABBIT_ESCAPE": "토끼 한 마리가 접촉할 때 12 피해. 여러 토끼에 맞으면 각각 합산됩니다.", "MAHORAGA": "일반 접촉 70, 돌진 적중 90. 재접촉과 다음 돌진은 다시 피해를 줄 수 있습니다.", "COPY_TECHNIQUE": "모방한 기술의 피해 방식을 따릅니다. 연습 더미에게서는 물의 호흡을 모방해 기본 170 피해를 줍니다.", "RIKA_MANIFESTATION": "리카의 빔은 대상당 150 피해 1회. 6초간 본인의 일반 기술·충돌 피해가 10% 증가합니다.", "SHUTTER_RUSH": "닫히는 셔터 범위에 있으면 80 피해를 1회 줍니다.", "IDLE_DEATH_GAMBLE": "직접 피해는 없습니다. 대박 중 충돌 피해가 15 증가하고, 6초간 초당 HP 50을 회복합니다.", "PURGATORY_ONIGIRI": "검기 1개당 70 피해. 세 갈래 검기가 각각 적중해야 피해가 합산됩니다.", "ASURA": "돌진 또는 전방 검기에 맞으면 180 피해. 같은 대상은 1회만 피해를 받습니다.", "EXPLOSION_DRIVE": "출발 폭발 60 + 돌진 90. 둘 다 맞으면 총 150입니다.", "HOWITZER_IMPACT": "돌진 끝의 큰 폭발에 맞으면 250 피해를 1회 줍니다.", "ORA_RUSH": "주먹 23 × 8회 = 최대 184입니다. 공격 범위에 들어온 타격만 적용됩니다.", "THE_WORLD": "시간정지 중 주먹 25 × 9회 = 최대 225. 정지 중 누적한 피해가 적용됩니다.", "MUDA_RUSH": "주먹 22 × 8회 = 최대 176입니다.", "DIO_THE_WORLD": "연속 주먹과 로드롤러 모두 24 × 9회 = 총 216. 시간정지가 끝나면 누적 피해를 줍니다.", "CRESCENT_SLASH": "검기 1개당 40. 같은 대상 최대 3회로 총 120입니다.", "MOONLIGHT_BARRAGE": "묶음당 65, 세 묶음 모두 맞으면 최대 195입니다. 같은 묶음은 대상당 1회만 적중합니다.", "STONE_FLAIL": "날아갈 때 100 + 돌아올 때 80 + 충격파 60. 세 공격을 모두 맞으면 최대 240입니다.", "STONE_WHIRLWIND": "충격파 50 × 4회 + 마지막 타격 80 = 최대 280입니다.", "PROJECTION_SORCERY": "직접 피해는 없습니다. 모은 분신 하나마다 충돌 피해가 10씩 증가합니다.", "PROJECTION_BARRAGE": "돌진 적중 1회당 80. 돌진 8회에서 각각 한 번씩 맞으면 최대 640입니다.", "CURSED_BLUE": "구체에 닿을 때 55 피해. 같은 대상은 0.25초 이상 간격을 두고 다시 맞을 수 있습니다.", "CURSED_RED": "붉은 공격 범위에 맞으면 110 피해를 1회 줍니다.", "HOLLOW_PURPLE": "보라색 구체가 닿으면 236 피해를 1회 줍니다.", "SHAMBLES": "위치 교환 경로의 공격에 맞으면 70 피해를 줍니다.", "ROOM": "룸 벽에 부딪힐 때마다 적에게 10 피해. 벽을 세우는 순간의 직접 피해는 없습니다.", "RED_ROC": "길게 뻗는 주먹에 맞으면 100 피해를 1회 줍니다.", "BOUND_MAN": "돌진 충돌 피해는 기본 충돌값 +15. 최대 5번의 돌진에서 각각 적중할 수 있습니다.", "GEAR_FIFTH": "변신 자체의 직접 피해는 없습니다. 니카 상태에서 기본 충돌 피해가 50으로 바뀝니다.", "NIKA_LIGHTNING": "던진 번개가 처음 맞은 대상에게 100 피해를 줍니다.", "NIKA_GIGANT": "5초간 거대화하며 충돌 피해가 1회당 95로 바뀝니다. 몸이 닿을 때 피해가 들어갑니다.", "KILLER_QUEEN_RUSH": "연속 주먹 27 × 8회 = 최대 216입니다.", "FIRST_BOMB": "다음 접촉으로 폭탄을 설치합니다. 다시 접촉하거나 3초가 지나면 100 피해로 폭발합니다.", "SHEER_HEART_ATTACK": "추적 폭탄의 폭발 범위에 들어오면 130 피해를 1회 줍니다.", "BITES_THE_DUST": "직접 피해는 없습니다. 과거의 HP·MP를 되돌리고, 캐릭터들을 3초간 새 위치로 이동시킵니다.", "ICE_AGE": "장판에 들어온 대상을 얼립니다. 얼음이 깨질 때 대상당 90 피해를 줍니다.", "PHEASANT_BEAK": "얼음 새 적중 80. 남은 빙벽에 부딪히면 접촉당 40 피해가 추가됩니다.", "ICE_BALL": "얼린 대상을 시전자가 부딪혀 깨면 80 피해. 자연스럽게 풀리면 추가 피해는 없습니다.", "YASAKANI_MAGATAMA": "빛 탄환 1개당 30. 같은 대상은 최대 120 피해까지 받습니다.", "YATA_MIRROR": "빛이 적중할 때마다 100 피해. 반사 후 다시 적중하면 추가 피해를 줄 수 있습니다.", "AMA_NO_MURAKUMO": "첫 검격은 대상당 200. 이후 같은 대상 적중은 현재 충돌 피해로 계산합니다.", "DAI_FUNKA": "마그마 주먹 120 + 초당 5씩 5초간 화상. 모두 받으면 총 145입니다.", "MEIGO": "직접 적중 120 + 초당 10씩 3초간 화상. 모두 받으면 총 150입니다.", "RYUSEI_KAZAN": "유성 1개당 70, 대상당 최대 3개 적중. 각 화상은 초당 5씩 4초간 이어집니다.", "TEACH_BLACK_HOLE": "검은 불꽃을 붙이면 매초 17 피해가 이어집니다. 끌어당김 자체에는 별도 피해가 없습니다.", "KUROUZU": "붙잡기 적중 50. 던진 상대가 다른 적과 충돌하면 그 적에게 50 추가 피해를 줍니다.", "GURASHI": "착지 충격파로 100~250 피해를 1회 줍니다. 중심에 가까울수록 피해가 큽니다.", "UNKNOWING_FIRE": "불꽃 돌진 또는 검기 적중 시 140 피해를 1회 줍니다.", "RISING_SCORCHING_SUN": "이동 중 전방의 불꽃 베기에 닿으면 140 피해. 같은 돌진에서는 대상당 1회입니다.", "RENGOKU": "돌진 230 + 남은 불길 30 × 최대 2회. 모두 맞으면 최대 290입니다.", "STRIKING_TIDE": "돌진 또는 물결 베기 적중 시 110 피해. 같은 대상은 한 번만 맞습니다.", "RIPPLE_THRUST": "찌르기 20 × 10회 = 최대 200입니다. 잔상 20개는 시각 효과이며 피해는 10회입니다.", "DEAD_CALM": "직접 피해는 없습니다. 7초간 받는 피해를 75% 줄이고, 줄인 만큼 MP를 얻습니다.", "ROAR": "자신 주변 폭발에 닿으면 110 피해를 1회 줍니다.", "CONSTANT_RESONANT_SLASHES": "첫 적중은 대상당 105. 이후 같은 대상을 맞히면 현재 충돌 피해를 줍니다.", "STRING_PERFORMANCE": "회전 칼날 90 × 최대 3회 = 총 270. 커지는 범위의 각 단계에서 한 번씩 적중합니다.", "MORNING_PEACOCK": "불꽃 주먹 16 × 10회 = 최대 160입니다.", "DAYTIME_TIGER": "호랑이 충격파에 맞으면 120 피해를 1회 줍니다.", "EVENING_ELEPHANT": "충격파 1회당 40. 네 번 발사하지만 같은 대상은 최대 3회로 총 120입니다.", "NIGHT_GUY": "돌진 적중 250 피해 1회. 사용자도 현재 HP의 10%에 해당하는 반동을 받습니다.", "LOTUS_ICE": "주변 첫 타격 80 + 얼음 고리 30 × 최대 2회 = 모두 맞으면 140입니다.", "SCATTERING_LOTUSES": "전방 꽃잎 베기 55 × 돌진 3회 = 최대 165입니다.", "FROZEN_WATER_LILY_BODHISATTVA": "보살에 닿으면 35씩 피해를 줍니다. 같은 대상은 일정 간격으로 다시 피해를 받습니다.", "SHADOW_SMASH": "뻗어나가는 다크 섀도에 맞으면 120 피해를 1회 줍니다.", "BLACK_ANKH": "직접 피해는 없습니다. 6초간 방어를 강화하고, 남은 방어 횟수가 있을 때 충돌 피해가 25 증가합니다.", "BLACK_ANKH_BALDUR": "다크 섀도의 큰 공격에 맞으면 200 피해. 한 번의 공격에서 같은 대상은 1회만 맞습니다.", "BLACK_WHIP": "채찍 적중 75 피해. 끌어온 상대와 다시 충돌하면 기본 충돌 피해에 25를 추가합니다.", "FA_JIN": "매초 다음 충돌의 추가 피해가 10씩 쌓여 최대 +100. 충돌하면 모은 추가 피해를 소모합니다.", "DETROIT_120": "두 번 전진한 뒤 날리는 마지막 주먹이 170 피해를 1회 줍니다.", "HEAVEN_ICE_WALL": "빙벽 충돌 40 × 대상당 최대 3회 = 총 120입니다.", "FLASHFIRE_FIST": "전방의 불꽃 공격에 맞으면 105 피해를 1회 줍니다.", "FLASHFREEZE_HEATWAVE": "얼음길 60 + 마지막 열파 140. 둘 다 맞으면 총 200입니다.", "FIERCE_WINGS_SHOT": "깃털 1개당 60. 대상당 최대 3개 적중해 총 180 피해를 줍니다.", "FIERCE_WINGS_SWORD": "돌진 검격은 대상당 110 피해 1회. 5초간 충돌 피해가 25 증가합니다.", "FIERCE_WINGS_BARRAGE": "깃털 35 × 대상당 최대 8개 = 총 280. 맞힌 깃털은 이동·충돌 공격도 약화합니다.", "AKI_FOX": "여우에게 물리면 130 피해를 1회 주고 잠깐 붙잡습니다.", "AKI_FUTURE": "직접 공격을 회피한 뒤 50 피해로 반격합니다. 두 번 회피하면 효과가 끝납니다.", "AKI_CURSE": "못으로 저주를 누적합니다. 3회 누적하면 잠시 뒤 400의 저주 피해가 추가됩니다. 못 적중 피해는 별도입니다.", "POWER_WEAPON": "무작위 무기: 망치는 충돌 +50, 낫은 대상당 80, 창은 한 발당 40 피해를 줍니다.", "POWER_BLOOD": "큰 피의 무기 피해는 100 + 회수한 핏자국 수 ×40, 최대 260입니다.", "REZE_SHOT": "불씨 직격 40 + 주변 폭발 120. 두 피해가 모두 적용되면 한 발당 160입니다. 벽에 남은 폭발은 90 피해입니다.", "REZE_DASH": "폭발 돌진에 처음 닿으면 150 피해를 줍니다.", "REZE_BOMB": "자신 주변 폭발에 맞으면 250 피해. 같은 폭발은 대상당 1회만 적중합니다.", "SHINRA_TENSEI": "충격파 96 + 밀린 뒤 벽 충돌 42. 두 조건을 만족하면 총 138입니다.", "BANSHO_TENIN": "더미를 끌어당겨 충분히 가까워지면 흑봉으로 144 피해를 1회 줍니다.", "CHIBAKU_TENSEI": "당기는 동안에는 직접 피해가 없습니다. 끝날 때 중심에 남은 상대에게 240 피해를 줍니다.", "RAIKIRI": "번개 돌진에 처음 맞은 상대에게 130 피해를 줍니다.", "LIGHTNING_CLONE": "분신에 처음 접촉하면 120 피해와 짧은 정지를 줍니다. 적중한 분신은 사라집니다.", "KAMUI": "재등장 후 돌진에 처음 맞은 대상에게 200 피해를 줍니다.", "GETSUGA": "검기 중심 130 / 가장자리 75. 한 번의 검기는 같은 대상에게 1회만 피해를 줍니다.", "ICHIGO_SHUNPO": "순간 이동 뒤 베기 115 피해 1회. 이동과 베기가 별도로 중복 타격하지는 않습니다.", "TENSA_ZANGETSU": "8초간 충돌 피해 +20. 일반기는 중심 190 / 가장자리 130 피해의 검붉은 월아천충으로 바뀝니다.", "BLACK_GETSUGA": "검기 중심 190 / 가장자리 130. 같은 대상에게 둘 중 하나만 1회 적용됩니다.", "SENBONZAKURA": "칼날 무리 34 × 대상당 최대 5회 = 총 170입니다.", "BYAKUYA_SHUNPO": "순간 이동 뒤 한 번 베어 110 피해를 줍니다.", "SENBONZAKURA_KAGEYOSHI": "칼날 40 × 최대 4개 + 꽃잎 폭발 60 = 최대 220. 꽃잎 폭발은 대상당 1회입니다.", "KYOKA_SUIGETSU": "직접 공격 한 번을 환영이 대신 맞고 100 피해로 반격합니다. 지속 피해에는 발동하지 않습니다.", "SOKATSUI": "푸른 화염 폭발로 125 피해 1회. 직격과 폭발이 중복 계산되지는 않습니다.", "KUROHITSUGI": "추적 1초 → 포획 1초 → 마지막에 240 피해 1회. 추적·흡인 중에는 별도 피해가 없습니다.", "RYOJIN_HYOHEKI": "첫 벽 충돌 80, 이후 재접촉 15. 첫 정지는 0.3초, 이후 정지는 0.2초입니다.", "TENSO_JURIN": "눈보라 안에서 초당 30 × 최대 5회 = 총 150. 범위를 벗어나면 해당 타격을 피합니다.", "RYUSENKA": "돌진 60 + 1초 뒤 얼음 파괴 180 = 총 240. 눈보라 피해 중인 적은 마무리 240으로 총 300입니다.", "ZIP_AMBUSH": "지퍼에서 나온 뒤 주먹으로 110 피해를 1회 줍니다.", "ARI_RUSH": "지퍼 손 30 + 연속 주먹 23 × 8회 = 모두 맞으면 총 214입니다.", "ARRIVEDERCI": "벽 주먹은 대상당 75 피해 1회. 이어지는 연타 23 × 8회까지 맞으면 총 259입니다."};
 function renderPracticeDamageInfo(){
  if(headless)return;
@@ -25378,7 +25530,8 @@ function opmPunch(actor, serious = false) {
     const p = shotoLocal({x:actor.x,z:actor.z,dx:d.x,dz:d.z},target.x,target.z), r=actorRadius(target);
     if (p.x < -r || p.x > reach+windReach+r || Math.abs(p.z) > width/2+r) continue;
     const queued=damageQueue.length;
-    hurt(actor,target,p.x <= reach+r ? direct : wind,serious?'special':'skill');
+    const contact=p.x<=reach+r;
+    withAlchemyHitMode(contact?"melee":"ranged",()=>hurt(actor,target,contact?direct:wind,serious?"special":"skill"));
     // Attach impulse only to the hit that survived dodge/illusion checks.
     if(damageQueue.length>queued){const hit=damageQueue[damageQueue.length-1];if(hit.a===actor&&hit.b===target)hit.opmPunchImpulse={x:d.x,z:d.z,speed:impulse};}
   }
@@ -25391,7 +25544,7 @@ function opmRush(actor,count,damage,color,metal=false) {
   const direction=opmDirection(actor), interval=.075;
   hold(actor,interval*(count-1)+.1);
   for(let i=0;i<count;i++) schedule(actor,i*interval,()=>{
-    for(const target of actors) if(target!==actor&&target.alive&&!opmPhasing(target)&&oraHits(actor,target,direction,15,50)) hurt(actor,target,damage,"skill",0,{rush:true,final:i===count-1});
+    for(const target of actors) if(target!==actor&&target.alive&&!opmPhasing(target)&&oraHits(actor,target,direction,15,50)) withAlchemyHitMode("melee",()=>hurt(actor,target,damage,"skill",0,{rush:true,final:i===count-1}));
     opmRushVisual(actor,direction,color,metal,i);
   });
 }
@@ -26447,21 +26600,6 @@ function withAlchemyHitMode(mode, action) {
   try { return action(); } finally { alchemyHitMode = previous; }
 }
 
-function applyAlchemyGuard(hit) {
-  const {a: attacker, b: defender, damageKind, hitMode} = hit;
-  if (defender.alchemyGuardUntil <= t || !defender.alchemyGuardUntil || hit.n <= 0 ||
-      attacker === defender || !defender.alive || defender.hp<=0 || !damageKind ||
-      damageKind === 'bleachDot' || damageKind === 'roomWall') return;
-  defender.alchemyGuardUntil = 0;
-  hit.n = Math.round(hit.n * .6);
-  fx('ring', defender.x, defender.z, 2, 0xc3dbfa, .3);
-  const contact = Math.hypot(attacker.x-defender.x, attacker.z-defender.z);
-  if (attacker.alive && hitMode !== 'ranged' &&
-      (hitMode === 'melee' || damageKind === 'collision' || contact <= actorRadius(attacker)+actorRadius(defender)+.45)) {
-    withAlchemyHitMode('melee', () => hurt(defender, attacker, 75));
-  }
-}
-
 function alchemyBoxEntry(wall, origin, direction, pad, limit) {
   const point = shotoLocal(wall, origin.x, origin.z);
   const vx = direction.x*wall.dx + direction.z*wall.dz;
@@ -26531,7 +26669,7 @@ function reflectAlchemy(actor, normal) {
 function constrainAlchemyActors() {
   if (!alchemyWalls.length) return;
   for (const actor of actors) {
-    if (!actor.alive || !actor.opmPrevious) continue;
+    if (!actor.alive || !actor.opmPrevious || actor.alchemyCarry || alchemyLocked(actor)) continue;
     const previous=actor.opmPrevious;
     const x=actor.x-previous.x,z=actor.z-previous.z,length=Math.hypot(x,z);
     if (length<1e-8) continue;
@@ -26552,14 +26690,20 @@ function clearAlchemyWalls() {
 
 function updateAlchemyWalls() {
   alchemyWalls=alchemyWalls.filter(wall=>{
-    if (wall.until>t && wall.owner.alive) return true;
+    if (wall.until>t && wall.owner.alive) {
+      if(wall.mesh && wall.raisedAt!==null){
+        const p=Math.min(1,(t-wall.raisedAt)/.19);
+        wall.mesh.scale.y=Math.max(.035,1-(1-p)**3)*Math.min(1,(wall.until-t)/.15);
+      }
+      return true;
+    }
     removeMesh(wall.mesh);
     return false;
   });
 }
 
-function alchemyWall(owner, x, z, direction, halfLength, halfWidth, duration) {
-  const wall={owner,x,z,dx:direction.x,dz:direction.z,halfLength,halfWidth,until:t+duration,mesh:null};
+function alchemyWall(owner, x, z, direction, halfLength, halfWidth, duration, pillar=false) {
+  const wall={owner,x,z,dx:direction.x,dz:direction.z,halfLength,halfWidth,until:t+duration,raisedAt:pillar?t:null,mesh:null};
   alchemyWalls.push(wall);
   for (const actor of actors) {
     if (!actor.alive) continue;
@@ -26575,7 +26719,22 @@ function alchemyWall(owner, x, z, direction, halfLength, halfWidth, duration) {
   }
   if (!headless && world) {
     const group=new THREE.Group();
-    const blocks=Math.ceil(halfLength);
+    if(pillar){
+      group.name="edward-raised-rock-pillar";
+      for(let i=0;i<9;i++){
+        const side=i%3-1,row=Math.floor(i/3);
+        const height=1.7+(1+Math.cos(i*2.33))*.88;
+        const geometry=new THREE.CylinderGeometry(.67+.08*(i%3),.81,height,6,1,false,i*.78);
+        const rock=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+          color:[0x887461,0xb59a7d,0x69594e][i%3],roughness:.96,flatShading:true
+        }));
+        rock.scale.x=.77;
+        rock.position.set((row-1)*.61,height*.5,side*1.48);
+        rock.rotation.set(.05*Math.sin(i),i*.28,.07*Math.cos(i));
+        group.add(rock);
+      }
+    }
+    const blocks=pillar?0:Math.ceil(halfLength);
     for (let i=0;i<blocks;i++) {
       const height=2.4+.5*Math.sin(i*2.3)**2;
       const block=new THREE.Mesh(new THREE.BoxGeometry(2*halfLength/blocks+.02,height,2*halfWidth),
@@ -26595,7 +26754,7 @@ function shatterAlchemyObstacle(wall) {
   wall.until=t;
   removeMesh(wall.mesh);
   wall.mesh=null;
-  bleachShards(wall.x,wall.z,0xcab09d,18);
+  alchemyDebris(wall.x,wall.z,3.1,25);
 }
 
 function alchemyTargets(actor) {
@@ -26604,26 +26763,7 @@ function alchemyTargets(actor) {
 
 function alchemyBlast(actor,x,z,radius,damage,kind='skill',include=()=>true) {
   fx('ring',x,z,radius,actor.d.color,.36);
-  if (!headless && world && actor.d.id==='roy') {
-    const flames=new THREE.Group();
-    const shards=[];
-    for (let i=0;i<14;i++) {
-      const angle=i*2.399963;
-      const distance=radius*Math.sqrt((i+.5)/14)*.92;
-      const flame=opmPart(flames,new THREE.ConeGeometry(.54+(i%3)*.26,2.9,5),
-        i%3===0?0xffdf86:0xff6423,x+Math.cos(angle)*distance,.1,z+Math.sin(angle)*distance,.83);
-      flame.rotation.z=.2*Math.sin(i);
-      shards.push(flame);
-    }
-    akiEffect(flames,.34,p=>{
-      for (const [i,flame] of shards.entries()) {
-        const rise=Math.sin(Math.PI*Math.min(1,p*1.15));
-        flame.position.y=.25+1.7*rise;
-        flame.scale.set(.6+p*.8,.17+rise*(.76+(i%4)*.22),.6+p*.8);
-        flame.userData.akiCustomOpacity=.82*(1-p);
-      }
-    });
-  }
+  if (actor.d.id==='roy') alchemyPlume(x,z,radius);
   withAlchemyHitMode('ranged',()=>{
     for (const target of alchemyTargets(actor)) {
       if (Math.hypot(target.x-x,target.z-z)<=radius+actorRadius(target) && include(target))
@@ -26632,26 +26772,144 @@ function alchemyBlast(actor,x,z,radius,damage,kind='skill',include=()=>true) {
   });
 }
 
+function alchemyGuardActive(actor) {
+  return actor.alive && actor.hp>0 && actor.alchemyGuardUntil>t;
+}
+
+function alchemyLocked(actor) {
+  return actor.alchemyStoppedUntil>t || actor.alchemyCarriedBy?.alive && actor.alchemyCarriedBy.alchemyCarry?.victim===actor;
+}
+
+function applyAlchemyGuard(hit) {
+  const {a:attacker,b:defender,damageKind,hitMode}=hit;
+  if (!alchemyGuardActive(defender) || hit.n<=0 || attacker===defender || hitMode==="ranged") return;
+  const directMelee=hitMode==="melee" && ["skill","special","powerWeapon","akiCounter","illusionCounter"].includes(damageKind);
+  if (!directMelee && damageKind!=="collision" && damageKind!=="summon") return;
+  hit.n=Math.round(hit.n*.6);
+  alchemyLightning(defender.x,defender.z,2.8);
+  withAlchemyHitMode("ranged",()=>hurt(defender,attacker,70,"skill"));
+}
+
+let alchemyReflections=[];
+
+function alchemyShotEntry(target,x,z,direction,radius,length) {
+  const dx=target.x-x,dz=target.z-z,along=dx*direction.x+dz*direction.z;
+  const disc=radius*radius-dx*dx-dz*dz+along*along;
+  if (disc<0) return Infinity;
+  const span=Math.sqrt(disc),entry=Math.max(0,along-span);
+  return along+span>=0 && entry<=length+1e-8 ? entry : Infinity;
+}
+
+function reflectAlchemyShot(shot,defender,fromX,fromZ,damage,radius,speed=shot.speed,kind="skill") {
+  if (!alchemyGuardActive(defender) || !(damage>0)) return false;
+  const owner=shot.a||shot.owner;
+  const step=Math.hypot(shot.x-fromX,shot.z-fromZ);
+  const heading=step>1e-8 ? unit(shot.x-fromX,shot.z-fromZ) : unit(shot.dx??defender.x-owner.x,shot.dz??defender.z-owner.z);
+  const contact=alchemyShotEntry(defender,fromX,fromZ,heading,actorRadius(defender)+radius,step);
+  const distance=Number.isFinite(contact)?contact:step;
+  const dx=-heading.x,dz=-heading.z;
+  const reflected={
+    a:defender,x:clampAlchemy(fromX+heading.x*distance+dx*.015,W,radius),
+    z:clampAlchemy(fromZ+heading.z*distance+dz*.015,H,radius),dx,dz,
+    r:radius,speed,remaining:Math.hypot(W,H),damage:damage*owner.power,
+    kind,specialSource:shot.specialSource||kind==="special"||kind==="rare",mesh:shot.mesh||alchemyReflectedOrb(Math.min(radius,.8)),
+  };
+  if (shot.mesh?.userData.zip) {
+    removeMesh(shot.mesh);
+    reflected.mesh=alchemyReflectedOrb(radius);
+  }
+  shot.mesh=null;
+  if(reflected.mesh){
+    if(!reflected.mesh.parent) world.add(reflected.mesh);
+    reflected.mesh.position.set(reflected.x,1.35,reflected.z);
+    reflected.mesh.rotation.y=Math.atan2(dx,dz);
+  }
+  alchemyReflections.push(reflected);
+  alchemyLightning(reflected.x,reflected.z,2.8);
+  return true;
+}
+
+function alchemyReflectedOrb(radius) {
+  if (headless || !world) return null;
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,12,8),
+    new THREE.MeshStandardMaterial({color:0xa0c4dd,metalness:.55,roughness:.30}));
+  world.add(mesh);
+  return mesh;
+}
+
+function advanceAlchemyReflections(dt) {
+  if (!alchemyReflections.length) return;
+  const active=alchemyReflections;
+  alchemyReflections=[];
+  const walls=bleachWalls();
+  for(const shot of active){
+    if (!shot.a.alive) {removeMesh(shot.mesh);continue;}
+    const direction={x:shot.dx,z:shot.dz};
+    const {x,z}=shot;
+    const length=boundedTravel(shot,direction,Math.min(shot.remaining,shot.speed*dt),shot.r);
+    let victim=null,closest=Infinity;
+    for(const target of opmProjectileActors()){
+      if (target===shot.a||!target.alive) continue;
+      const entry=alchemyShotEntry(target,x,z,direction,actorRadius(target)+shot.r,length);
+      if (entry<closest){victim=target;closest=entry;}
+    }
+    const travel=Math.min(length,closest);
+    shot.x+=shot.dx*travel;shot.z+=shot.dz*travel;shot.remaining-=travel;
+    if(walls.some(({a,f})=>a!==shot.a&&bleachSegmentRect(x,z,shot.x,shot.z,f,shot.r))){
+      removeMesh(shot.mesh);
+      continue;
+    }
+    if(victim){
+      const baseDamage=shot.damage/shot.a.power;
+      if(!reflectAlchemyShot(shot,victim,x,z,baseDamage,shot.r,shot.speed,shot.kind)){
+        withDamageOrigin(shot.a,shot.specialSource,()=>withAlchemyHitMode("ranged",()=>hurt(shot.a,victim,baseDamage,shot.kind)));
+        removeMesh(shot.mesh);
+      }
+    }else if (shot.remaining<=1e-8 || length<shot.speed*dt-1e-8){
+      removeMesh(shot.mesh);
+    }else{
+      if(shot.mesh) shot.mesh.position.set(shot.x,1.35,shot.z);
+      alchemyReflections.push(shot);
+    }
+  }
+}
+
+function clearAlchemyReflections() {
+  for(const shot of alchemyReflections) removeMesh(shot.mesh);
+  alchemyReflections=[];
+}
+
 function alchemyDash(actor,target,distance,speed,damage,options={}) {
   opmDash(actor,target,distance,speed,options.done,actor.d.color,options.reduce||0,victim=>{
     const before=damageQueue.length;
-    withAlchemyHitMode('melee',()=>hurt(actor,victim,damage,options.special?'special':'skill',0,options.cinematic));
-    if (damageQueue.length>before) options.onHit?.(victim);
+    withAlchemyHitMode("melee",()=>hurt(actor,victim,damage,options.special?"special":"skill",0,options.cinematic));
+    if (damageQueue.length>before) {
+      if (options.confirmHit) damageQueue.at(-1).alchemyAfterHit=()=>options.confirmHit(victim);
+      options.onHit?.(victim);
+    }
   });
-  actor.dash.stopOnHit=options.stop!==false;
-  actor.dash.breakAlchemyObstacle=!!options.breakObstacle;
-  if (options.stop===false) actor.dash.singleAlchemyHit=true;
+  const state=actor.dash;
+  state.stopOnHit=options.stop!==false;
+  state.breakAlchemyObstacle=!!options.breakObstacle;
+  if(options.stop===false) state.singleAlchemyHit=true;
+  if(options.aim){
+    state.opmAim={target,turn:options.aim};
+    state.width*=1.10;
+  }
+  return state;
 }
 
 function edwardGround(actor,target) {
   const d=unit(target.dx,target.dz);
-  const x=clampAlchemy(target.x+d.x*3,W,1.2),z=clampAlchemy(target.z+d.z*3,H,1.2);
+  const x=clampAlchemy(target.x+d.x*3,W,2.7),z=clampAlchemy(target.z+d.z*3,H,2.7);
   hold(actor,.35);
-  fx('warning',x,z,4,0x64cfff,.35);
+  fx("warning",x,z,4,0x64cfff,.35);
   schedule(actor,.35,()=>{
     alchemyBlast(actor,x,z,4,105);
-    alchemyWall(actor,x,z,d,1.2,1.2,2);
-    bleachShards(x,z,0x997b63,18);
+    const wall=alchemyWall(actor,x,z,d,1.2,2.4,4,true);
+    if(wall.mesh) wall.mesh.scale.y=.035;
+    alchemyDebris(x,z,4,38);
+    alchemyLightning(x,z,4,0xc3edff,.33);
   });
 }
 
@@ -26660,81 +26918,115 @@ function clampAlchemy(value,size,margin) {
 }
 
 function edwardBlade(actor,target) {
-  alchemyDash(actor,target,12,84,115,{stop:false});
-  if (headless || !world) return;
-  const cast=actor.dash;
-  const blade=new THREE.Mesh(new THREE.ConeGeometry(.56,3,4),
-    new THREE.MeshStandardMaterial({color:0xd5ebf5,metalness:.72,roughness:.26}));
-  akiEffect(blade,.2,()=>{
-    blade.visible=actor.alive && actor.dash===cast;
-    blade.position.set(actor.x+actor.dz*.88+actor.dx*1.4,1.3,actor.z-actor.dx*.88+actor.dz*1.4);
-    blade.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(actor.dx,0,actor.dz));
-  });
+  const state=alchemyDash(actor,target,20,84,115,{stop:false,aim:1.25});
+  alchemyDashVisual(actor,state);
 }
 
 function edwardCannon(actor,target) {
   hold(actor,.86);
+  alchemyLightning(actor.x,actor.z,2.1,0xc3edff,.38);
   schedule(actor,.5,()=>{
     if (!target.alive) return;
     const d=unit(target.dx,target.dz);
     const axis={x:target.x,z:target.z,dx:d.x,dz:d.z};
     const walls=[-1,1].map(side=>alchemyWall(actor,axis.x-d.z*3.34*side,axis.z+d.x*3.34*side,d,6,.34,.65));
+    const start={x:axis.x-d.x*6,z:axis.z-d.z*6};
+    alchemyCannonVisual(start,d);
     schedule(actor,.2,()=>{
-      const start={x:axis.x-d.x*6,z:axis.z-d.z*6};
+      const end={x:axis.x+d.x*6,z:axis.z+d.z*6};
+      const ball={a:actor,x:end.x,z:end.z,dx:d.x,dz:d.z,speed:80,specialSource:true,mesh:null};
       if (!headless && world) {
-        const shot=new THREE.Mesh(new THREE.SphereGeometry(.6,12,8),
-          new THREE.MeshBasicMaterial({color:0xffbc65}));
-        akiEffect(shot,.15,p=>shot.position.set(start.x+d.x*12*p,1.3,start.z+d.z*12*p));
-        beam(start.x,start.z,axis.x+d.x*6,axis.z+d.z*6,0xffae48,.19,.85);
+        ball.mesh=new THREE.Mesh(new THREE.SphereGeometry(.57,20,12),
+          new THREE.MeshStandardMaterial({color:0x202127,metalness:.63,roughness:.33}));
+        ball.mesh.name="edward-black-metal-cannonball";
+        alchemyPlume(start.x+d.x*1.4,start.z+d.z*1.4,1.6,1.12,true);
+        fx("hit",start.x+d.x*1.4,start.z+d.z*1.4,1.4,0xffd397,.14);
       }
-      withAlchemyHitMode('ranged',()=>{
-        for (const victim of alchemyTargets(actor)) {
-          const local=shotoLocal(axis,victim.x,victim.z);
-          if (Math.abs(local.x)<=6 && Math.abs(local.z)<3) hurt(actor,victim,200,'special');
+      const trapped=alchemyTargets(actor).map(victim=>({victim,local:shotoLocal(axis,victim.x,victim.z)}))
+        .filter(({local})=>Math.abs(local.x)<=6 && Math.abs(local.z)<3)
+        .sort((a,b)=>a.local.x-b.local.x);
+      withAlchemyHitMode("ranged",()=>{
+        for (const {victim,local} of trapped) {
+          const offset=local.z;
+          const firedFrom={x:start.x-d.z*offset,z:start.z+d.x*offset};
+          ball.x=end.x-d.z*offset;ball.z=end.z+d.x*offset;
+          if (reflectAlchemyShot(ball,victim,firedFrom.x,firedFrom.z,200,.57,80,"special")) break;
+          hurt(actor,victim,200,"special");
         }
       });
+      if(ball.mesh){
+        const mesh=ball.mesh;
+        mesh.position.set(start.x+d.x*1.4,1.43,start.z+d.z*1.4);
+        akiEffect(mesh,.15,p=>mesh.position.set(start.x+d.x*(1.4+10.6*p),1.43,start.z+d.z*(1.4+10.6*p)));
+      }
       schedule(actor,.15,()=>walls.filter(wall=>wall.until>t).forEach(shatterAlchemyObstacle));
     });
   });
 }
 
 function alphonseShoulder(actor,target) {
-  alchemyDash(actor,target,11,75,120,{reduce:.2,onHit:victim=>pushActor(victim,{x:actor.dx,z:actor.dz},3.5)});
+  const charge=(enemy,second=false)=>{
+    const state=alchemyDash(actor,enemy,11,75,60,{reduce:.2,stop:false,
+      onHit:victim=>pushActor(victim,{x:actor.dx,z:actor.dz},3.5),
+      done:second?null:()=>{
+        const next=nearest(actor);
+        if(next) charge(next,true);
+      },
+    });
+    alchemyShoulderVisual(actor,state);
+  };
+  charge(target);
 }
 
 function alphonseGuard(actor) {
-  actor.alchemyGuardUntil=t+2.5;
-  fx('ring',actor.x,actor.z,2.4,0xb5d2ff,.45);
+  actor.alchemyGuardUntil=t+5;
+  alchemyGuardVisual(actor);
 }
 
 function alphonseCombo(actor,target) {
   let caught=null;
-  alchemyDash(actor,target,13,84,60,{special:true,cinematic:{rush:true},onHit:victim=>{caught=victim;},done:()=>{
-    if (!caught) return;
-    hold(actor,.36);
-    for (const [delay,damage] of [[.16,60],[.34,110]]) schedule(actor,delay,()=>{
-      if (!caught.alive) return;
-      withAlchemyHitMode('melee',()=>hurt(actor,caught,damage,'special',0,{rush:true,final:damage===110}));
-      fx('ring',caught.x,caught.z,damage===110?3.2:1.5,0xbbd3e4,.26);
-    });
-  }});
+  const strike=(victim,damage)=>{
+    alchemyLightning(victim.x,victim.z,damage===110?5.3:2.7);
+    alchemyDebris(victim.x,victim.z,damage===110?5.3:2.7,damage===110?40:12,0x8e8173);
+  };
+  const state=alchemyDash(actor,target,13,84,60,{special:true,cinematic:{rush:true},
+    onHit:victim=>{caught=victim;strike(victim,60);},
+    done:()=>{
+      if (!caught) return;
+      hold(actor,.36);
+      for (const [delay,damage] of [[.16,60],[.34,110]]) schedule(actor,delay,()=>{
+        if (!caught.alive) return;
+        withAlchemyHitMode("melee",()=>hurt(actor,caught,damage,"special",0,{rush:true,final:damage===110}));
+        strike(caught,damage);
+      });
+    },
+  });
+  alchemyShoulderVisual(actor,state);
+}
+
+function alchemyLead(target,seconds) {
+  const moving=!(target.rootUntil>t || ballFrozen(target) || bleachLocked(target) || alchemyLocked(target));
+  const travel=moving?speedOf(target)*seconds:0;
+  const r=actorRadius(target);
+  return {x:clampAlchemy(target.x+target.dx*travel,W,r),z:clampAlchemy(target.z+target.dz*travel,H,r)};
 }
 
 function royPrecision(actor,target) {
-  const {x,z}=target;
+  const {x,z}=alchemyLead(target,.12);
   hold(actor,.4);
-  fx('warning',x,z,4,0xf68c41,.4);
-  schedule(actor,.4,()=>alchemyBlast(actor,x,z,4,125));
+  fx("warning",x,z,4.55,0xf68c41,.4);
+  schedule(actor,.4,()=>alchemyBlast(actor,x,z,4.55,125));
 }
 
 function royChain(actor,target) {
-  const d=unit(target.x-actor.x,target.z-actor.z);
+  const aim=alchemyLead(target,.10);
+  const d=unit(aim.x-actor.x,aim.z-actor.z);
   const origin={x:actor.x,z:actor.z};
   const counts=new Map();
   hold(actor,.56);
   [4,9,14].forEach((distance,i)=>{
     const x=clampAlchemy(origin.x+d.x*distance,W,.25),z=clampAlchemy(origin.z+d.z*distance,H,.25);
-    schedule(actor,.16+i*.16,()=>alchemyBlast(actor,x,z,3.7,55,'skill',victim=>{
+    schedule(actor,.16+i*.16,()=>alchemyBlast(actor,x,z,4.15,55,"skill",victim=>{
       const count=counts.get(victim)||0;
       if (count>=2) return false;
       counts.set(victim,count+1);
@@ -26744,18 +27036,62 @@ function royChain(actor,target) {
 }
 
 function royInferno(actor,target) {
-  const {x,z}=target;
-  hold(actor,.94);
-  fx('warning',x,z,8,0xf65c28,.65);
+  hold(actor,1.05);
   schedule(actor,.65,()=>{
-    alchemyBlast(actor,x,z,8,70,'special');
-    fx('warning',x,z,3.5,0xffbd46,.28);
+    if(!target.alive) target=nearest(actor);
+    if(!target) return;
+    const origin={x:actor.x,z:actor.z};
+    const angle=Math.atan2(target.z-origin.z,target.x-origin.x);
+    const hit=new Set(),reach=15,halfAngle=50*Math.PI/180,steps=20;
+    const sweep=i=>{
+      const heading=angle-halfAngle+2*halfAngle*i/steps;
+      const d={x:Math.cos(heading),z:Math.sin(heading)};
+      const length=wallDistance(origin,d,reach);
+      const x=origin.x+d.x*length,z=origin.z+d.z*length;
+      if(i%4===0){
+        for(const fraction of [.42,.80,1]){
+          alchemyPlume(origin.x+(x-origin.x)*fraction,origin.z+(z-origin.z)*fraction,1.55,1.06);
+        }
+      }
+      withAlchemyHitMode("ranged",()=>{
+        for(const victim of alchemyTargets(actor)){
+          if(hit.has(victim)||segmentDistance(victim.x,victim.z,origin.x,origin.z,x,z)>actorRadius(victim)+.55) continue;
+          hit.add(victim);
+          const before=damageQueue.length;
+          hurt(actor,victim,170,"special");
+          if(damageQueue.length>before) damageQueue.at(-1).alchemyAfterHit=()=>startRoyBurn(actor,victim);
+        }
+      });
+    };
+    sweep(0);
+    for(let i=1;i<=steps;i++) schedule(actor,i*.02,()=>sweep(i));
   });
-  schedule(actor,.93,()=>alchemyBlast(actor,x,z,3.5,170,'special'));
+}
+
+function startRoyBurn(actor,victim) {
+  const burn={actor,next:t+1,remaining:3};
+  victim.royBurn=burn;
+  alchemyPlume(victim.x,victim.z,1.25,.68);
+}
+
+function updateRoyBurns() {
+  for(const victim of actors){
+    const burn=victim.royBurn;
+    if(!burn||!victim.alive) continue;
+    while(burn.remaining && burn.next<=t+1e-8){
+      damageQueue.push({a:burn.actor,b:victim,damageKind:"royBurn",...reducedHit(victim,15*burn.actor.power)});
+      burn.next+=1;
+      burn.remaining--;
+      alchemyPlume(victim.x,victim.z,.9,.53);
+    }
+    if(!burn.remaining) victim.royBurn=null;
+  }
 }
 
 function scarArm(actor,target) {
-  alchemyDash(actor,target,10,95,130,{breakObstacle:true});
+  const state=alchemyDash(actor,target,15,95,130,{breakObstacle:true,aim:1.25,
+    onHit:victim=>alchemyLightning(victim.x,victim.z,2.6,0xc7f1dc)});
+  alchemyDashVisual(actor,state,true);
 }
 
 function scarGround(actor,target) {
@@ -26764,11 +27100,11 @@ function scarGround(actor,target) {
   const hit=new Set();
   hold(actor,.38);
   for (let i=0;i<4;i++) schedule(actor,.07+i*.085,()=>{
-    const end=13*(i+1)/4;
+    const end=13*(i+1)/4,start=end-13/4;
     const x=origin.x+d.x*(end-13/8),z=origin.z+d.z*(end-13/8);
-    fx('ring',x,z,2,0x70f0cd,.22);
-    bleachShards(x,z,0xa88d73,10);
-    withAlchemyHitMode('ranged',()=>{
+    alchemyGroundCracks(origin.x+d.x*start,origin.z+d.z*start,d,13/4,3.9);
+    alchemyDebris(x,z,2.2,13,0x987252);
+    withAlchemyHitMode("ranged",()=>{
       for (const victim of alchemyTargets(actor)) {
         const p=shotoLocal(origin,victim.x,victim.z),r=actorRadius(victim);
         if (hit.has(victim)||p.x<-r||p.x>end+r||Math.abs(p.z)>2+r) continue;
@@ -26784,16 +27120,340 @@ function scarGround(actor,target) {
 
 function scarChain(actor) {
   hold(actor,.45);
+  alchemyLightning(actor.x,actor.z,2.1,0xc5f6e0,.46);
   schedule(actor,.45,()=>{
     const target=nearest(actor);
     if (!target) return;
-    alchemyDash(actor,target,14,95,150,{special:true,onHit:victim=>{
-      fx('ring',victim.x,victim.z,4,0x62f0bf,.36);
-      bleachShards(victim.x,victim.z,0xa38a70,22);
-      withAlchemyHitMode('ranged',()=>hurt(actor,victim,90,'special'));
+    const state=alchemyDash(actor,target,21,95,150,{special:true,aim:1.25,confirmHit:victim=>{
+      if(victim.hp<=0 && !practiceActive) return;
+      const direction={x:actor.dx,z:actor.dz};
+      actor.alchemyCarry={victim,direction};
+      actor.busy=Infinity;
+      victim.alchemyCarriedBy=actor;
+      victim.dash=victim.bleachDash=null;
+      victim.projectileBusy=false;
+      victim.busy=Math.max(t,victim.rootUntil||0);
+      victim.opmPunchFlight=null;
+      alchemyLightning(victim.x,victim.z,2.9,0xc5f6e0);
     }});
+    state.scarChain=true;
+    alchemyDashVisual(actor,state,true);
   });
 }
+
+function advanceScarCarry(actor,dt) {
+  const {victim,direction:d}=actor.alchemyCarry;
+  const release=()=>{
+    actor.alchemyCarry=null;
+    actor.busy=t;
+    if(victim.alchemyCarriedBy===actor) victim.alchemyCarriedBy=null;
+  };
+  if(!victim.alive || victim.alchemyCarriedBy!==actor || kamuiHidden(victim) || bleachLocked(victim)){
+    release();
+    return false;
+  }
+  const radius=actorRadius(victim);
+  const tx=d.x?((d.x>0?W/2-radius:-W/2+radius)-victim.x)/d.x:Infinity;
+  const tz=d.z?((d.z>0?H/2-radius:-H/2+radius)-victim.z)/d.z:Infinity;
+  const wall=Math.max(0,Math.min(tx,tz));
+  const travel=Math.min(wall,86*dt);
+  // Room barriers can interrupt the grab before it reaches the arena wall.
+  if(roomTravelLimit(victim,d,travel)<travel-1e-8){
+    release();
+    return false;
+  }
+  victim.x+=d.x*travel;victim.z+=d.z*travel;
+  const separation=actorRadius(actor)+radius+.04;
+  actor.x=clampAlchemy(victim.x-d.x*separation,W,actorRadius(actor));
+  actor.z=clampAlchemy(victim.z-d.z*separation,H,actorRadius(actor));
+  actor.noContactUntil=victim.noContactUntil=t+STEP*2;
+  if(wall>travel+1e-8) return true;
+  release();
+  const normal={x:tx<=tz?-Math.sign(d.x):0,z:tz<=tx?-Math.sign(d.z):0};
+  const bounce=unit(normal.x,normal.z);
+  victim.dx=bounce.x;victim.dz=bounce.z;
+  victim.alchemyStoppedUntil=Math.max(victim.alchemyStoppedUntil||0,t+.5);
+  actor.dx=bounce.x;actor.dz=bounce.z;
+  const x=victim.x,z=victim.z;
+  for(const angle of [-.57,0,.57]){
+    const inward={x:bounce.x*Math.cos(angle)-bounce.z*Math.sin(angle),z:bounce.x*Math.sin(angle)+bounce.z*Math.cos(angle)};
+    alchemyGroundCracks(x,z,inward,7.5,5.3,1.6);
+  }
+  alchemyDebris(x,z,6.5,44,0xa47e5b);
+  withAlchemyHitMode("ranged",()=>hurt(actor,victim,90,"special"));
+  return true;
+}
+
+// Three-dimensional transmutation, flame and fracture effects.
+function alchemyDebris(x,z,radius,count=28,color=0xa58262) {
+  if (headless || !world) return;
+  const material=new THREE.MeshStandardMaterial({color,roughness:.96,flatShading:true});
+  const stones=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),material,count);
+  stones.name="alchemy-flying-stone";
+  stones.position.set(x,0,z);
+  stones.frustumCulled=false;
+  const pose=new THREE.Object3D();
+  const paint=p=>{
+    for(let i=0;i<count;i++){
+      const angle=i*2.399963, distance=radius*(.18+(i*.618%1)*(.36+.72*p));
+      const size=(.11+(i*.147%1)*.31)*Math.min(1,(1-p)*5);
+      pose.position.set(Math.cos(angle)*distance,Math.max(size,.16+(3.4+i%6*.45)*p-6.6*p*p),Math.sin(angle)*distance);
+      pose.rotation.set(i+7*p,i*.7+4*p,i*.2-8*p);
+      pose.scale.set(size,size*.64,size*1.18);
+      pose.updateMatrix();
+      stones.setMatrixAt(i,pose.matrix);
+    }
+    stones.instanceMatrix.needsUpdate=true;
+  };
+  paint(0);
+  akiEffect(stones,.78,paint);
+}
+
+function alchemyLightning(x,z,reach,color=0xc1d7e7,life=.32) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.name="alchemy-blue-gray-discharge";
+  group.position.set(x,.10,z);
+  for(let i=0;i<8;i++){
+    const angle=i*Math.PI/4+.17;
+    const points=[[0,.28,0]];
+    for(let j=1;j<=5;j++){
+      const q=angle+.22*Math.sin(i*2+j*4),d=reach*j/5*(.65+.06*i);
+      points.push([Math.cos(q)*d,.2+Math.abs(Math.sin(i+j*2))*(1.4-j*.18),Math.sin(q)*d]);
+    }
+    bleachLine(group,points,0x506e91,.083,.48);
+    bleachLine(group,points,color,.031,.95);
+    if(i%2===0) bleachLine(group,[points[2],points[3],[
+      points[3][0]-.66*Math.sin(angle),.37,points[3][2]+.66*Math.cos(angle)
+    ]],0x95b4cf,.029,.8);
+  }
+  akiEffect(group,life,p=>{
+    group.scale.set(1+p*.23,1+p*.19,1+p*.23);
+    for(const m of group.children) m.userData.akiCustomOpacity=(1-p)*(.60+.38*Math.abs(Math.cos(p*21)));
+  });
+}
+
+function alchemyGroundCracks(x,z,direction,length,width,life=1.2) {
+  if(headless || !world) return;
+  const group=new THREE.Group();
+  group.name="scar-earth-fracture";
+  group.position.set(x,.035,z);
+  group.rotation.y=-Math.atan2(direction.z,direction.x);
+  const trench=new THREE.MeshBasicMaterial({color:0x3f2920,side:THREE.DoubleSide,transparent:true,opacity:.96,depthWrite:false});
+  const edge=new THREE.MeshBasicMaterial({color:0xa26c45,side:THREE.DoubleSide,transparent:true,opacity:.83,depthWrite:false});
+  const put=(from,to,thick)=>{
+    const [ax,az]=from,[bx,bz]=to;
+    const d=unit(bx-ax,bz-az);
+    const vertices=[];
+    for(const [dx,dz] of [[ax-d.z*thick,az+d.x*thick],[ax+d.z*thick,az-d.x*thick],[bx,bz]])
+      vertices.push(dx,.006,dz);
+    const fissure=new THREE.BufferGeometry();
+    fissure.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    group.add(new THREE.Mesh(fissure,trench));
+    const bevel=new THREE.BufferGeometry();
+    bevel.setAttribute('position',new THREE.Float32BufferAttribute([
+      ax+d.z*thick,0,az-d.x*thick,ax+d.z*thick*1.6,0,az-d.x*thick*1.6,bx,0,bz
+    ],3));
+    group.add(new THREE.Mesh(bevel,edge));
+  };
+  let prev=[0,0];
+  for(let i=1;i<=7;i++){
+    const next=[length*i/7,Math.sin(i*4.1)*width*.23*(1-i/9)];
+    put(prev,next,width*(.12-i*.012));
+    const side=i%2?1:-1;
+    const branch=[next[0]-.34*length/7,next[1]+side*width*(.22+.17*Math.sin(i*1.9)**2)];
+    put(next,branch,width*.071);
+    put(branch,[branch[0]+length*.10,branch[1]+side*width*.14],width*.032);
+    prev=next;
+  }
+  akiEffect(group,life,p=>{
+    for(const m of group.children) m.userData.akiCustomOpacity=(m.material===trench ? .96 : .83)*Math.min(1,(1-p)*3.2);
+  });
+}
+
+function alchemyCannonVisual(start,direction) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.name="edward-transmuting-cannon";
+  group.position.set(start.x,-1.8,start.z);
+  group.rotation.y=Math.atan2(direction.x,direction.z);
+  const make=(geometry,color,x,y,z,metal=.15)=>opmPart(group,geometry,color,x,y,z,1,metal);
+  make(new THREE.BoxGeometry(2.1,.62,2),0x685140,0,.44,-.5);
+  make(new THREE.BoxGeometry(1.62,.55,1.26),0x363438,0,.89,-.3,.55);
+  for(const side of [-1,1]){
+    const wheel=make(new THREE.CylinderGeometry(.62,.62,.25,16),0x39383a,side*.91,.64,-.42,.45);
+    wheel.rotation.z=Math.PI/2;
+    const hub=make(new THREE.CylinderGeometry(.22,.22,.29,8),0x96764d,side*.94,.64,-.42,.56);
+    hub.rotation.z=Math.PI/2;
+  }
+  const barrel=make(new THREE.CylinderGeometry(.48,.68,2.75,20),0x2d3037,0,1.43,-.03,.65);
+  barrel.rotation.x=Math.PI/2;
+  for(const z of [-1.13,.38,1.27]){
+    const band=make(new THREE.TorusGeometry(z<0 ? .64 : .50,.10,7,20),0x767b83,0,1.43,z,.68);
+    band.rotation.x=0;
+  }
+  make(new THREE.CircleGeometry(.42,20),0x131317,0,1.43,1.359);
+  const life=.49;
+  akiEffect(group,life,p=>{
+    const q=Math.min(1,p*life/.19);
+    group.position.y=-1.9*(1-q)**2;
+    group.position.x=start.x-direction.x*.30*Math.max(0,1-Math.abs(p*life-.235)/.035);
+    group.position.z=start.z-direction.z*.30*Math.max(0,1-Math.abs(p*life-.235)/.035);
+    group.scale.y=Math.min(1,(1-p)*9);
+  });
+  alchemyDebris(start.x,start.z,2.7,16);
+  alchemyLightning(start.x,start.z,2.7,0xc4edff,.21);
+}
+
+function alchemyShoulderVisual(actor,dashState) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.name="alphonse-charge-pauldron";
+  for(const side of [-1,1]){
+    const plate=opmPart(group,new THREE.SphereGeometry(.81,14,8,0,Math.PI*2,0,Math.PI*.57),
+      side===1?0x9eafbc:0x526777,side*.84,0,.42,.83,.62);
+    plate.scale.set(1.03,1.22,1.35);
+    plate.rotation.z=side*.64;
+  }
+  akiEffect(group,.23,()=>{
+    group.visible=actor.alive&&actor.dash===dashState;
+    group.position.set(actor.x,1.07,actor.z);
+    group.rotation.y=Math.atan2(actor.dx,actor.dz);
+  });
+}
+
+function alchemyGuardVisual(actor) {
+  if(headless || !world) return;
+  const group=new THREE.Group();
+  group.name="alphonse-orbiting-armor";
+  for(let i=0;i<6;i++){
+    const angle=i*Math.PI/3, x=Math.sin(angle)*2.28,z=Math.cos(angle)*2.28;
+    const shield=new THREE.Group();
+    shield.position.set(x,.12*Math.sin(i*2),z);
+    shield.rotation.y=angle;
+    group.add(shield);
+    const outline=new THREE.Shape();
+    outline.moveTo(-.59,.58);outline.lineTo(-.42,.82);outline.lineTo(.42,.82);
+    outline.lineTo(.59,.58);outline.lineTo(.49,-.21);outline.lineTo(0,-.70);
+    outline.lineTo(-.49,-.21);outline.closePath();
+    opmPart(shield,new THREE.ExtrudeGeometry(outline,{depth:.09,bevelSize:.045,bevelThickness:.047,bevelSegments:1,steps:1}),
+      0x61798d,0,0,0,.87,.52);
+    opmPart(shield,new THREE.BoxGeometry(.10,1.13,.095),0xc4d6df,0,.14,.11,.9,.62);
+    opmPart(shield,new THREE.SphereGeometry(.19,9,7),0x9db2c4,0,.17,.15,.96,.62);
+    for(const side of [-1,1]) opmPart(shield,new THREE.SphereGeometry(.075,8,6),0xd3e0e8,side*.40,.55,.15,.92,.6);
+  }
+  const state=actor.alchemyGuardUntil;
+  akiEffect(group,5,p=>{
+    group.visible=actor.alive&&actor.alchemyGuardUntil===state;
+    group.position.set(actor.x,1.42,actor.z);
+    group.rotation.y=t*2.8;
+    group.scale.setScalar(1+.045*Math.sin(t*9));
+    group.traverse(m=>{if(m.isMesh)m.userData.akiCustomOpacity=.86*Math.min(1,(1-p)*15+.05);});
+  });
+}
+
+const ALCHEMY_PLUME_NOISE=`
+float hash(vec2 v){return fract(sin(dot(v,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 v){
+  vec2 i=floor(v),f=fract(v);f=f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+}
+float fbm(vec2 v){return noise(v)*.57+noise(v*2.13)*.28+noise(v*4.33)*.15;}
+`;
+
+function alchemyPlume(x,z,radius,heat=1,smokeOnly=false) {
+  if(headless || !world) return;
+  const group=new THREE.Group();
+  group.name=smokeOnly?"alchemy-powder-smoke":"roy-turbulent-flames-and-smoke";
+  group.position.set(x,.1,z);
+  const cards=[];
+  const geometry=new THREE.PlaneGeometry(1,1);
+  const count=smokeOnly?6:radius>3?12:8;
+  for(let i=0;i<count;i++){
+    const angle=i*2.399963, distance=radius*Math.sqrt((i+.5)/count)*.78;
+    const smoke=smokeOnly||i>=Math.ceil(count*.58);
+    const material=new THREE.ShaderMaterial({
+      transparent:true,depthWrite:false,side:THREE.DoubleSide,
+      uniforms:{age:{value:0},seed:{value:i*5.47+x*.31+z*.12},smoke:{value:smoke?1:0}},
+      vertexShader:`
+        varying vec2 st;
+        void main(){
+          st=uv;
+          vec4 center=modelViewMatrix*vec4(0,0,0,1);
+          center.xy+=position.xy*vec2(length(modelMatrix[0].xyz),length(modelMatrix[1].xyz));
+          gl_Position=projectionMatrix*center;
+        }`,
+      fragmentShader:`
+        varying vec2 st;
+        uniform float age,seed,smoke;
+        ${ALCHEMY_PLUME_NOISE}
+        void main(){
+          vec2 uv=st;
+          float f=fbm(vec2(uv.x*4.1+seed,uv.y*5.4-age*7.6));
+          float fade=smoothstep(0.0,.09,age)*(1.0-smoothstep(.34,1.0,age));
+          if(smoke>.5){
+            float edge=1.0-length((uv-vec2(.5))*vec2(2.0,2.19))+(f-.48)*.52;
+            vec3 gray=mix(vec3(.19,.17,.17),vec3(.45,.37,.31),f);
+            gl_FragColor=vec4(gray,smoothstep(.04,.49,edge)*fade*.63);
+          }else{
+            float bend=(f-.52)*.38*uv.y;
+            float body=.47*pow(1.0-uv.y,.66)-abs(uv.x-.5+bend)+(f-.46)*.26;
+            float alpha=smoothstep(.00,.14,body)*smoothstep(.0,.10,uv.y)*(1.0-smoothstep(.76,1.0,uv.y));
+            float hot=clamp((body+.11)*1.7+(1.0-uv.y)*.42+(f-.55)*.33,0.0,1.0);
+            vec3 red=mix(vec3(.78,.065,.013),vec3(1.0,.36,.04),smoothstep(.14,.61,hot));
+            vec3 gold=mix(red,vec3(1.0,.97,.69),smoothstep(.57,1.0,hot));
+            gl_FragColor=vec4(gold,alpha*fade*.96);
+          }
+          #include <colorspace_fragment>
+        }`
+    });
+    const mesh=new THREE.Mesh(geometry,material);
+    mesh.renderOrder=smoke?5:6;
+    group.add(mesh);
+    cards.push({mesh,smoke,dx:Math.cos(angle),dz:Math.sin(angle),distance,i});
+  }
+  const animate=p=>{
+    for(const {mesh,smoke,dx,dz,distance,i} of cards){
+      const q=smoke?Math.max(0,(p-.14)/.86):p*1.66;
+      mesh.material.uniforms.age.value=Math.min(1,q);
+      const size=smoke?(1.25+q*3.4)*heat:(1.34+Math.sin(Math.PI*Math.min(1,q))*1.18)*heat;
+      mesh.position.set(dx*(distance+q*(smoke?1.7:.48)),
+        smoke ? .70+q*2.5 : 1.02+Math.min(1,q)*.95,
+        dz*(distance+q*(smoke?1.7:.48)));
+      mesh.scale.set(size,size*(smoke ? .73 : 1.57),1);
+    }
+  };
+  animate(0);
+  akiEffect(group,smokeOnly ? .84 : 1.05,animate);
+}
+
+function alchemyDashVisual(actor,state,scarStyle=false) {
+  if(headless || !world) return;
+  const group=new THREE.Group();
+  group.name=scarStyle?"scar-deconstruction-arm":"edward-automail-blade";
+  const arm=opmPart(group,new THREE.CylinderGeometry(.29,.34,1.46,8),
+    scarStyle?0x946952:0x798b9a,-.55,.03,.73,1,scarStyle ? .04 : .66);
+  arm.rotation.x=Math.PI/2;
+  if(scarStyle){
+    for(let i=0;i<4;i++){
+      const mark=opmPart(group,new THREE.TorusGeometry(.295,.037,5,12),0x2a3034,-.55,.03,.31+i*.25,1,.1);
+      mark.rotation.z=.15*i;
+    }
+    opmPart(group,new THREE.IcosahedronGeometry(.35,1),0xb1886b,-.55,.03,1.57,1,.06);
+    bleachLine(group,[[-.88,.04,.30],[-.48,.42,.81],[-.91,.18,1.14],[-.39,.24,1.85]],0xa1f1de,.043,.92);
+  }else{
+    const blade=opmPart(group,new THREE.ConeGeometry(.56,3.2,4),0xc8dbe6,-.55,.02,1.83,1,.78);
+    blade.rotation.x=Math.PI/2;
+    const spine=opmPart(group,new THREE.ConeGeometry(.31,3.27,4),0xf3fcff,-.55,.09,1.89,1,.61);
+    spine.rotation.x=Math.PI/2;
+  }
+  akiEffect(group,.85,()=>{
+    group.visible=actor.alive&&(actor.dash===state||scarStyle&&state.scarChain&&!!actor.alchemyCarry);
+    group.position.set(actor.x,1.31,actor.z);
+    group.rotation.y=Math.atan2(actor.dx,actor.dz);
+  });
+}
+
 
 const ALCHEMY_SKILLS = new Set([
   "EDWARD_GROUND",
@@ -26809,7 +27469,10 @@ const ALCHEMY_SKILLS = new Set([
   "SCAR_GROUND",
   "SCAR_CHAIN"
 ]);
-BATTLE_STATE_FIELDS.push(["alchemyWalls",()=>alchemyWalls,value=>{alchemyWalls=value;},()=>[]]);
+BATTLE_STATE_FIELDS.push(
+  ["alchemyWalls",()=>alchemyWalls,value=>{alchemyWalls=value;},()=>[]],
+  ["alchemyReflections",()=>alchemyReflections,value=>{alchemyReflections=value;},()=>[]],
+);
 
 // bootstrap.js
 ((bgm.loop = !0),
