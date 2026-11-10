@@ -2716,12 +2716,14 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
         <div class="home-stage">
           <img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-09">2026.11.09</time></span>
+            <span>최종 수정 <time datetime="2026-11-10">2026.11.10</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 갑옷 방어 벽 및 전투 조정</strong>
+                <strong>최신 패치 · 총의 마인 아키</strong>
+                <p>총의 마인 아키가 추가됐습니다. 권총으로 속사하고, 소총으로 이동하며 난사합니다. 스페셜은 뒤로 물러난 뒤 조준 사격하며, 적중 시 20% 확률로 헤드샷이 발동합니다.</p>
+                <strong>이전 패치 · 갑옷 방어 벽 및 전투 조정</strong>
                 <p>로이는 SP 123·기본 충돌 피해 43입니다. 스페셜은 직격 150과 5초간 초당 20의 화상 피해를 줍니다.</p>
                 <p>스카는 분해의 오른팔로 설치물을 부순 뒤 남은 거리만큼 계속 돌진합니다.</p>
                 <p>알폰스는 갑옷 방어 시 상대 위치에 폭 10·두께 4의 벽을 8초간 연성합니다. 적이 부딪히면 50 피해를 받습니다. 방어 중 알폰스가 부딪히면 이동 방향으로 최대 20을 날려 첫 적에게 100 피해를 줍니다.</p>
@@ -2935,6 +2937,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script><script type="application/json" id="voice-data">
 {
+  "AKI_RAPID_FIRE": "./assets/sfx/aki-rapid-fire.MP3",
+  "AKI_BARRAGE": "./assets/sfx/aki-barrage.MP3",
+  "AKI_AIMED_SHOT": "./assets/sfx/aki-aimed-shot.MP3",
   "EDWARD_GROUND": "./assets/sfx/edward-ground.mp3",
   "EDWARD_BLADE": "./assets/sfx/edward-blade.mp3",
   "EDWARD_CANNON": "./assets/sfx/edward-cannon.mp3",
@@ -3124,6 +3129,10 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 }
 </script><script type="application/json" id="skill-image-data">
 {
+  "AKI_RAPID_FIRE": "./assets/skill-banners/aki-rapid-fire.webp",
+  "AKI_BARRAGE": "./assets/skill-banners/aki-barrage.webp",
+  "AKI_AIMED_SHOT": "./assets/skill-banners/aki-aimed-shot.webp",
+  "AKI_HEADSHOT": "./assets/skill-banners/aki-headshot.png",
   "EDWARD_GROUND": "./assets/skill-banners/edward-ground.webp",
   "EDWARD_BLADE": "./assets/skill-banners/edward-blade.webp",
   "EDWARD_CANNON": "./assets/skill-banners/edward-cannon.webp",
@@ -3301,6 +3310,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 }
 </script><script type="application/json" id="official-portrait-data">
 {
+  "aki_gun_fiend": "./assets/portraits/aki_gun_fiend.webp",
   "edward": "./assets/portraits/edward.webp",
   "alphonse": "./assets/portraits/alphonse.webp",
   "roy": "./assets/portraits/roy.jpg",
@@ -3729,6 +3739,9 @@ function clearBattleObjects() {
   clearEdwardCannons();
   for (const actor of actors) {
     actor.alchemyCarry=actor.alchemyCarriedBy=actor.royBurn=null;
+    actor.akiGunAttack = null;
+    removeMesh(actor.akiGunRig);
+    actor.akiGunRig = null;
     actor.alchemyGuardUntil=actor.alchemyStoppedUntil=0;
     for (const field of actor.bleachFields || []) {
       field.active = false;
@@ -7477,6 +7490,7 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
       hitMode: alchemyHitMode || (e.dash ? "melee" : null),
       cinemaRush: !!cinematic?.rush,
       cinemaFinal: !!cinematic?.final,
+      gunHeadshot: !!cinematic?.gunHeadshot,
       skillHit: "collision" !== n || i,
       specialHit:
         "special" === n ||
@@ -7665,6 +7679,7 @@ function applyQueuedDamage() {
       o > 0 && e.denjiSource && denjiApplyHit(e.a, e.b, e.denjiState),
       o > 0 && e.powerBloodHit && addPowerBlood(e.a, e.powerBloodHit.x, e.powerBloodHit.z),
       o > 0 && e.akiFoxHit && e.akiFoxHit(),
+      o > 0 && e.gunHeadshot && showAkiGunHeadshot(e.a, e.b),
       o > 0 && e.opmPunchImpulse && launchOpmPunchTarget(e.b,e.opmPunchImpulse),
       o > 0 && e.alchemyAfterHit?.(),
        o > 0 && e.zipHandHit && e.zipHandHit(),
@@ -8109,6 +8124,7 @@ function castSkill(e, a) {
     "KAKASHI_CHOICE" === s && (s=Math.random()<.6?"RAIKIRI":"LIGHTNING_CLONE"),
     "REZE_CHOICE" === s && (s = Math.random() < 0.5 ? "REZE_SHOT" : "REZE_DASH"),
     "AKI_CHOICE" === s && (s = Math.random() < 0.5 ? "AKI_FOX" : "AKI_FUTURE"),
+    "AKI_GUN_CHOICE" === s && (s = akiGunNormalSkill()),
     "SHADOW_CHOICE" === s && (s = Math.random() < 0.5 ? "SHADOW_SMASH" : "BLACK_ANKH"),
     "DARK_DEKU_SKILL" === s && (s = randomDarkDekuSkill()),
     "HAWKS_SKILL" === s && (s = randomHawksSkill()),
@@ -8135,7 +8151,7 @@ function castSkill(e, a) {
         AKI_FOX: "여우의 악마",
         AKI_FUTURE: "미래의 악마",
       }[s] ||
-      OPM_NAMES[s] || BLEACH_NAMES[s] ||
+      AKI_GUN_NAMES[s] || OPM_NAMES[s] || BLEACH_NAMES[s] ||
       TENGEN_NAMES[s] ||
       GIYU_NAMES[s] ||
       RENGOKU_NAMES[s] ||
@@ -8159,6 +8175,7 @@ function castSkill(e, a) {
           s === "ARI_RUSH" ||
           BLEACH_NAMES[s] ||
           ALCHEMY_SKILLS.has(s) ||
+          AKI_GUN_NAMES[s] ||
           tone(a ? 440 : 660, 0.12, 0.05),
         n || s === "ARI_RUSH" ||
           ("BITES_THE_DUST" === s
@@ -9889,6 +9906,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   resolveActorContacts();
   constrainAlchemyActors();
   constrainActorsToBleachWalls();
+  updateAkiGunAttacks();
   withAlchemyHitMode("ranged",()=>{
     advanceAlchemyReflections(dt);
     updateEdwardCannons(dt);
@@ -9940,6 +9958,7 @@ function steerStorm(e, a) {
     e.teachThrown ||
     e.teachJump ||
     e.dash?.rengokuType ||
+    e.dash?.akiGunRetreat ||
     e.giyuThrust ||
     "STRIKING_TIDE" === e.dash?.healthType ||
     e.dash?.tengenRush
@@ -11561,6 +11580,11 @@ function addAvatarAppearance(
       part(new THREE.BoxGeometry(0.16, 0.5, 0.06), s.accent, 0, -0.84, 0.93, "tie").rotation.z =
         -0.03;
     }
+  }
+  if (n === "aki_gun_fiend") {
+    patch([[-.27, -.44], [.27, -.44], [.14, -.96], [0, -1.10], [-.14, -.96]], 0xf5e6d4, "white-shirt");
+    stroke([[.03, -.50], [0, -.70], [-.10, -.98]], 0x15111b, .050, "black-tie");
+    addAkiGunFiendDetails(i);
   }
   if ("cross" === s.pattern)
     for (const e of [-1, 1]) {
@@ -16613,6 +16637,7 @@ function updateActorMeshes(e) {
       updateBleachVisual(a);
       updateZipActorVisual(a);
       updateKamuiActorVisual(a);
+      if (a.akiGunAttack || a.akiGunRig) updateAkiGunVisual(a);
     }
 }
 
@@ -18137,6 +18162,7 @@ function preloadSkillBanner(key) {
 function preloadFighterBanners(character) {
   if (!character || headless) return;
   for (const skill of practiceSkills(character)) preloadSkillBanner(skill.type);
+  if (character.id === "aki_gun_fiend") preloadSkillBanner("AKI_HEADSHOT");
 }
 
 function showBanner(e, a) {
@@ -22408,6 +22434,10 @@ const MOVEMENT_SCALE = 1.6,
     AKI_FOX: useAkiFox,
     AKI_FUTURE: useAkiFuture,
     AKI_CURSE: useAkiCurse,
+    AKI_GUN_CHOICE: useAkiGunChoice,
+    AKI_RAPID_FIRE: useAkiRapidFire,
+    AKI_BARRAGE: useAkiBarrage,
+    AKI_AIMED_SHOT: useAkiAimedShot,
     HAWKS_SKILL: useHawksSkill,
     FIERCE_WINGS_SHOT: useHawksShot,
     FIERCE_WINGS_SWORD: useHawksSword,
@@ -23330,6 +23360,25 @@ const jjkIds = ["yuji", "todo", "megumi", "yuta"],
         "거리 20·속도 55로 못 3개를 20도 간격으로 발사합니다. 첫 적중 대상에게 15 피해 후 추격해 45 피해와 저주 1중첩을 부여합니다. 적중 시 카운트가 3→2→1로 내려갑니다. 마지막 적중 1초 뒤 0으로 바뀌며 저주의 악마가 나타나 0.35초간 정지시키고 400 피해를 줍니다. 피해 순간 반경 3의 회색 불꽃이 나타납니다(추가 피해 없음). 저주는 상대별로 유지되며 발동 후 초기화됩니다.",
     },
     {
+      id: "aki_gun_fiend",
+      name: "총의 마인 아키",
+      short: "총의 마인 아키",
+      color: 0x9f6269,
+      maxHp: 1200,
+      maxMp: 66.6,
+      maxSp: 123,
+      baseDamage: 46,
+      speed: 40,
+      radius: 1.2,
+      skillType: "AKI_GUN_CHOICE",
+      specialType: "AKI_AIMED_SHOT",
+      role: "원거리형 · 속사와 조준 사격",
+      skill: "속사 / 난사",
+      special: "조준 사격",
+      desc: "일반 기술은 각각 50% 확률로 발동합니다. 속사는 0.3초간 멈춘 뒤 M1911로 거리 35까지 쏴 첫 적에게 75 피해를 줍니다. 난사는 이동하며 AK47로 거리 20·각도 80° 범위를 2초간 공격해 초당 60, 최대 120 피해를 줍니다.",
+      spDesc: "상대 반대 방향으로 최대 15만큼 돌진한 뒤 SRS99로 1초간 멈춰 조준합니다. 거리 45까지 발사해 첫 적에게 180 피해를 줍니다. 명중 시 20% 확률로 헤드샷이 발동해 280 피해를 줍니다.",
+    },
+    {
       id: "power",
       name: "파워",
       short: "파워",
@@ -24170,6 +24219,7 @@ const CHARACTER_TAGS = Object.freeze({
   reze: { battleType: "폭격형", anime: "체인소 맨" },
   power: { battleType: "특수형", anime: "체인소 맨" },
   aki: { battleType: "특수형", anime: "체인소 맨" },
+  aki_gun_fiend: { battleType: "원거리형", anime: "체인소 맨" },
   tanjiro: { battleType: "폭격형", anime: "귀멸의 칼날" },
   yuji: { battleType: "폭격형", anime: "주술회전" },
   zoro: { battleType: "폭격형", anime: "원피스" },
@@ -24275,6 +24325,10 @@ const AVATAR_STYLES = {
     pattern: "buttons",
     accent: 0x94182b,
     collar: 0xffffff,
+  },
+  aki_gun_fiend: {
+    skin: 0xe8c3a8, hair: 0x141a27, tip: 0x303b50, cut: "bob",
+    coat: 0x27232c, pattern: "lapels", accent: 0x131016, collar: 0x46404a,
   },
   aki: {
     skin: 0xe4c5ad,
@@ -25437,7 +25491,340 @@ for(const d of CHARACTER_DATABASE)if(bleachUpdatedDescriptions[d.id])Object.assi
 
 // Practice mode keeps battle rules intact and offers explicit, free skill selection.
 let practiceActive=false,practiceIndex=0,practiceSelectedType='',practiceUiSignature='';
+// Gun Fiend Aki. Damage uses the battle clock; flash and tracer meshes are cosmetic.
+const AKI_GUN_NAMES = {
+  AKI_RAPID_FIRE: "속사",
+  AKI_BARRAGE: "난사",
+  AKI_AIMED_SHOT: "조준 사격",
+};
+const AKI_GUN_MUZZLE = { M1911: 1.03, AK47: 2.12, SRS99: 2.87 };
+const AKI_BARRAGE_RANGE = 20;
+const AKI_BARRAGE_HALF_ANGLE = 40 * Math.PI / 180;
+const AKI_BARRAGE_RATE = 60;
+const AKI_GUN_MOUNT = 1.02;
+
+function akiGunNormalSkill() {
+  return Math.random() < .5 ? "AKI_RAPID_FIRE" : "AKI_BARRAGE";
+}
+
+function useAkiGunChoice(actor, target) {
+  const type = akiGunNormalSkill();
+  presentSkillVariant(actor, type, AKI_GUN_NAMES[type], false);
+  executeSkill(actor, type, target);
+}
+
+function aimAkiGun(actor, attack) {
+  const target = attack.target?.alive && !kamuiHidden(attack.target) ? attack.target : nearest(actor);
+  attack.target = target;
+  if (target) attack.direction = unit(target.x - actor.x, target.z - actor.z);
+  return attack.direction;
+}
+
+function startAkiGun(actor, target, weapon, duration) {
+  const attack = {
+    weapon, target, started: t, until: t + duration,
+    direction: { x: actor.dx, z: actor.dz },
+  };
+  actor.akiGunAttack = attack;
+  aimAkiGun(actor, attack);
+  return attack;
+}
+
+function akiGunRange(actor, direction, range) {
+  const edgeX = direction.x > 0 ? W / 2 - actor.x : W / 2 + actor.x;
+  const edgeZ = direction.z > 0 ? H / 2 - actor.z : H / 2 + actor.z;
+  return Math.min(range, edgeX / Math.abs(direction.x), edgeZ / Math.abs(direction.z));
+}
+
+function akiGunFirstHit(actor, direction, range) {
+  let first = null;
+  let entry = range;
+  for (const target of actors) {
+    if (target === actor || !target.alive || kamuiHidden(target) || opmPhasing(target)) continue;
+    const dx = target.x - actor.x, dz = target.z - actor.z;
+    const along = dx * direction.x + dz * direction.z;
+    const across = dx * direction.z - dz * direction.x;
+    const radius = actorRadius(target);
+    if (along < 0 || Math.abs(across) > radius) continue;
+    const nearEdge = along - Math.sqrt(radius * radius - across * across);
+    if (nearEdge <= entry && (!first || nearEdge < entry)) {
+      entry = nearEdge;
+      first = target;
+    }
+  }
+  return first;
+}
+
+function akiGunTracer(actor, attack, direction, range, width, life) {
+  if (headless || !world || range <= 0) return;
+  const scale = actor.mesh?.scale.x ?? 1.25;
+  const start = Math.min(range * .8, (AKI_GUN_MOUNT + AKI_GUN_MUZZLE[attack.weapon]) * scale);
+  const length = range - start, center = start + length / 2;
+  const tracer = new THREE.Group();
+  tracer.name = "aki-gun-white-tracer";
+  for (const [size, opacity] of [[width * 2.8, .20], [width, .98]]) {
+    tracer.add(new THREE.Mesh(new THREE.BoxGeometry(size, size * .42, length),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity, depthWrite: false })));
+  }
+  tracer.position.set(actor.x + direction.x * center, (actor.mesh?.position.y ?? 1.25) + .32 * scale,
+    actor.z + direction.z * center);
+  tracer.rotation.y = Math.atan2(direction.x, direction.z);
+  akiEffect(tracer, life);
+}
+
+function fireAkiGun(actor, attack, range, aimed = false) {
+  if (actor.akiGunAttack !== attack) return;
+  const direction = aimAkiGun(actor, attack);
+  const reach = akiGunRange(actor, direction, range);
+  attack.flashAt = t;
+  attack.firedAt = t;
+  akiGunTracer(actor, attack, direction, reach, aimed ? .24 : .13, aimed ? .23 : .15);
+  const target = akiGunFirstHit(actor, direction, reach);
+  if (!target) return;
+  const gunHeadshot = aimed && Math.random() < .2;
+  const damage = aimed ? (gunHeadshot ? 280 : 180) : 75;
+  withAlchemyHitMode("ranged", () => hurt(actor, target, damage,
+    aimed ? "special" : "skill", 0, { gunHeadshot }));
+}
+
+function showAkiGunHeadshot(actor, target) {
+  showBanner({ x: target.x, z: target.z, d: actor.d, castName: "헤드샷" }, "AKI_HEADSHOT");
+  fx("ring", target.x, target.z, 1.7, 0xff4938, .26);
+  skillEvent(actor, "AKI_AIMED_SHOT", "headshot", { target: target.slot });
+}
+
+function useAkiRapidFire(actor, target) {
+  const duration = .30;
+  hold(actor, duration);
+  const attack = startAkiGun(actor, target, "M1911", duration);
+  schedule(actor, duration, () => fireAkiGun(actor, attack, 35));
+}
+
+function useAkiBarrage(actor, target) {
+  const attack = startAkiGun(actor, target, "AK47", 2);
+  actor.busy = attack.until;
+  attack.sampledAt = t;
+  attack.nextShot = t;
+  attack.shot = 0;
+  attack.exposure = new Map();
+}
+
+function useAkiAimedShot(actor, target) {
+  const back = unit(actor.x - target.x, actor.z - target.z);
+  const prepare = () => {
+    hold(actor, 1);
+    const attack = startAkiGun(actor, target, "SRS99", 1);
+    cinemaCast(actor, "AKI_AIMED_SHOT", true);
+    schedule(actor, 1, () => fireAkiGun(actor, attack, 45, true));
+  };
+  const distance = boundedTravel(actor, back, 15);
+  if (distance <= 1e-8) {
+    prepare();
+    return;
+  }
+  dash(actor, { x: actor.x + back.x, z: actor.z + back.z }, distance, 46, 0, 0, 0, false, prepare);
+  actor.dash.akiGunRetreat = true;
+}
+
+function akiBarrageContains(actor, direction, target) {
+  const dx = target.x - actor.x, dz = target.z - actor.z;
+  const distance = Math.hypot(dx, dz);
+  return distance <= AKI_BARRAGE_RANGE &&
+    dx * direction.x + dz * direction.z >= distance * Math.cos(AKI_BARRAGE_HALF_ANGLE) - 1e-8;
+}
+
+function updateAkiGunAttacks() {
+  for (const actor of actors) {
+    const attack = actor.akiGunAttack;
+    if (!actor.alive || !attack) continue;
+    if (attack.firedAt != null) {
+      if (t - attack.firedAt >= .20) actor.akiGunAttack = null;
+      continue;
+    }
+    const direction = aimAkiGun(actor, attack);
+    if (attack.weapon !== "AK47") continue;
+    const elapsed = Math.max(0, Math.min(t, attack.until) - attack.sampledAt);
+    attack.sampledAt = t;
+    const ended = t >= attack.until - 1e-8;
+    const canFire = !ballFrozen(actor) && !kamuiHidden(actor) && !alchemyLocked(actor) &&
+      !bleachLocked(actor) && !arrivederciStopped(actor) && !teachLocked(actor);
+    if (canFire && !ended && t >= attack.nextShot - 1e-8) {
+      const sweep = [-.78, .38, -.24, .87, -.95, .10, .62, -.48];
+      const angle = Math.atan2(direction.z, direction.x) +
+        sweep[attack.shot++ % sweep.length] * AKI_BARRAGE_HALF_ANGLE;
+      attack.flashDirection = { x: Math.cos(angle), z: Math.sin(angle) };
+      attack.nextShot = t + .09;
+      attack.flashAt = t;
+      const reach = akiGunRange(actor, attack.flashDirection, AKI_BARRAGE_RANGE);
+      akiGunTracer(actor, attack, attack.flashDirection, reach, .075, .10);
+    }
+    for (const target of actors) {
+      if (target === actor || !target.alive) continue;
+      const inside = canFire && !kamuiHidden(target) && !opmPhasing(target) &&
+        akiBarrageContains(actor, direction, target);
+      const exposure = attack.exposure.get(target) || { total: 0, dealt: 0 };
+      if (inside) exposure.total += elapsed;
+      const raw = Math.min(120, Math.floor(exposure.total * AKI_BARRAGE_RATE + 1e-6));
+      const due = raw - exposure.dealt;
+      if (due > 0 && (due >= 12 || ended || !inside)) {
+        withAlchemyHitMode("ranged", () => hurt(actor, target, due, "skill", 0, { rush: true }));
+        exposure.dealt = raw;
+      }
+      if (exposure.total > 0) attack.exposure.set(target, exposure);
+    }
+    if (ended) attack.firedAt = t;
+  }
+}
+
+function akiGunModel(weapon) {
+  const gun = new THREE.Group();
+  gun.name = "aki-summoned-" + weapon;
+  const metal = 0x424c58, steel = 0x84929d, dark = 0x1a222c, wood = 0x82452a;
+  const box = (w, h, l, color, y, z) =>
+    opmPart(gun, new THREE.BoxGeometry(w, h, l), color, 0, y, z, 1, color === wood ? .15 : .62);
+  const tube = (r, length, color, y, z) => {
+    const mesh = opmPart(gun, new THREE.CylinderGeometry(r, r, length, 10), color, 0, y, z, 1, .62);
+    mesh.rotation.x = Math.PI / 2;
+    return mesh;
+  };
+  const guard = opmPart(gun, new THREE.TorusGeometry(.17, .027, 5, 12), steel, 0, -.16, .06, 1, .58);
+  guard.rotation.y = Math.PI / 2;
+  guard.scale.set(1.3, .75, 1);
+  if (weapon === "M1911") {
+    box(.30, .24, 1.40, metal, .12, .27);
+    box(.25, .08, 1.20, steel, -.02, .27);
+    box(.25, .62, .35, wood, -.27, -.27).rotation.x = -.29;
+    tube(.095, .19, dark, .10, .96);
+    for (let i = 0; i < 6; i++) box(.315, .16, .022, dark, .12, -.37 + i * .065);
+    box(.07, .10, .14, steel, .28, .78);
+    box(.17, .09, .12, dark, .28, -.33);
+  } else if (weapon === "AK47") {
+    box(.33, .31, 1.22, metal, .03, .12);
+    box(.35, .24, 1.06, wood, -.02, -1.02).rotation.x = .1;
+    box(.31, .28, .08, dark, -.07, -1.56);
+    box(.23, .49, .31, wood, -.30, -.27).rotation.x = -.28;
+    box(.37, .25, .65, wood, -.01, .90);
+    box(.29, .12, .53, wood, .20, .94);
+    tube(.064, 1.13, steel, .06, 1.54);
+    tube(.085, .18, dark, .06, 2.05);
+    box(.11, .26, .10, steel, .18, 1.92);
+    for (let i = 0; i < 5; i++)
+      box(.22, .24, .33, dark, -.19 - i * .135, .37 + i * i * .023).rotation.x = .14 + i * .13;
+  } else {
+    box(.38, .33, 1.66, dark, .02, -.20);
+    box(.36, .32, .84, metal, .01, -1.18);
+    box(.41, .49, .11, steel, .00, -1.61);
+    box(.29, .16, .90, steel, .13, .56);
+    box(.24, .48, .26, dark, -.26, -.24).rotation.x = -.14;
+    tube(.079, 2.00, metal, .08, 1.80);
+    box(.30, .21, .24, steel, .08, 2.75);
+    tube(.12, 1.00, dark, .39, .12);
+    tube(.17, .19, steel, .39, .59);
+    tube(.09, .028, 0x7cb9c8, .39, .70);
+    box(.12, .15, .12, metal, .22, -.18);
+    box(.12, .15, .12, metal, .22, .37);
+    for (const side of [-1, 1]) robotLink(gun, [0, -.05, .88], [side * .38, -.45, 1.16], .045, steel);
+  }
+  const flash = new THREE.Group();
+  flash.position.set(0, weapon === "M1911" ? .1 : .08, AKI_GUN_MUZZLE[weapon]);
+  for (let i = 0; i < 5; i++) {
+    const flare = new THREE.Mesh(new THREE.ConeGeometry(i ? .14 : .26, i ? .54 : .89, 4),
+      new THREE.MeshBasicMaterial({ color: i ? 0xffa431 : 0xfff1ba }));
+    flare.rotation.set(Math.PI / 2, 0, i * Math.PI / 2);
+    flare.position.set(i ? Math.cos(i * Math.PI / 2) * .14 : 0,
+      i ? Math.sin(i * Math.PI / 2) * .14 : 0, .25);
+    flash.add(flare);
+  }
+  flash.visible = false;
+  gun.add(flash);
+  gun.userData.flash = flash;
+  return gun;
+}
+
+function updateAkiGunVisual(actor) {
+  const attack = actor.akiGunAttack;
+  if (!attack) {
+    if (actor.akiGunRig) {
+      removeMesh(actor.akiGunRig);
+      actor.akiGunRig = null;
+    }
+    return;
+  }
+  let rig = actor.akiGunRig;
+  if (rig?.userData.weapon !== attack.weapon) {
+    removeMesh(rig);
+    rig = new THREE.Group();
+    rig.userData.weapon = attack.weapon;
+    const gun = akiGunModel(attack.weapon);
+    rig.userData.gun = gun;
+    rig.add(gun);
+    if (attack.weapon === "AK47") {
+      const sector = new THREE.Mesh(
+        new THREE.CircleGeometry(1, 24, -Math.PI / 2 - AKI_BARRAGE_HALF_ANGLE, 2 * AKI_BARRAGE_HALF_ANGLE),
+        new THREE.MeshBasicMaterial({ color: 0xffb75c, opacity: .10, transparent: true, depthWrite: false }));
+      sector.rotation.x = -Math.PI / 2;
+      rig.userData.sector = sector;
+      rig.add(sector);
+    }
+    if (attack.weapon === "SRS99") {
+      const sight = new THREE.Mesh(new THREE.BoxGeometry(.042, .027, 1),
+        new THREE.MeshBasicMaterial({ color: 0xff3c40, opacity: .76, transparent: true, depthWrite: false }));
+      rig.userData.sight = sight;
+      rig.add(sight);
+    }
+    actor.mesh.add(rig);
+    actor.akiGunRig = rig;
+  }
+  const { gun, sector, sight } = rig.userData;
+  const direction = attack.direction;
+  const age = t - (attack.flashAt ?? -Infinity);
+  const flash = age < .065;
+  const scale = actor.mesh.scale.x;
+  rig.rotation.y = Math.atan2(direction.x, direction.z) - actor.mesh.rotation.y;
+  if (actor.d.id === "aki_gun_fiend") {
+    actor.mesh.rotation.y = Math.atan2(direction.x, direction.z);
+    rig.rotation.y = 0;
+  }
+  const flashDirection = attack.flashDirection || direction;
+  gun.rotation.y = flash && sector
+    ? Math.atan2(flashDirection.x, flashDirection.z) - Math.atan2(direction.x, direction.z) : 0;
+  gun.position.set(Math.sin(gun.rotation.y) * AKI_GUN_MOUNT, .32,
+    Math.cos(gun.rotation.y) * AKI_GUN_MOUNT - (flash ? .16 * (1 - age / .065) : 0));
+  gun.scale.setScalar(.36 + .64 * Math.min(1, (t - attack.started) / .11));
+  gun.userData.flash.visible = flash;
+  gun.userData.flash.scale.setScalar(flash ? 1.12 - age * 5 : 1);
+  if (sector) {
+    sector.visible = attack.firedAt == null;
+    sector.scale.setScalar(AKI_BARRAGE_RANGE / scale);
+    sector.position.y = (.095 - actor.mesh.position.y) / scale;
+  }
+  if (sight) {
+    const start = AKI_GUN_MOUNT + AKI_GUN_MUZZLE.SRS99;
+    const reach = akiGunRange(actor, direction, 45) / scale;
+    sight.visible = attack.firedAt == null && reach > start;
+    sight.position.set(0, .40, (start + reach) / 2);
+    sight.scale.z = Math.max(0, reach - start);
+  }
+}
+
+function addAkiGunFiendDetails(group) {
+  const barrel = new THREE.Group();
+  barrel.name = "aki-gun-fiend-forehead";
+  barrel.position.set(.10, .47, 1.04);
+  barrel.rotation.x = .22;
+  opmPart(barrel, new THREE.BoxGeometry(.51, .51, .64), 0x64545d, 0, 0, .22, 1, .52);
+  opmPart(barrel, new THREE.BoxGeometry(.38, .40, .78), 0x4b424d, 0, 0, .34, 1, .52);
+  opmPart(barrel, new THREE.TorusGeometry(.138, .041, 8, 14), 0x998087, 0, 0, .75, 1, .56);
+  opmPart(barrel, new THREE.CircleGeometry(.128, 14), 0x120f15, 0, 0, .754, 1, .1);
+  for (const side of [-1, 1]) {
+    robotLink(barrel, [side * .26, .20, .01], [side * .21, .12, .55], .035, 0xa18084);
+    robotLink(barrel, [side * .24, -.15, .00], [side * .16, -.20, .47], .036, 0x302833);
+  }
+  group.add(barrel);
+}
+
 const PRACTICE_VARIANTS={
+ aki_gun_fiend:["AKI_RAPID_FIRE","AKI_BARRAGE","AKI_AIMED_SHOT"],
  saitama:["NORMAL_PUNCH","CONSECUTIVE_PUNCHES","SERIOUS_PUNCH"],genos:["INCINERATION","MACHINEGUN_BLOW","INCINERATION_UPGRADE"],tatsumaki:["PSYCHIC_THROW","PSYCHIC_SPEED","PSYCHOKINESIS"],silver_fang:["BANG_ASSAULT","BANG_WALL_ART","BANG_GUARD"],child_emperor:["ROBOT_ARMS","OCTOPUS_TANK","BRAVE_GIANT","DELTA_SCALE_SABER","MILLENNIUM_EMPEROR_NOVA"],metal_bat:["BAT_SLAM","BAT_BARRAGE","BAT_DRAGON"],
  tanjiro:['WATER_SLASH','BURNING_BONES','HINOKAMI_ENBU'],zenitsu:['THUNDERCLAP_FLASH','THUNDER_GOD','THUNDERCLAP_SIXFOLD'],
  naruto:['RASENGAN_AURA','SAGE_RASENSHURIKEN','KURAMA_RASENGAN'],sasuke:['CHIDORI_AURA','SUSANOO','AMATERASU'],
@@ -25454,7 +25841,7 @@ const PRACTICE_VARIANTS={
  ichigo:['GETSUGA','ICHIGO_SHUNPO','TENSA_ZANGETSU','BLACK_GETSUGA'],byakuya:['SENBONZAKURA','BYAKUYA_SHUNPO','SENBONZAKURA_KAGEYOSHI'],
  aizen:['KYOKA_SUIGETSU','SOKATSUI','KUROHITSUGI'],toshiro:['RYOJIN_HYOHEKI','TENSO_JURIN','RYUSENKA'],bucciarati:['ZIP_AMBUSH','ARI_RUSH','ARRIVEDERCI']
 };
-const PRACTICE_LABELS={AKI_FOX:'여우의 악마',AKI_FUTURE:'미래의 악마',REZE_SHOT:'원거리 폭발',REZE_DASH:'폭발 돌진',WATER_SLASH:'물의 호흡',RASENGAN_AURA:'나선환',CHIDORI_AURA:'치도리',DIVINE_DOG:'옥견',HOLLOW_PURPLE:'허식 무라사키',SUSANOO:'스사노오',KILLER_QUEEN_RUSH:'킬러퀸 · 러시',FIRST_BOMB:'제1의 폭탄',SHADOW_SMASH:'다크 섀도',BLACK_ANKH:'블랙 앙크',LOTUS_ICE:'연잎 얼음',SCATTERING_LOTUSES:'흩날리는 연꽃',MORNING_PEACOCK:'아침공작',DAYTIME_TIGER:'점심 호랑이',EVENING_ELEPHANT:'저녁 코끼리',NIGHT_GUY:'밤 가이',SHINRA_TENSEI:'신라천정',BANSHO_TENIN:'만상천인',RAIKIRI:'뇌절',LIGHTNING_CLONE:'뇌둔 그림자 분신',ZIP_AMBUSH:'지퍼 기습',ARI_RUSH:'아리아리 러쉬',ARRIVEDERCI:'아리베데르치'};
+const PRACTICE_LABELS={...AKI_GUN_NAMES,AKI_FOX:'여우의 악마',AKI_FUTURE:'미래의 악마',REZE_SHOT:'원거리 폭발',REZE_DASH:'폭발 돌진',WATER_SLASH:'물의 호흡',RASENGAN_AURA:'나선환',CHIDORI_AURA:'치도리',DIVINE_DOG:'옥견',HOLLOW_PURPLE:'허식 무라사키',SUSANOO:'스사노오',KILLER_QUEEN_RUSH:'킬러퀸 · 러시',FIRST_BOMB:'제1의 폭탄',SHADOW_SMASH:'다크 섀도',BLACK_ANKH:'블랙 앙크',LOTUS_ICE:'연잎 얼음',SCATTERING_LOTUSES:'흩날리는 연꽃',MORNING_PEACOCK:'아침공작',DAYTIME_TIGER:'점심 호랑이',EVENING_ELEPHANT:'저녁 코끼리',NIGHT_GUY:'밤 가이',SHINRA_TENSEI:'신라천정',BANSHO_TENIN:'만상천인',RAIKIRI:'뇌절',LIGHTNING_CLONE:'뇌둔 그림자 분신',ZIP_AMBUSH:'지퍼 기습',ARI_RUSH:'아리아리 러쉬',ARRIVEDERCI:'아리베데르치'};
 const PRACTICE_EXPLANATIONS={
  WATER_SLASH:'더미를 향해 돌진하며 베어 피해를 줍니다. 이동 경로에 닿아야 적중합니다.',BURNING_BONES:'불꽃을 두르고 돌진해 더미를 강하게 벱니다.',HINOKAMI_ENBU:'불꽃 돌진으로 베고, 마지막 원형 참격으로 한 번 더 피해를 줍니다.',
  THUNDERCLAP_FLASH:'번개처럼 빠르게 돌진하며 경로에 있는 더미를 벱니다.',THUNDER_GOD:'상대 쪽으로 약하게 방향을 보정하는 번개 돌진입니다. 노란 번개 잔상을 남기며 관통해 피해를 줍니다.',THUNDERCLAP_SIXFOLD:'방향을 바꿔 연속 돌진합니다. 돌진에 맞을 때마다 피해를 줍니다.',
@@ -25552,6 +25939,9 @@ for(const c of CHARACTER_DATABASE)if(friendlyBleachDescriptions[c.id])Object.ass
 
 
 const PRACTICE_DAMAGE_DETAILS = {...{
+  "AKI_RAPID_FIRE": "0.3초 정지 후 M1911을 쏩니다. 사거리 35, 첫 적중 75 피해.",
+  "AKI_BARRAGE": "2초 동안 이동하며 사거리 20·각도 80°의 부채꼴을 AK47로 공격합니다. 범위 내에서 초당 60, 대상당 최대 120 피해.",
+  "AKI_AIMED_SHOT": "반대 방향으로 최대 15만큼 돌진 후 1초간 정지합니다. SRS99 사거리 45, 첫 적중 시 80% 확률로 180 피해, 20% 확률로 헤드샷 280 피해.",
   "EDWARD_GROUND": "0.35초 뒤부터 상대 이동을 예측해 0.3초 간격으로 돌기둥 3개를 세웁니다. 각 기둥은 4초간 유지되며, 충돌당 40 피해를 줍니다. 한 번 사용하면 대상당 최대 160 피해.",
   "EDWARD_BLADE": "거리 25를 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 지나가면 얇은 흰 초승달 검기가 스쳐 지나갑니다.",
   "EDWARD_CANNON": "0.5초 뒤 상대와의 직선 양옆에 길이 30·간격 7의 돌벽을 세웁니다. 0.2초 뒤 직경 5의 포탄을 발사해 통로에 남은 상대에게 200 피해를 줍니다. 포탄이 닿거나 벽을 세운 지 2초가 지나면 돌벽이 사라집니다.",
