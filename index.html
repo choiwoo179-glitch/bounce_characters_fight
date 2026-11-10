@@ -18037,11 +18037,28 @@ function playVoice(e, a) {
   return playVoiceAsset(voiceKey(e, a));
 }
 
+// Match the measured skill clips to the existing effects at roughly -18 LUFS.
+const alchemyVoiceGain = new Map([
+  ["EDWARD_GROUND", 3.90],
+  ["EDWARD_BLADE", 3.66],
+  ["EDWARD_CANNON", 3.79],
+  ["ALPHONSE_SHOULDER", 2.56],
+  ["ALPHONSE_GUARD", 4.83],
+  ["ALPHONSE_COMBO", 2.94],
+  ["ROY_PRECISION", 3.55],
+  ["ROY_CHAIN", 3.55],
+  ["ROY_INFERNO", 5.53],
+  ["SCAR_ARM", 4.55],
+  ["SCAR_GROUND", 7.81],
+  ["SCAR_CHAIN", 4.55],
+]);
+
 function playVoiceAsset(e, owner = null) {
   // Yuta keeps his own cast audio; copied attacks (including later hits) stay silent.
   if (owner?.d.id === "yuta" && e !== "COPY_TECHNIQUE" && e !== "RIKA_MANIFESTATION") return null;
   if (headless || muted || !e || !skillVoices[e]) return null;
   const a = new GameAudioClip("sfx", skillVoices[e]);
+  a.mixGain = alchemyVoiceGain.get(e) ?? 1;
   ((a.volume = sfxVolume),
     voiceClips.push(a),
     (a.onended = () => {
@@ -24025,7 +24042,7 @@ class GameAudioClip {
   _updateGain() {
     const level = this._volume * this._mixGain;
     if (this._gain) this._gain.gain.value = this._muted ? 0 : level;
-    if (this._fallback) this._fallback.volume = level;
+    if (this._fallback) this._fallback.volume = Math.min(1, level);
   }
   _releaseSource() {
     const source = this._source;
@@ -24065,7 +24082,7 @@ class GameAudioClip {
         this._fallback.onended = () => this.onended?.();
         this._fallback.onerror = () => this.onerror?.();
       }
-      this._fallback.volume = this._volume * this._mixGain;
+      this._updateGain();
       this._fallback.muted = this._muted;
       this._fallback.loop = this._loop;
       return this._fallback.play();
