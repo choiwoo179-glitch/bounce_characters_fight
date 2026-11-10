@@ -2721,7 +2721,11 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 켄파치 기술 조정</strong>
+                <strong>최신 패치 · 6개 캐릭터 밸런스 조정</strong>
+                <p>에드워드 돌기둥은 충돌당 35·최대 140 피해입니다. 알폰스는 체력 1330·충돌 피해 50, 스카는 충돌 피해 52·SP 125로 조정됐습니다.</p>
+                <p>로이는 체력 1200·MP 63·SP 110이며 화상은 초당 30씩 4초간 적용됩니다. 총의 마인 아키는 SP 133·헤드샷 피해 360이며 난사 중 받는 피해가 25% 줄어듭니다.</p>
+                <p>켄파치는 체력 1300·SP 145입니다. 양손 베기는 약하게 추적하는 거리 7의 돌진을 두 번 사용해 70×2 피해를 주며, 만해는 최대 12초간 지속됩니다.</p>
+                <strong>이전 패치 · 켄파치 기술 조정</strong>
                 <p>양손 베기는 최대 거리 12를 돌진해 첫 충돌에 100 피해를 주고, 돌진 중 받는 피해를 20% 줄입니다. 노자라시는 준비 후 재조준합니다. 만해 충돌에는 노자라시의 바닥 잔상과 붉은 번개가 겹쳐 나타납니다.</p>
                 <strong>이전 패치 · 자라키 켄파치</strong>
                 <p>자라키 켄파치가 추가됐습니다. 양손 베기로 밀어내고, 시해 · 노자라시로 전방을 내려찍습니다. 만해 상태에서 새 충돌로 최대 두 번 강화 피해를 줍니다.</p>
@@ -7415,6 +7419,8 @@ function reduction(e) {
       e.nika ? 0.1 : 0,
       e.bleachDash ? .25 : 0,
       kenpachiBankaiActive(e) ? .2 : 0,
+      e.akiGunAttack?.weapon === "AK47" && e.akiGunAttack.firedAt == null &&
+        e.akiGunAttack.until > t + 1e-8 ? .25 : 0,
       (e.buff && e.buff.until > t && e.buff.reduce) || 0,
       (e.dash && e.dash.reduce) || 0,
     ),
@@ -23405,7 +23411,7 @@ const jjkIds = ["yuji", "todo", "megumi", "yuta"],
       color: 0x9f6269,
       maxHp: 1100,
       maxMp: 66.6,
-      maxSp: 166,
+      maxSp: 133,
       baseDamage: 43,
       speed: 35,
       radius: 1.2,
@@ -23414,8 +23420,8 @@ const jjkIds = ["yuji", "todo", "megumi", "yuta"],
       role: "원거리형 · 속사와 조준 사격",
       skill: "속사 / 난사",
       special: "조준 사격",
-      desc: "일반 기술은 각각 50% 확률로 발동합니다. 속사는 0.3초간 멈춘 뒤 M1911로 거리 35까지 쏴 첫 적에게 75 피해를 줍니다. 난사는 이동하며 AK47로 거리 15·각도 60° 범위를 2초간 공격해 초당 60, 최대 120 피해를 줍니다. 사격은 구조물을 관통하지 못합니다.",
-      spDesc: "상대 반대 방향으로 최대 15만큼 돌진한 뒤 SRS99로 1초간 멈춰 조준합니다. 거리 45까지 발사해 첫 적에게 180 피해를 줍니다. 구조물에 막힙니다. 명중 시 20% 확률로 헤드샷이 발동해 280 피해를 줍니다.",
+      desc: "일반 기술은 각각 50% 확률로 발동합니다. 속사는 0.3초간 멈춘 뒤 M1911로 거리 35까지 쏴 첫 적에게 75 피해를 줍니다. 난사는 이동하며 AK47로 거리 15·각도 60° 범위를 2초간 공격해 초당 60, 최대 120 피해를 줍니다. 난사 중 받는 피해는 25% 줄어듭니다. 사격은 구조물을 관통하지 못합니다.",
+      spDesc: "상대 반대 방향으로 최대 15만큼 돌진한 뒤 SRS99로 1초간 멈춰 조준합니다. 거리 45까지 발사해 첫 적에게 180 피해를 줍니다. 구조물에 막힙니다. 명중 시 20% 확률로 헤드샷이 발동해 360 피해를 줍니다.",
     },
     {
       id: "power",
@@ -23677,33 +23683,42 @@ function kenpachiPose(actor, kind, direction, duration) {
 
 function useKenpachiTwoHandedSlash(actor, target) {
   const firstAim = unit(target.x - actor.x, target.z - actor.z);
-  kenpachiPose(actor, "raise", firstAim, .2);
-  ninjaPrep(actor, .2, () => {
+  let remaining = 2;
+  const advance = () => {
     const opponent = nearest(actor);
-    if (!opponent) return;
-    const direction = unit(opponent.x - actor.x, opponent.z - actor.z);
-    const swing = () => {
-      kenpachiPose(actor, "cut", direction, .22);
-      kenpachiSlashVisual(actor.x, actor.z, direction);
-    };
-    const length = boundedTravel(actor, direction, 12);
-    if (length <= 1e-8) {
-      swing();
+    if (!opponent) {
+      actor.busy = t;
       return;
     }
-    opmDash(actor, { x: actor.x + direction.x, z: actor.z + direction.z }, length, 56, swing,
+    const direction = unit(opponent.x - actor.x, opponent.z - actor.z);
+    const finish = () => {
+      const facing = { x: actor.dx, z: actor.dz };
+      kenpachiPose(actor, "cut", facing, .22);
+      kenpachiSlashVisual(actor.x, actor.z, facing);
+      if (--remaining > 0) ninjaPrep(actor, .10, advance);
+    };
+    const length = boundedTravel(actor, direction, 7);
+    if (length <= 1e-8) {
+      finish();
+      return;
+    }
+    opmDash(actor, { x: actor.x + direction.x, z: actor.z + direction.z }, length, 56, finish,
       0xffd478, .2, victim => {
         const queued = damageQueue.length;
-        withAlchemyHitMode("melee", () => hurt(actor, victim, 100));
+        const facing = { x: actor.dx, z: actor.dz };
+        withAlchemyHitMode("melee", () => hurt(actor, victim, 70));
         if (damageQueue.length > queued) damageQueue.at(-1).onConfirmedHit = () => {
           kenpachiSparks(victim.x, victim.z, false);
-          pushActor(victim, direction, 3);
+          pushActor(victim, facing, 3);
         };
       });
     actor.dash.stopOnHit = true;
     actor.dash.kenpachiAdvance = true;
+    actor.dash.opmAim = { target: opponent, turn: 1.1 };
     kenpachiPose(actor, "raise", direction, length / 56);
-  });
+  };
+  kenpachiPose(actor, "raise", firstAim, .2);
+  ninjaPrep(actor, .2, advance);
 }
 
 function useKenpachiNozarashi(actor, target) {
@@ -23733,7 +23748,7 @@ function useKenpachiNozarashi(actor, target) {
 function useKenpachiBankai(actor) {
   kenpachiPose(actor, "transform", { x: actor.dx, z: actor.dz }, .4);
   ninjaPrep(actor, .4, () => {
-    actor.kenpachiBankai = { until: t + 6, hits: 0, trailAt: t };
+    actor.kenpachiBankai = { until: t + 12, hits: 0, trailAt: t };
     if (!headless && world) bleachRing(actor.x, actor.z, 3.3, 0xdb273e, .34);
     skillEvent(actor, "KENPACHI_BANKAI", "transform");
   });
@@ -24231,7 +24246,7 @@ CHARACTER_DATABASE.push(...[
     "specialType": "EDWARD_CANNON",
     "skill": "지면 연성 / 오토메일 칼날",
     "special": "연쇄 연성-대포",
-    "desc": "일반기 각 50%. 지면 연성: 0.35초 뒤부터 상대 이동을 예측해 0.3초 간격으로 돌기둥 3개를 세웁니다. 각 기둥은 4초간 유지되며, 충돌당 40 피해를 줍니다. 한 번 사용하면 대상당 최대 160 피해. 오토메일 칼날: 거리 25를 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 지나가면 얇은 흰 초승달 검기가 스쳐 지나갑니다.",
+    "desc": "일반기 각 50%. 지면 연성: 0.35초 뒤부터 상대 이동을 예측해 0.3초 간격으로 돌기둥 3개를 세웁니다. 각 기둥은 4초간 유지되며, 충돌당 35 피해를 줍니다. 한 번 사용하면 대상당 최대 140 피해. 오토메일 칼날: 거리 25를 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 지나가면 얇은 흰 초승달 검기가 스쳐 지나갑니다.",
     "spDesc": "0.5초 뒤 상대와의 직선 양옆에 길이 30·간격 7의 돌벽을 세웁니다. 0.2초 뒤 직경 5의 포탄을 발사해 통로에 남은 상대에게 200 피해를 줍니다. 포탄이 닿거나 벽을 세운 지 2초가 지나면 돌벽이 사라집니다."
   },
   {
@@ -24239,10 +24254,10 @@ CHARACTER_DATABASE.push(...[
     "name": "알폰스 엘릭",
     "short": "알폰스",
     "color": 9283519,
-    "maxHp": 1380,
+    "maxHp": 1330,
     "maxMp": 90,
     "maxSp": 150,
-    "baseDamage": 53,
+    "baseDamage": 50,
     "speed": 35,
     "radius": 1.2,
     "role": "갑옷 방어 · 연격",
@@ -24260,9 +24275,9 @@ CHARACTER_DATABASE.push(...[
     "name": "로이 머스탱",
     "short": "로이",
     "color": 15364411,
-    "maxHp": 1150,
-    "maxMp": 72,
-    "maxSp": 123,
+    "maxHp": 1200,
+    "maxMp": 63,
+    "maxSp": 110,
     "baseDamage": 43,
     "speed": 38,
     "radius": 1.2,
@@ -24274,7 +24289,7 @@ CHARACTER_DATABASE.push(...[
     "skill": "화염 연성 — 정밀 점화 / 화염 연성 — 연쇄 점화",
     "special": "대규모 화염 연성",
     "desc": "일반기 각 50%. 화염 연성 — 정밀 점화: 상대 이동과 벽 반사를 예측하고 폭발 지점을 한 번 보정합니다. 0.32초 뒤 반경 7에 120 피해를 줍니다. 화염 연성 — 연쇄 점화: 상대를 약하게 추적하며 반경 5의 폭발을 6번 이어갑니다. 지점당 55 피해, 대상당 최대 110 피해.",
-    "spDesc": "0.65초 뒤 전방 −50°에서 +50°까지 거리 21의 불꽃을 휩씁니다. 직격 150 피해와 5초간 초당 20의 화상 피해를 줍니다."
+    "spDesc": "0.65초 뒤 전방 −50°에서 +50°까지 거리 21의 불꽃을 휩씁니다. 직격 150 피해와 4초간 초당 30의 화상 피해를 줍니다."
   },
   {
     "id": "scar",
@@ -24283,8 +24298,8 @@ CHARACTER_DATABASE.push(...[
     "color": 7723448,
     "maxHp": 1240,
     "maxMp": 81,
-    "maxSp": 150,
-    "baseDamage": 50,
+    "maxSp": 125,
+    "baseDamage": 52,
     "speed": 43,
     "radius": 1.2,
     "role": "분해 · 빠른 진입",
@@ -24629,11 +24644,11 @@ CHARACTER_DATABASE.push({
 });
 CHARACTER_DATABASE.push({id:"bucciarati",name:"부챠라티",short:"부챠라티",color:0x358be4,maxHp:1200,maxMp:75,maxSp:120,baseDamage:51,speed:38,radius:1.2,skillType:"ZIP_CHOICE",specialType:"ARRIVEDERCI",skill:"지퍼 기습 / 아리아리 러쉬",special:"아리베데르치",role:"지퍼 이동 · 연타",desc:"각 50% 확률로 발동합니다. 지퍼 기습: 제자리에서 0.5초간 지퍼 속으로 들어간 뒤 0.5초 후 상대의 뒤쪽 거리 4에 나타나, 길이 7·폭 3의 주먹으로 110 피해를 줍니다. 지퍼 이동 중에는 무적입니다. 아리아리 러쉬: 상대를 향해 지퍼로 연결된 손을 속력 80·최대 거리 25·폭 3으로 발사합니다. 명중 시 30 피해와 함께 효과음이 재생되며, 상대를 속력 50으로 끌어온 뒤 전방 반경 15·부채꼴 100도 범위에 23 피해를 8회 줍니다. 모두 적중하면 총 214 피해입니다.",spDesc:"0.5초간 지퍼로 이동하여 무작위 벽의 중앙에 나타납니다. 벽에서 경기장 안쪽으로 지퍼로 연결된 손 4개를 17도 간격·최대 거리 20으로 뻗으며, 상대마다 최대 1회 75 피해를 주고 1.5초간 정지시킵니다. 명중한 상대 중 한 명에게 돌진한 뒤 23 피해의 연타를 8회 가합니다. 선택된 상대에게 모두 적중하면 총 259 피해입니다."});
 const kenpachiCharacter = {
-  radius:1.2,anime:"블리치",id:"kenpachi",name:"자라키 켄파치",short:"켄파치",color:0xe1a943,maxHp:1250,maxMp:90,maxSp:155,baseDamage:53,speed:36.5,
+  radius:1.2,anime:"블리치",id:"kenpachi",name:"자라키 켄파치",short:"켄파치",color:0xe1a943,maxHp:1300,maxMp:90,maxSp:145,baseDamage:53,speed:36.5,
   battleType:"내구형",skillType:"KENPACHI_CHOICE",specialType:"KENPACHI_BANKAI",skill:"양손 베기 / 노자라시",special:"만해",
   role:"내구형 · 묵직한 근접 압박",
-  desc:"양손 베기(60%)는 0.2초 준비 후 최대 거리 12를 돌진해 처음 부딪힌 적에게 100 피해와 밀어내기를 줍니다. 돌진 중 받는 피해는 20% 줄어듭니다. 노자라시(40%)는 0.45초 준비를 마치면 상대 방향으로 재조준해 길이 15·폭 5를 내리찍어 150 피해를 줍니다.",
-  spDesc:"0.4초 후 최대 6초간 만해 상태가 됩니다. 이동 속도는 20% 오르고 받는 피해는 20% 줄어듭니다. 새로 부딪힌 상대에게 충돌 피해 대신 110을 주며, 두 번 적중하거나 시간이 끝나면 0.35초 동안 자세를 추스릅니다. 만해 중에는 다른 기술을 사용할 수 없습니다."};
+  desc:"양손 베기(60%)는 0.2초 준비 후 상대를 약하게 추적하며 거리 7을 두 번 돌진합니다. 돌진당 첫 충돌에 70 피해와 밀어내기를 주며 최대 140 피해입니다. 돌진 중 받는 피해는 20% 줄어듭니다. 노자라시(40%)는 0.45초 준비를 마치면 상대 방향으로 재조준해 길이 15·폭 5를 내리찍어 150 피해를 줍니다.",
+  spDesc:"0.4초 후 최대 12초간 만해 상태가 됩니다. 이동 속도는 20% 오르고 받는 피해는 20% 줄어듭니다. 새로 부딪힌 상대에게 충돌 피해 대신 110을 주며, 두 번 적중하거나 시간이 끝나면 0.35초 동안 자세를 추스릅니다. 만해 중에는 다른 기술을 사용할 수 없습니다."};
 portraits[CHARACTER_DATABASE.length] = portrait(kenpachiCharacter);
 CHARACTER_DATABASE.push(kenpachiCharacter);
 for (const character of CHARACTER_DATABASE) Object.assign(character, character.id === "dio" ? CHARACTER_TAGS.jotaro : CHARACTER_TAGS[character.id]);
@@ -25931,7 +25946,7 @@ function fireAkiGun(actor, attack, range, aimed = false) {
   const target = akiGunFirstHit(actor, direction, reach);
   if (!target || reach <= 0) return;
   const gunHeadshot = aimed && Math.random() < .2;
-  const damage = aimed ? (gunHeadshot ? 280 : 180) : 75;
+  const damage = aimed ? (gunHeadshot ? 360 : 180) : 75;
   withAlchemyHitMode("ranged", () => hurt(actor, target, damage,
     aimed ? "special" : "skill", 0, { gunHeadshot }));
 }
@@ -26290,13 +26305,13 @@ for(const c of CHARACTER_DATABASE)if(friendlyBleachDescriptions[c.id])Object.ass
 
 
 const PRACTICE_DAMAGE_DETAILS = {...{
-  "KENPACHI_TWO_HANDED_SLASH": "0.2초 준비 후 최대 거리 12를 돌진합니다. 첫 충돌에 100 피해와 밀어내기를 주며, 돌진 중 받는 피해가 20% 감소합니다.",
+  "KENPACHI_TWO_HANDED_SLASH": "0.2초 준비 후 약하게 추적하며 거리 7을 두 번 돌진합니다. 돌진당 70 피해, 최대 140 피해와 밀어내기를 주며 돌진 중 받는 피해 20% 감소. 두 돌진 사이는 0.1초입니다.",
   "KENPACHI_NOZARASHI": "0.45초 준비 후 상대 방향으로 재조준하고 길이 15·폭 5를 내려찍어 150 피해를 한 번 줍니다.",
-  "KENPACHI_BANKAI": "0.4초 후 최대 6초간 이동 속도 +20%, 받는 피해 −20%. 새로 충돌할 때 110 피해, 두 번 적중하면 종료됩니다. 종료 후 0.35초간 정지합니다.",
+  "KENPACHI_BANKAI": "0.4초 후 최대 12초간 이동 속도 +20%, 받는 피해 −20%. 새로 충돌할 때 110 피해, 두 번 적중하면 종료됩니다. 종료 후 0.35초간 정지합니다.",
   "AKI_RAPID_FIRE": "0.3초 정지 후 M1911을 쏩니다. 사거리 35, 첫 적중 75 피해. 구조물에 막힙니다.",
-  "AKI_BARRAGE": "2초 동안 이동하며 사거리 15·각도 60°의 부채꼴을 AK47로 공격합니다. 구조물 뒤의 적을 제외하고 초당 60, 대상당 최대 120 피해.",
-  "AKI_AIMED_SHOT": "반대 방향으로 최대 15만큼 돌진 후 1초간 정지합니다. SRS99 사거리 45, 첫 적중 시 80% 확률로 180 피해, 20% 확률로 헤드샷 280 피해. 구조물에 막힙니다.",
-  "EDWARD_GROUND": "0.35초 뒤부터 상대 이동을 예측해 0.3초 간격으로 돌기둥 3개를 세웁니다. 각 기둥은 4초간 유지되며, 충돌당 40 피해를 줍니다. 한 번 사용하면 대상당 최대 160 피해.",
+  "AKI_BARRAGE": "2초 동안 이동하며 사거리 15·각도 60°의 부채꼴을 AK47로 공격합니다. 구조물 뒤의 적을 제외하고 초당 60, 대상당 최대 120 피해. 난사 중 받는 피해 25% 감소.",
+  "AKI_AIMED_SHOT": "반대 방향으로 최대 15만큼 돌진 후 1초간 정지합니다. SRS99 사거리 45, 첫 적중 시 80% 확률로 180 피해, 20% 확률로 헤드샷 360 피해. 구조물에 막힙니다.",
+  "EDWARD_GROUND": "0.35초 뒤부터 상대 이동을 예측해 0.3초 간격으로 돌기둥 3개를 세웁니다. 각 기둥은 4초간 유지되며, 충돌당 35 피해를 줍니다. 한 번 사용하면 대상당 최대 140 피해.",
   "EDWARD_BLADE": "거리 25를 돌진하며 표적을 약하게 추적합니다. 첫 상대에게 115 피해를 주고 지나가면 얇은 흰 초승달 검기가 스쳐 지나갑니다.",
   "EDWARD_CANNON": "0.5초 뒤 상대와의 직선 양옆에 길이 30·간격 7의 돌벽을 세웁니다. 0.2초 뒤 직경 5의 포탄을 발사해 통로에 남은 상대에게 200 피해를 줍니다. 포탄이 닿거나 벽을 세운 지 2초가 지나면 돌벽이 사라집니다.",
   "ALPHONSE_SHOULDER": "거리 11을 두 번 돌진합니다. 1회당 60 피해와 밀쳐내기, 최대 120 피해. 돌진 중 받는 피해 20% 감소.",
@@ -26304,7 +26319,7 @@ const PRACTICE_DAMAGE_DETAILS = {...{
   "ALPHONSE_COMBO": "상대를 약하게 추적해 거리 20을 돌진하며 받는 피해가 20% 감소합니다. 첫 타격이 명중하면 60×2 + 내려찍기 110, 최대 230 피해를 줍니다.",
   "ROY_PRECISION": "상대 이동과 벽 반사를 예측하고 폭발 지점을 한 번 보정합니다. 0.32초 뒤 반경 7에 120 피해를 줍니다.",
   "ROY_CHAIN": "상대를 약하게 추적하며 반경 5의 폭발을 6번 이어갑니다. 지점당 55 피해, 대상당 최대 110 피해.",
-  "ROY_INFERNO": "0.65초 뒤 전방 −50°에서 +50°까지 거리 21의 불꽃을 휩씁니다. 직격 150 피해와 5초간 초당 20의 화상 피해를 줍니다.",
+  "ROY_INFERNO": "0.65초 뒤 전방 −50°에서 +50°까지 거리 21의 불꽃을 휩씁니다. 직격 150 피해와 4초간 초당 30의 화상 피해를 줍니다.",
   "SCAR_ARM": "상대를 약하게 추적하며 거리 18·피해 판정 폭 6으로 돌진해 첫 상대에게 120 피해를 줍니다. 파괴 가능한 설치물은 충돌 피해 없이 부수고 남은 거리만큼 계속 돌진합니다.",
   "SCAR_GROUND": "전방 거리 20·폭 8의 지면을 연쇄 분해합니다. 대상당 최대 100 피해와 0.5초 이동 정지.",
   "SCAR_CHAIN": "0.45초 준비 후 거리 21·피해 판정 폭 6으로 돌진하며 받는 피해가 25% 감소합니다. 첫 상대에게 150 피해를 주고 벽까지 끌고 갑니다. 벽 충돌 시 90 피해와 0.5초 정지."
@@ -27509,7 +27524,7 @@ function damageFromAlchemyPillar(wall,target) {
   if(count>=4||damage.lastContacts.get(target)===t) return;
   damage.lastContacts.set(target,t);
   const before=damageQueue.length;
-  withAlchemyHitMode("ranged",()=>hurt(wall.owner,target,40));
+  withAlchemyHitMode("ranged",()=>hurt(wall.owner,target,35));
   if(damageQueue[before]?.a===wall.owner&&damageQueue[before].b===target)
     damage.hits.set(target,count+1);
 }
@@ -28170,7 +28185,7 @@ function royInferno(actor,target) {
 }
 
 function startRoyBurn(actor,victim) {
-  const burn={actor,next:t+1,remaining:5};
+  const burn={actor,next:t+1,remaining:4};
   victim.royBurn=burn;
   alchemyPlume(victim.x,victim.z,1.25,.68);
 }
@@ -28180,7 +28195,7 @@ function updateRoyBurns() {
     const burn=victim.royBurn;
     if(!burn||!victim.alive) continue;
     while(burn.remaining && burn.next<=t+1e-8){
-      damageQueue.push({a:burn.actor,b:victim,damageKind:"royBurn",...reducedHit(victim,20*burn.actor.power)});
+      damageQueue.push({a:burn.actor,b:victim,damageKind:"royBurn",...reducedHit(victim,30*burn.actor.power)});
       burn.next+=1;
       burn.remaining--;
       alchemyPlume(victim.x,victim.z,.9,.53);
