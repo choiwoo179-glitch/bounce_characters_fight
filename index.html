@@ -2716,12 +2716,14 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
         <div class="home-stage">
           <img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-10">2026.11.10</time></span>
+            <span>최종 수정 <time datetime="2026-11-11">2026.11.11</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 자라키 켄파치</strong>
+                <strong>최신 패치 · 켄파치 기술 조정</strong>
+                <p>양손 베기는 최대 거리 12를 돌진해 첫 충돌에 100 피해를 주고, 돌진 중 받는 피해를 20% 줄입니다. 노자라시는 준비 후 재조준합니다. 만해 충돌에는 노자라시의 바닥 잔상과 붉은 번개가 겹쳐 나타납니다.</p>
+                <strong>이전 패치 · 자라키 켄파치</strong>
                 <p>자라키 켄파치가 추가됐습니다. 양손 베기로 밀어내고, 시해 · 노자라시로 전방을 내려찍습니다. 만해 상태에서 새 충돌로 최대 두 번 강화 피해를 줍니다.</p>
                 <strong>이전 패치 · 총의 마인 아키 조정</strong>
                 <p>체력 1100·SP 166·이동 속도 35·충돌 피해 43을 적용했습니다. 난사 범위는 거리 15·각도 60°이며, 모든 사격이 돌기둥과 얼음벽 등 구조물에 막힙니다.</p>
@@ -23683,29 +23685,24 @@ function useKenpachiTwoHandedSlash(actor, target) {
     const swing = () => {
       kenpachiPose(actor, "cut", direction, .22);
       kenpachiSlashVisual(actor.x, actor.z, direction);
-      for (const victim of actors) {
-        if (victim === actor || !bleachLive(victim) || opmPhasing(victim)) continue;
-        const dx = victim.x - actor.x, dz = victim.z - actor.z;
-        const distance = Math.hypot(dx, dz);
-        if (distance > 7 + actorRadius(victim) ||
-            dx * direction.x + dz * direction.z < distance * Math.SQRT1_2 - 1e-8) continue;
-        const queued = damageQueue.length;
-        withAlchemyHitMode("melee", () => hurt(actor, victim, 115));
-        if (damageQueue.length > queued) damageQueue.at(-1).onConfirmedHit = () => {
-          kenpachiSparks(victim.x, victim.z, false);
-          pushActor(victim, unit(dx, dz), 3);
-        };
-      }
     };
-    const length = boundedTravel(actor, direction, 5);
+    const length = boundedTravel(actor, direction, 12);
     if (length <= 1e-8) {
       swing();
       return;
     }
-    opmDash(actor, { x: actor.x + direction.x, z: actor.z + direction.z }, length, 56, swing);
+    opmDash(actor, { x: actor.x + direction.x, z: actor.z + direction.z }, length, 56, swing,
+      0xffd478, .2, victim => {
+        const queued = damageQueue.length;
+        withAlchemyHitMode("melee", () => hurt(actor, victim, 100));
+        if (damageQueue.length > queued) damageQueue.at(-1).onConfirmedHit = () => {
+          kenpachiSparks(victim.x, victim.z, false);
+          pushActor(victim, direction, 3);
+        };
+      });
     actor.dash.stopOnHit = true;
     actor.dash.kenpachiAdvance = true;
-    kenpachiPose(actor, "raise", direction, .15);
+    kenpachiPose(actor, "raise", direction, length / 56);
   });
 }
 
@@ -23716,6 +23713,10 @@ function useKenpachiNozarashi(actor, target) {
   kenpachiPose(actor, "nozarashiRaise", direction, .45);
   kenpachiNozarashiWarning(actor, line);
   ninjaPrep(actor, .45, () => {
+    const opponent = nearest(actor);
+    if (!opponent) return;
+    const direction = unit(opponent.x - actor.x, opponent.z - actor.z);
+    const line = { x: actor.x, z: actor.z, dx: direction.x, dz: direction.z };
     kenpachiPose(actor, "nozarashiCut", direction, .28);
     kenpachiNozarashiImpact(line, direction);
     for (const victim of actors) {
@@ -23756,6 +23757,10 @@ function confirmKenpachiBankaiContact(actor, victim, form) {
   const direction = unit(victim.x - actor.x, victim.z - actor.z);
   kenpachiSlashVisual(victim.x - direction.x * 2.7, victim.z - direction.z * 2.7, direction, true);
   kenpachiSparks(victim.x, victim.z, true);
+  kenpachiNozarashiImpact({
+    x: victim.x - direction.x * 7.5, z: victim.z - direction.z * 7.5,
+  }, direction);
+  alchemyLightning(victim.x, victim.z, 3.4, 0xff243e, .40, {outline:0x650b23, branch:0xffa6b5});
   skillEvent(actor, "KENPACHI_BANKAI", "impact", { count: form.hits, target: victim.slot });
   if (form.hits === 2) endKenpachiBankai(actor);
 }
@@ -24627,7 +24632,7 @@ const kenpachiCharacter = {
   radius:1.2,anime:"블리치",id:"kenpachi",name:"자라키 켄파치",short:"켄파치",color:0xe1a943,maxHp:1250,maxMp:90,maxSp:155,baseDamage:53,speed:36.5,
   battleType:"내구형",skillType:"KENPACHI_CHOICE",specialType:"KENPACHI_BANKAI",skill:"양손 베기 / 노자라시",special:"만해",
   role:"내구형 · 묵직한 근접 압박",
-  desc:"양손 베기(60%)는 0.2초 준비한 뒤 최대 거리 5를 전진하고, 전방 반경 7·90°를 베어 115 피해와 밀어내기를 줍니다. 노자라시(40%)는 시작할 때 방향을 고정하고 0.45초 뒤 길이 15·폭 5를 내리찍어 150 피해를 줍니다.",
+  desc:"양손 베기(60%)는 0.2초 준비 후 최대 거리 12를 돌진해 처음 부딪힌 적에게 100 피해와 밀어내기를 줍니다. 돌진 중 받는 피해는 20% 줄어듭니다. 노자라시(40%)는 0.45초 준비를 마치면 상대 방향으로 재조준해 길이 15·폭 5를 내리찍어 150 피해를 줍니다.",
   spDesc:"0.4초 후 최대 6초간 만해 상태가 됩니다. 이동 속도는 20% 오르고 받는 피해는 20% 줄어듭니다. 새로 부딪힌 상대에게 충돌 피해 대신 110을 주며, 두 번 적중하거나 시간이 끝나면 0.35초 동안 자세를 추스릅니다. 만해 중에는 다른 기술을 사용할 수 없습니다."};
 portraits[CHARACTER_DATABASE.length] = portrait(kenpachiCharacter);
 CHARACTER_DATABASE.push(kenpachiCharacter);
@@ -26285,8 +26290,8 @@ for(const c of CHARACTER_DATABASE)if(friendlyBleachDescriptions[c.id])Object.ass
 
 
 const PRACTICE_DAMAGE_DETAILS = {...{
-  "KENPACHI_TWO_HANDED_SLASH": "0.2초 준비 후 최대 거리 5를 전진해 전방 반경 7·90°를 벱니다. 베기에 맞으면 115 피해와 밀어내기가 적용됩니다.",
-  "KENPACHI_NOZARASHI": "시작할 때 방향을 고정하고 0.45초 뒤 길이 15·폭 5를 내려찍어 150 피해를 한 번 줍니다.",
+  "KENPACHI_TWO_HANDED_SLASH": "0.2초 준비 후 최대 거리 12를 돌진합니다. 첫 충돌에 100 피해와 밀어내기를 주며, 돌진 중 받는 피해가 20% 감소합니다.",
+  "KENPACHI_NOZARASHI": "0.45초 준비 후 상대 방향으로 재조준하고 길이 15·폭 5를 내려찍어 150 피해를 한 번 줍니다.",
   "KENPACHI_BANKAI": "0.4초 후 최대 6초간 이동 속도 +20%, 받는 피해 −20%. 새로 충돌할 때 110 피해, 두 번 적중하면 종료됩니다. 종료 후 0.35초간 정지합니다.",
   "AKI_RAPID_FIRE": "0.3초 정지 후 M1911을 쏩니다. 사거리 35, 첫 적중 75 피해. 구조물에 막힙니다.",
   "AKI_BARRAGE": "2초 동안 이동하며 사거리 15·각도 60°의 부채꼴을 AK47로 공격합니다. 구조물 뒤의 적을 제외하고 초당 60, 대상당 최대 120 피해.",
@@ -28306,7 +28311,7 @@ function alchemyDebris(x,z,radius,count=28,color=0xa58262) {
   akiEffect(stones,.78,paint);
 }
 
-function alchemyLightning(x,z,reach,color=0xc1d7e7,life=.32) {
+function alchemyLightning(x,z,reach,color=0xc1d7e7,life=.32,palette={outline:0x506e91,branch:0x95b4cf}) {
   if (headless || !world) return;
   const group=new THREE.Group();
   group.name="alchemy-blue-gray-discharge";
@@ -28318,11 +28323,11 @@ function alchemyLightning(x,z,reach,color=0xc1d7e7,life=.32) {
       const q=angle+.22*Math.sin(i*2+j*4),d=reach*j/5*(.65+.06*i);
       points.push([Math.cos(q)*d,.2+Math.abs(Math.sin(i+j*2))*(1.4-j*.18),Math.sin(q)*d]);
     }
-    bleachLine(group,points,0x506e91,.083,.48);
+    bleachLine(group,points,palette.outline,.083,.48);
     bleachLine(group,points,color,.031,.95);
     if(i%2===0) bleachLine(group,[points[2],points[3],[
       points[3][0]-.66*Math.sin(angle),.37,points[3][2]+.66*Math.cos(angle)
-    ]],0x95b4cf,.029,.8);
+    ]],palette.branch,.029,.8);
   }
   akiEffect(group,life,p=>{
     group.scale.set(1+p*.23,1+p*.19,1+p*.23);
