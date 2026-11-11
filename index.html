@@ -833,11 +833,29 @@ body.battle-theme {
   touch-action: manipulation;
 }
 #home .options {
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
+#home .start-mode {
+  width: 400px;
+  max-width: 100%;
+  min-height: 52px;
+  border-color: #81b7ff;
+  background: #1559d5;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  touch-action: manipulation;
+}
+#home .start-mode:hover {
+  background: #1b62db;
+}
+#home .start-mode:active {
+  background: #1047b3;
+  transform: none;
+}
 #skillModeHint {
-  flex-basis: 100%;
   margin: 0;
   text-align: center;
 }
@@ -2765,6 +2783,7 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
           <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
           <div class="home-controls"><div class="modes" id="modes"></div>
             <div class="options">
+              <button type="button" id="startMode" class="start-mode">시작하기</button>
               <label class="skill-mode-switch">
                 <input id="manual" type="checkbox" role="switch" checked aria-label="스킬 직접 사용 모드" aria-describedby="skillModeHint" />
                 <span class="skill-mode-options" aria-hidden="true">
@@ -18306,9 +18325,9 @@ function chooseMode(players) {
     button.setAttribute("aria-pressed", String(selected));
   });
   $("modeHint").textContent = mode === 0
-    ? "연습 버튼을 더블 클릭해 시작하세요."
+    ? "시작하기를 누르면 연습 모드로 들어갑니다."
     : (mode === 1 ? "5명의 무작위 상대와 연속 대전" : mode + "명이 한 기기에서 대전") +
-      " · 모드 버튼을 더블 클릭해 캐릭터를 선택하세요.";
+      " · 시작하기를 눌러 캐릭터를 선택하세요.";
   updateSkillModeHint();
 }
 
@@ -18770,6 +18789,7 @@ function initUI() {
         selection();
       };
     }),
+    ($("startMode").onclick = selection),
     $("manual").addEventListener("change", updateSkillModeHint),
     chooseMode(1),
     ($("back").onclick = home),
