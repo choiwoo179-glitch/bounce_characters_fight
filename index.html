@@ -2715,9 +2715,37 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
   pointer-events:none;opacity:0;transform-origin:center;
   background:radial-gradient(ellipse,rgba(153,227,255,.23),rgba(122,154,255,.11) 43%,transparent 72%);
 }
+
+body.startup-loading > header,
+body.startup-loading > main { visibility: hidden; }
+body.startup-loading { overflow: hidden; }
+#startupScreen {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: 20px; background: #0d131d; color: #edf2f5; overflow: auto;
+}
+#startupScreen[hidden] { display: none; }
+.startup-card {
+  width: min(100%, 430px); padding: 26px; background: #151f2d;
+  border: 1px solid #334863; border-radius: 16px;
+}
+.startup-card h1 { margin: 0 0 20px; font-size: clamp(21px, 5vw, 27px); }
+#startupProgress { width: 100%; height: 12px; accent-color: #498bff; }
+#startupStatus { color: #c1d2e9; margin: 12px 0 0; line-height: 1.5; }
+#startupProblems { max-height: 30vh; overflow: auto; padding-left: 22px; overflow-wrap: anywhere; }
+#startupRetry { margin-top: 14px; min-height: 44px; background: #1559d5; }
 </style>
 </head>
-  <body>
+  <body class="startup-loading">
+    <section id="startupScreen" aria-labelledby="startupTitle">
+      <div class="startup-card">
+        <h1 id="startupTitle">바운스 캐릭터즈 파이트</h1>
+        <progress id="startupProgress" aria-label="게임 리소스 로딩 진행률"></progress>
+        <p id="startupStatus" role="status">게임을 불러오는 중…</p>
+        <ul id="startupProblems" hidden></ul>
+        <button type="button" id="startupRetry" hidden>다시 시도</button>
+        <noscript>게임을 실행하려면 JavaScript를 활성화해 주세요.</noscript>
+      </div>
+    </section>
     <!-- HTML 구조 -->
     <header>
       <div class="brand">BALL<span>FIGHT.</span></div>
@@ -2732,7 +2760,7 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
     <main>
       <section id="home">
         <div class="home-stage">
-          <img class="game-title" src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
+          <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" />
           <div class="home-version" aria-label="버전 정보">
             <span>최종 수정 <time datetime="2026-11-11">2026.11.11</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
@@ -28682,24 +28710,172 @@ BATTLE_STATE_FIELDS.push(
     }),
   }));
 
-try {
-  if (!window.THREE) throw Error("3D 엔진을 불러오지 못했습니다. 파일을 다시 내려받아 주세요.");
-  initScene();
-  initUI();
-  initArenaZoom();
-  prepareAkiFoxTemplates();
-  prepareReusableBattleModels();
-  home();
-  requestAnimationFrame(frame);
-  if (new URLSearchParams(location.search).has("test")) {
-    showSelfTestReport();
-  }
-} catch (e) {
-  (($("error").textContent =
-    "실행 오류: " + e.message + " · WebGL을 지원하는 최신 Chrome 또는 Edge에서 열어 주세요."),
-    $("error").classList.remove("hidden"),
-    console.error(e));
+// Keep downloaded resources available for the lifetime of the page.
+const startupAssets = new Map();
+
+function startupAssetUrl(url) {
+  return startupAssets.get(url)?.src ?? url;
 }
+
+async function loadStartupAsset(url, kind) {
+  const controller = new AbortController();
+  let src = url;
+  let objectUrl;
+  let probe;
+  let timeout;
+  try {
+    const load = async () => {
+      if (location.protocol !== "file:" && !url.startsWith("data:")) {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const blob = await response.blob();
+        if (!blob.size) throw new Error("빈 파일");
+        if (controller.signal.aborted) return;
+        objectUrl = URL.createObjectURL(blob);
+        src = objectUrl;
+      }
+      if (kind === "image") {
+        probe = new Image();
+        probe.src = src;
+        await probe.decode();
+      } else {
+        probe = new Audio();
+        probe.preload = "auto";
+        await new Promise((resolve, reject) => {
+          probe.onloadedmetadata = resolve;
+          probe.onerror = () => reject(new Error("지원하지 않거나 손상된 오디오"));
+          probe.src = src;
+        });
+      }
+      if (!controller.signal.aborted) startupAssets.set(url, { src, probe: kind === "image" ? probe : null });
+    };
+    await Promise.race([load(), new Promise((_, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort();
+        reject(new Error("요청 시간 초과"));
+      }, 25000);
+    })]);
+  } catch (error) {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (probe) probe.removeAttribute("src");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    if (kind === "audio" && probe) {
+      probe.onloadedmetadata = probe.onerror = null;
+      probe.removeAttribute("src");
+      probe.load();
+    }
+  }
+}
+
+function startupAssetList() {
+  const assets = new Map();
+  const add = (url, kind) => {
+    if (typeof url === "string" && url) assets.set(url, kind);
+  };
+  for (const url of Object.values(skillVoices)) add(url, "audio");
+  for (const url of Object.values(skillBannerUrls)) add(url, "image");
+  for (const url of Object.values(officialPortraits)) add(url, "image");
+  for (const track of Object.values(musicAssets)) {
+    add(track.audio, "audio");
+    add(track.image, "image");
+  }
+  add($("gameTitle").dataset.src, "image");
+  return assets;
+}
+
+async function preloadStartupAssets(assets) {
+  const progress = $("startupProgress");
+  const status = $("startupStatus");
+  const pending = [...assets].filter(([url]) => !startupAssets.has(url));
+  const failures = [];
+  let next = 0;
+  const report = () => {
+    progress.value = startupAssets.size;
+    status.textContent = `리소스 준비 중 · ${progress.value} / ${progress.max}`;
+  };
+  progress.max = assets.size;
+  report();
+  async function worker() {
+    while (next < pending.length) {
+      const [url, kind] = pending[next++];
+      try {
+        await loadStartupAsset(url, kind);
+      } catch (error) {
+        failures.push({ url, message: error.message });
+      }
+      report();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(6, pending.length) }, worker));
+  return failures;
+}
+
+function bindStartupAssets() {
+  for (const key of Object.keys(skillVoices)) skillVoices[key] = startupAssetUrl(skillVoices[key]);
+  for (const key of Object.keys(officialPortraits)) officialPortraits[key] = startupAssetUrl(officialPortraits[key]);
+  for (const [key, url] of Object.entries(skillBannerUrls)) {
+    const asset = startupAssets.get(url);
+    if (!asset) continue;
+    bannerAssets[key] = asset.probe;
+    requestedSkillBanners.add(key);
+  }
+  for (const track of Object.values(musicAssets)) {
+    track.audio = startupAssetUrl(track.audio);
+    if (track.image) track.image = startupAssetUrl(track.image);
+  }
+  const title = $("gameTitle");
+  title.src = startupAssetUrl(title.dataset.src);
+}
+
+async function startGameAfterLoading() {
+  const status = $("startupStatus");
+  const retry = $("startupRetry");
+  const problems = $("startupProblems");
+  retry.hidden = true;
+  problems.hidden = true;
+  problems.replaceChildren();
+  try {
+    if (!window.THREE) throw new Error("3D 엔진을 불러오지 못했습니다.");
+    skillBannerUrls ??= consumeAssetData("skill-image-data");
+    const failures = await preloadStartupAssets(startupAssetList());
+    if (failures.length) {
+      status.textContent = `리소스 ${failures.length}개를 불러오지 못했습니다. 연결 상태와 파일 경로를 확인해 주세요.`;
+      for (const { url, message } of failures) {
+        const item = document.createElement("li");
+        item.textContent = (url.startsWith("data:") ? "내장 리소스" : url) + " · " + message;
+        problems.append(item);
+      }
+      problems.hidden = false;
+      retry.onclick = startGameAfterLoading;
+      retry.hidden = false;
+      retry.focus();
+      return;
+    }
+    status.textContent = "게임 화면 준비 중…";
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    bindStartupAssets();
+    initScene();
+    initUI();
+    initArenaZoom();
+    prepareAkiFoxTemplates();
+    prepareReusableBattleModels();
+    home();
+    document.body.classList.remove("startup-loading");
+    $("startupScreen").hidden = true;
+    requestAnimationFrame(frame);
+    if (new URLSearchParams(location.search).has("test")) showSelfTestReport();
+  } catch (error) {
+    status.textContent = "실행 오류 · " + error.message;
+    retry.onclick = () => location.reload();
+    retry.hidden = false;
+    retry.focus();
+    console.error(error);
+  }
+}
+
+requestAnimationFrame(() => requestAnimationFrame(startGameAfterLoading));
 </script>
   </body>
 </html>
