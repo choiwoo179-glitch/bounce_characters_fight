@@ -1,5 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
+  <style>
+#onlineModal .dialog {
+  width: min(450px, 100%);
+}
+#onlineModal input:focus {
+  outline: 2px solid var(--lime);
+  border-color: var(--lime);
+}
+</style>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -2862,10 +2871,10 @@ body.startup-loading { overflow: hidden; }
           </details>
           <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
           <div class="home-controls"><div class="modes" id="modes"></div>
-            <button type="button" class="mode" id="modeOnline2p">
-    <b>온라인 2P</b>
-    <small>4자리 코드로 접속</small>
-  </button>
+           <button type="button" class="mode" id="modeOnline2p" style="margin-top: 8px; width: 100%;">
+  <b>온라인 2P</b>
+  <small>4자리 코드로 실시간 대전</small>
+</button>
 </div>
             <div class="options">
               <button type="button" id="startMode" class="start-mode">시작하기</button>
@@ -3041,7 +3050,34 @@ body.startup-loading { overflow: hidden; }
     </div>
   </div>
 </div>
-
+<div id="onlineModal" class="overlay hidden" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="dialog">
+    <div class="eyebrow">MULTIPLAYER</div>
+    <h2>온라인 2P 대전</h2>
+    
+    <div id="onlineOptions" class="actions">
+      <button id="btnCreateRoom" class="primary big">방 만들기 (1P)</button>
+      <button id="btnJoinRoom" class="big">방 참가하기 (2P)</button>
+      <button id="btnCancelOnline" class="quiet">닫기</button>
+    </div>
+    
+    <div id="createRoomUI" class="hidden">
+      <p>방 코드: <b id="roomCodeDisplay" style="font-size:42px; color:var(--lime); display:block; margin: 15px 0;">----</b></p>
+      <p>상대방이 코드를 입력하기를 기다리고 있습니다...</p>
+      <br>
+      <button id="btnCancelCreate" class="quiet">취소</button>
+    </div>
+    
+    <div id="joinRoomUI" class="hidden">
+      <p>상대방의 4자리 방 코드를 입력하세요</p>
+      <input type="text" id="roomCodeInput" maxlength="4" placeholder="0000" style="font-size:28px; text-align:center; width:120px; padding:10px; margin: 15px 0; background: var(--panel); color: white; border: 1px solid var(--line); border-radius: 8px;">
+      <div class="actions">
+        <button id="btnSubmitJoin" class="primary">접속</button>
+        <button id="btnCancelJoin" class="quiet">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
     <div
       id="modal"
       class="overlay hidden"
@@ -29183,12 +29219,9 @@ async function startGameAfterLoading() {
 requestAnimationFrame(() => requestAnimationFrame(startGameAfterLoading));
 </script>
 <script type="module">
-  // Firebase SDK 불러오기 (ES 모듈 방식)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-  import { getDatabase, ref, set, onValue, get, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getDatabase, ref, set, onValue, get, update, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // 제공된 Firebase 설정
   const firebaseConfig = {
     apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
     authDomain: "bounce-characters-fight.firebaseapp.com",
@@ -29200,18 +29233,22 @@ requestAnimationFrame(() => requestAnimationFrame(startGameAfterLoading));
     measurementId: "G-8F7QLR4VRC"
   };
 
-  // Firebase 초기화
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
   const db = getDatabase(app);
 
-  // 전역 상태 변수
-  let isOnlineMode = false;
-  let currentRoomId = null;
-  let isHost = false;
-  let roomRef = null;
+  // 온라인 대전 상태 관리 객체
+  const net = {
+    active: false,
+    roomId: null,
+    isHost: false,
+    roomRef: null,
+    unsub: null,
+    syncTimer: null,
+    battleStarted: false,
+    lastGuestCastId: 0,
+    lastHostCastId: 0
+  };
 
-  // UI 요소 가져오기
   const modeOnline2pBtn = document.getElementById('modeOnline2p');
   const onlineModal = document.getElementById('onlineModal');
   const onlineOptions = document.getElementById('onlineOptions');
@@ -29220,136 +29257,297 @@ requestAnimationFrame(() => requestAnimationFrame(startGameAfterLoading));
   const roomCodeDisplay = document.getElementById('roomCodeDisplay');
   const roomCodeInput = document.getElementById('roomCodeInput');
 
-  // 모드 버튼 클릭 이벤트
-  if(modeOnline2pBtn) {
-    modeOnline2pBtn.addEventListener('click', () => {
-      // 기존 활성화된 모드 제거 후 선택 표시 (게임 내 기존 로직에 맞게 연동)
-      document.querySelectorAll('.mode').forEach(btn => btn.classList.remove('active'));
-      modeOnline2pBtn.classList.add('active');
-      isOnlineMode = true;
-      
-      // 모달창 띄우기
-      onlineModal.classList.remove('hidden');
-      resetOnlineUI();
-    });
-  }
+  // 모드 버튼 클릭
+  modeOnline2pBtn?.addEventListener('click', () => {
+    document.querySelectorAll('.mode').forEach(btn => btn.classList.remove('active'));
+    modeOnline2pBtn.classList.add('active');
+    onlineModal.classList.remove('hidden');
+    resetOnlineUI();
+  });
 
   function resetOnlineUI() {
     onlineOptions.classList.remove('hidden');
     createRoomUI.classList.add('hidden');
     joinRoomUI.classList.add('hidden');
     roomCodeInput.value = '';
-    
-    if(roomRef) {
-        // 호스트였다면 방 삭제 (취소 시)
-        if(isHost && currentRoomId) {
-            remove(roomRef);
-        }
-        roomRef = null;
-    }
-    currentRoomId = null;
-    isHost = false;
+    cleanupNet();
   }
 
-  // 모달 닫기
+  function cleanupNet() {
+    if (net.syncTimer) { clearInterval(net.syncTimer); net.syncTimer = null; }
+    if (net.unsub) { net.unsub(); net.unsub = null; }
+    if (net.roomRef && net.isHost) { remove(net.roomRef).catch(() => {}); }
+    net.active = false;
+    net.roomId = null;
+    net.isHost = false;
+    net.roomRef = null;
+    net.battleStarted = false;
+    net.lastGuestCastId = 0;
+    net.lastHostCastId = 0;
+  }
+
   document.getElementById('btnCancelOnline')?.addEventListener('click', () => {
     onlineModal.classList.add('hidden');
-    isOnlineMode = false;
-  });
-
-  // 방 만들기 (호스트)
-  document.getElementById('btnCreateRoom')?.addEventListener('click', () => {
-    onlineOptions.classList.add('hidden');
-    createRoomUI.classList.remove('hidden');
-    
-    // 4자리 방 코드 생성
-    currentRoomId = Math.floor(1000 + Math.random() * 9000).toString();
-    roomCodeDisplay.innerText = currentRoomId;
-    isHost = true;
-    
-    roomRef = ref(db, 'rooms/' + currentRoomId);
-    
-    // 방 데이터 초기화
-    set(roomRef, {
-      status: 'waiting',
-      hostReady: false,
-      guestReady: false,
-      gameState: {}
-    });
-
-    // 방 상태 리스너 (게스트 접속 대기)
-    onValue(roomRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && data.status === 'playing') {
-        // 게스트가 들어왔고 게임 시작됨
-        onlineModal.classList.add('hidden');
-        startGameAsOnline(); // 기존 게임 시작 로직에 연동 필요
-      }
-    });
-  });
-
-  // 호스트 방 만들기 취소
-  document.getElementById('btnCancelCreate')?.addEventListener('click', () => {
     resetOnlineUI();
   });
 
-  // 방 참가하기 (게스트) 화면으로 이동
+  // 1. 방 만들기 (호스트 = 1P)
+  document.getElementById('btnCreateRoom')?.addEventListener('click', async () => {
+    onlineOptions.classList.add('hidden');
+    createRoomUI.classList.remove('hidden');
+
+    net.roomId = Math.floor(1000 + Math.random() * 9000).toString();
+    roomCodeDisplay.innerText = net.roomId;
+    net.isHost = true;
+    net.active = true;
+    net.roomRef = ref(db, 'rooms/' + net.roomId);
+
+    onDisconnect(net.roomRef).remove();
+
+    await set(net.roomRef, {
+      status: 'waiting',
+      manual: document.getElementById('manual').checked,
+      picks: { p1: null, p2: null },
+      setup: null,
+      state: null,
+      guestCast: null,
+      hostCast: null
+    });
+
+    listenRoom();
+  });
+
+  document.getElementById('btnCancelCreate')?.addEventListener('click', resetOnlineUI);
+
+  // 2. 방 참가하기 (게스트 = 2P)
   document.getElementById('btnJoinRoom')?.addEventListener('click', () => {
     onlineOptions.classList.add('hidden');
     joinRoomUI.classList.remove('hidden');
   });
 
-  // 게스트 방 참가 취소
-  document.getElementById('btnCancelJoin')?.addEventListener('click', () => {
-    resetOnlineUI();
-  });
+  document.getElementById('btnCancelJoin')?.addEventListener('click', resetOnlineUI);
 
-  // 방 접속 (게스트)
   document.getElementById('btnSubmitJoin')?.addEventListener('click', async () => {
     const code = roomCodeInput.value.trim();
-    if (code.length !== 4) {
-      alert("4자리 방 코드를 입력해주세요.");
-      return;
-    }
-    
-    const checkRoomRef = ref(db, 'rooms/' + code);
-    const snapshot = await get(checkRoomRef);
-    
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      if (data.status === 'waiting') {
-        // 접속 성공, 상태를 playing으로 변경
-        currentRoomId = code;
-        isHost = false;
-        roomRef = checkRoomRef;
-        
-        await update(roomRef, { status: 'playing' });
-        
-        // 실시간 동기화 리스너 등록
-        onValue(roomRef, (snapshot) => {
-          const roomData = snapshot.val();
-          // roomData.gameState 를 통해 적 위치/상태 동기화 로직 연동
-        });
+    if (code.length !== 4) return alert("4자리 방 코드를 입력해주세요.");
 
-        alert("접속 성공!");
-        onlineModal.classList.add('hidden');
-        startGameAsOnline(); // 기존 게임 시작 로직에 연동 필요
-      } else {
-        alert("이미 게임이 진행중인 방입니다.");
-      }
-    } else {
-      alert("존재하지 않는 방 코드입니다.");
-    }
+    const targetRef = ref(db, 'rooms/' + code);
+    const snap = await get(targetRef);
+    if (!snap.exists()) return alert("존재하지 않는 방 코드입니다.");
+
+    const data = snap.val();
+    if (data.status !== 'waiting') return alert("이미 진행 중이거나 가득 찬 방입니다.");
+
+    net.roomId = code;
+    net.isHost = false;
+    net.active = true;
+    net.roomRef = targetRef;
+
+    await update(net.roomRef, { status: 'selecting' });
+    listenRoom();
   });
 
-  // ※ 중요: 기존 게임 루프(Game Loop) 내에 상태를 파이어베이스에 업데이트(set/update)하는 코드와,
-  // 파이어베이스에서 받은 데이터를 상대방 캐릭터(2P)에 렌더링하는 코드를 직접 연동하셔야 합니다.
-  
-  window.startGameAsOnline = function() {
-      console.log("온라인 대전 시작! 호스트 여부:", isHost, "방 번호:", currentRoomId);
-      // document.getElementById('startMode').click(); // 예시: 원래의 시작 버튼 트리거
+  // 3. 게임 내장 함수 후킹 (캐릭터 선택 & 스킬 입력 동기화)
+  const origSelectPlayer = window.selectPlayer;
+  window.selectPlayer = function(slot) {
+    if (net.active) {
+      const mySlot = net.isHost ? 0 : 1;
+      if (slot !== mySlot) return;
+    }
+    return origSelectPlayer.apply(this, arguments);
   };
 
+  const origPreviewFighter = window.previewFighter;
+  window.previewFighter = function(idx) {
+    if (net.active) {
+      selectionSlot = net.isHost ? 0 : 1;
+    }
+    return origPreviewFighter.apply(this, arguments);
+  };
+
+  const origConfirmFighter = window.confirmFighter;
+  window.confirmFighter = function(slot) {
+    if (!net.active) return origConfirmFighter.apply(this, arguments);
+
+    const mySlot = net.isHost ? 0 : 1;
+    if (slot !== mySlot) return;
+
+    selectionClick = null;
+    chosen[mySlot] = selectionChoices[mySlot];
+    drawSelection();
+
+    const pickKey = net.isHost ? 'p1' : 'p2';
+    update(ref(db, `rooms/${net.roomId}/picks`), { [pickKey]: chosen[mySlot] });
+  };
+
+  // 스킬 입력 처리: 게스트는 방장에게 명령 전송, 호스트는 직접 판정 후 이펙트 브로드캐스트
+  const origRequestCast = window.requestCast;
+  window.requestCast = function(slot, special) {
+    if (!net.active) return origRequestCast.apply(this, arguments);
+
+    const mySlot = net.isHost ? 0 : 1;
+    // 어느 기기에서든 Q/W(0번 슬롯 키)로 자신의 캐릭터 스킬을 쓸 수 있도록 매핑
+    const targetSlot = (slot === 0) ? mySlot : slot;
+    if (targetSlot !== mySlot) return;
+
+    if (net.isHost) {
+      origRequestCast(0, special);
+      update(net.roomRef, { hostCast: { id: Date.now() + Math.random(), special } }).catch(() => {});
+    } else {
+      update(net.roomRef, { guestCast: { id: Date.now() + Math.random(), special } }).catch(() => {});
+    }
+  };
+
+  // 나가기/홈 복귀 시 온라인 방 정리
+  const origHome = window.home;
+  window.home = function() {
+    if (net.active) cleanupNet();
+    return origHome.apply(this, arguments);
+  };
+
+  // 4. 실시간 방 데이터 수신 및 화면 동기화
+  function listenRoom() {
+    net.unsub = onValue(net.roomRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        if (net.active) {
+          alert("상대방이 방을 나갔거나 연결이 종료되었습니다.");
+          cleanupNet();
+          origHome();
+        }
+        return;
+      }
+
+      // [단계 A] 매칭 성사 -> 캐릭터 선택 화면 진입
+      if (data.status === 'selecting' && !net.battleStarted && document.getElementById('selection').classList.contains('hidden')) {
+        onlineModal.classList.add('hidden');
+        document.getElementById('manual').checked = !!data.manual;
+        window.chooseMode(2);
+        window.selection();
+
+        const mySlot = net.isHost ? 0 : 1;
+        selectionSlot = mySlot;
+        drawSelection();
+        document.getElementById('selectTitle').textContent =
+          `온라인 대전 (${net.isHost ? '1P 호스트' : '2P 게스트'}) · 전사를 선택하세요`;
+      }
+
+      // [단계 B] 양쪽 캐릭터 선택 실시간 반영
+      if (data.picks && !net.battleStarted) {
+        if (data.picks.p1 !== undefined && data.picks.p1 !== null) {
+          chosen[0] = data.picks.p1;
+          selectionChoices[0] = data.picks.p1;
+        }
+        if (data.picks.p2 !== undefined && data.picks.p2 !== null) {
+          chosen[1] = data.picks.p2;
+          selectionChoices[1] = data.picks.p2;
+        }
+        if (!document.getElementById('selection').classList.contains('hidden')) {
+          drawSelection();
+        }
+
+        // 둘 다 선택 완료 시 호스트가 전투 시드 생성 및 시작 신호 전송
+        if (net.isHost && chosen[0] !== undefined && chosen[1] !== undefined && data.status === 'selecting') {
+          const track = window.randomBattleTrack ? randomBattleTrack() : 0;
+          update(net.roomRef, {
+            status: 'playing',
+            setup: { p1: chosen[0], p2: chosen[1], track }
+          });
+        }
+      }
+
+      // [단계 C] 전투 동시 시작
+      if (data.status === 'playing' && data.setup && !net.battleStarted) {
+        net.battleStarted = true;
+        chosen[0] = data.setup.p1;
+        chosen[1] = data.setup.p2;
+        mode = 2;
+        window.startBattleNow(data.setup.track);
+        document.getElementById('battleMode').textContent = `ONLINE 2P · ROOM ${net.roomId}`;
+
+        if (net.isHost) {
+          startHostSyncLoop();
+        }
+      }
+
+      // [단계 D] 전투 중 실시간 동기화
+      if (net.battleStarted && actors.length >= 2) {
+        if (net.isHost) {
+          // 방장: 게스트가 보낸 스킬 발동 요청을 수신해 2P 스킬 실행
+          if (data.guestCast && data.guestCast.id !== net.lastGuestCastId) {
+            net.lastGuestCastId = data.guestCast.id;
+            if (running) origRequestCast(1, !!data.guestCast.special);
+          }
+        } else {
+          // 게스트: 방장이 계산한 권위(Authoritative) 좌표·HP·게이지 강제 동기화
+          if (data.state) {
+            t = data.state.t ?? t;
+            data.state.actors?.forEach((s, idx) => {
+              const a = actors[idx];
+              if (!a) return;
+              a.x = s.x;
+              a.z = s.z;
+              a.dx = s.dx;
+              a.dz = s.dz;
+              a.hp = s.hp;
+              a.maxHp = s.maxHp;
+              a.mp = s.mp;
+              a.sp = s.sp;
+              a.alive = s.alive;
+            });
+            window.updateHud?.();
+
+            // 전투 종료 시 게스트 화면에도 결과창 동시 출력
+            if (data.state.running === false && running) {
+              window.finish?.();
+            }
+          }
+
+          // 게스트 화면에서도 스킬 3D 이펙트가 동일하게 연출되도록 발동 트리거
+          if (data.hostCast && data.hostCast.id !== net.lastHostCastId) {
+            net.lastHostCastId = data.hostCast.id;
+            if (running && actors[0]?.alive) window.castSkill?.(actors[0], !!data.hostCast.special);
+          }
+          if (data.guestCast && data.guestCast.id !== net.lastGuestCastId) {
+            net.lastGuestCastId = data.guestCast.id;
+            if (running && actors[1]?.alive) window.castSkill?.(actors[1], !!data.guestCast.special);
+          }
+        }
+      }
+    });
+  }
+
+  // 5. 호스트 -> Firebase 상태 전송 루프 (초당 20회)
+  function startHostSyncLoop() {
+    if (net.syncTimer) clearInterval(net.syncTimer);
+    net.syncTimer = setInterval(() => {
+      if (!net.active || !net.isHost || actors.length < 2) return;
+      update(net.roomRef, {
+        state: {
+          t,
+          running,
+          actors: actors.slice(0, 2).map(a => ({
+            x: Math.round(a.x * 100) / 100,
+            z: Math.round(a.z * 100) / 100,
+            dx: Math.round(a.dx * 100) / 100,
+            dz: Math.round(a.dz * 100) / 100,
+            hp: a.hp,
+            maxHp: a.maxHp,
+            mp: a.mp,
+            sp: a.sp,
+            alive: a.alive
+          }))
+        }
+      }).catch(() => {});
+
+      // 전투가 끝나면 마지막 상태(running: false)를 한 번 전송한 뒤 루프 중지
+      if (!running) {
+        clearInterval(net.syncTimer);
+        net.syncTimer = null;
+      }
+    }, 50);
+  }
+</script>
 </script>
 
   </body>
