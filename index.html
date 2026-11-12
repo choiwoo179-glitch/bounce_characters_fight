@@ -2769,6 +2769,16 @@ body.startup-loading { overflow: hidden; }
   body.battle-theme:not(.practice-mode) #arena { min-height: 180px; }
 }
 </style>
+<style>
+/* 온라인 2P 모달 추가 스타일 */
+#onlineModal .dialog {
+  width: min(450px, 100%);
+}
+#onlineModal input:focus {
+  outline: 2px solid var(--lime);
+  border-color: var(--lime);
+}
+</style>
 </head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
@@ -2852,6 +2862,11 @@ body.startup-loading { overflow: hidden; }
           </details>
           <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
           <div class="home-controls"><div class="modes" id="modes"></div>
+            <button type="button" class="mode" id="modeOnline2p">
+    <b>온라인 2P</b>
+    <small>4자리 코드로 접속</small>
+  </button>
+</div>
             <div class="options">
               <button type="button" id="startMode" class="start-mode">시작하기</button>
               <label class="skill-mode-switch">
@@ -2998,6 +3013,35 @@ body.startup-loading { overflow: hidden; }
         <p class="arena-zoom-hint">마우스 휠 · 두 손가락으로 확대/축소</p>
       </section>
     </main>
+    <div id="onlineModal" class="overlay hidden" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="dialog">
+    <div class="eyebrow">MULTIPLAYER</div>
+    <h2>온라인 2P 대전</h2>
+    
+    <div id="onlineOptions" class="actions">
+      <button id="btnCreateRoom" class="primary big">방 만들기</button>
+      <button id="btnJoinRoom" class="big">방 참가하기</button>
+      <button id="btnCancelOnline" class="quiet">닫기</button>
+    </div>
+    
+    <div id="createRoomUI" class="hidden">
+      <p>방 코드: <b id="roomCodeDisplay" style="font-size:42px; color:var(--lime); display:block; margin: 15px 0;">----</b></p>
+      <p>상대방이 코드를 입력하기를 기다리고 있습니다...</p>
+      <br>
+      <button id="btnCancelCreate" class="quiet">취소</button>
+    </div>
+    
+    <div id="joinRoomUI" class="hidden">
+      <p>상대방의 4자리 방 코드를 입력하세요</p>
+      <input type="text" id="roomCodeInput" maxlength="4" placeholder="0000" style="font-size:28px; text-align:center; width:120px; padding:10px; margin: 15px 0; background: var(--panel); color: white; border: 1px solid var(--line); border-radius: 8px;">
+      <div class="actions">
+        <button id="btnSubmitJoin" class="primary">접속</button>
+        <button id="btnCancelJoin" class="quiet">취소</button>
+      </div>
+    </div>
+  </div>
+</div>
+
     <div
       id="modal"
       class="overlay hidden"
@@ -29138,6 +29182,176 @@ async function startGameAfterLoading() {
 
 requestAnimationFrame(() => requestAnimationFrame(startGameAfterLoading));
 </script>
+<script type="module">
+  // Firebase SDK 불러오기 (ES 모듈 방식)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+  import { getDatabase, ref, set, onValue, get, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  // 제공된 Firebase 설정
+  const firebaseConfig = {
+    apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
+    authDomain: "bounce-characters-fight.firebaseapp.com",
+    databaseURL: "https://bounce-characters-fight-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "bounce-characters-fight",
+    storageBucket: "bounce-characters-fight.firebasestorage.app",
+    messagingSenderId: "231389962267",
+    appId: "1:231389962267:web:689eb2fbce34b6e107d8be",
+    measurementId: "G-8F7QLR4VRC"
+  };
+
+  // Firebase 초기화
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getDatabase(app);
+
+  // 전역 상태 변수
+  let isOnlineMode = false;
+  let currentRoomId = null;
+  let isHost = false;
+  let roomRef = null;
+
+  // UI 요소 가져오기
+  const modeOnline2pBtn = document.getElementById('modeOnline2p');
+  const onlineModal = document.getElementById('onlineModal');
+  const onlineOptions = document.getElementById('onlineOptions');
+  const createRoomUI = document.getElementById('createRoomUI');
+  const joinRoomUI = document.getElementById('joinRoomUI');
+  const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+  const roomCodeInput = document.getElementById('roomCodeInput');
+
+  // 모드 버튼 클릭 이벤트
+  if(modeOnline2pBtn) {
+    modeOnline2pBtn.addEventListener('click', () => {
+      // 기존 활성화된 모드 제거 후 선택 표시 (게임 내 기존 로직에 맞게 연동)
+      document.querySelectorAll('.mode').forEach(btn => btn.classList.remove('active'));
+      modeOnline2pBtn.classList.add('active');
+      isOnlineMode = true;
+      
+      // 모달창 띄우기
+      onlineModal.classList.remove('hidden');
+      resetOnlineUI();
+    });
+  }
+
+  function resetOnlineUI() {
+    onlineOptions.classList.remove('hidden');
+    createRoomUI.classList.add('hidden');
+    joinRoomUI.classList.add('hidden');
+    roomCodeInput.value = '';
+    
+    if(roomRef) {
+        // 호스트였다면 방 삭제 (취소 시)
+        if(isHost && currentRoomId) {
+            remove(roomRef);
+        }
+        roomRef = null;
+    }
+    currentRoomId = null;
+    isHost = false;
+  }
+
+  // 모달 닫기
+  document.getElementById('btnCancelOnline')?.addEventListener('click', () => {
+    onlineModal.classList.add('hidden');
+    isOnlineMode = false;
+  });
+
+  // 방 만들기 (호스트)
+  document.getElementById('btnCreateRoom')?.addEventListener('click', () => {
+    onlineOptions.classList.add('hidden');
+    createRoomUI.classList.remove('hidden');
+    
+    // 4자리 방 코드 생성
+    currentRoomId = Math.floor(1000 + Math.random() * 9000).toString();
+    roomCodeDisplay.innerText = currentRoomId;
+    isHost = true;
+    
+    roomRef = ref(db, 'rooms/' + currentRoomId);
+    
+    // 방 데이터 초기화
+    set(roomRef, {
+      status: 'waiting',
+      hostReady: false,
+      guestReady: false,
+      gameState: {}
+    });
+
+    // 방 상태 리스너 (게스트 접속 대기)
+    onValue(roomRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && data.status === 'playing') {
+        // 게스트가 들어왔고 게임 시작됨
+        onlineModal.classList.add('hidden');
+        startGameAsOnline(); // 기존 게임 시작 로직에 연동 필요
+      }
+    });
+  });
+
+  // 호스트 방 만들기 취소
+  document.getElementById('btnCancelCreate')?.addEventListener('click', () => {
+    resetOnlineUI();
+  });
+
+  // 방 참가하기 (게스트) 화면으로 이동
+  document.getElementById('btnJoinRoom')?.addEventListener('click', () => {
+    onlineOptions.classList.add('hidden');
+    joinRoomUI.classList.remove('hidden');
+  });
+
+  // 게스트 방 참가 취소
+  document.getElementById('btnCancelJoin')?.addEventListener('click', () => {
+    resetOnlineUI();
+  });
+
+  // 방 접속 (게스트)
+  document.getElementById('btnSubmitJoin')?.addEventListener('click', async () => {
+    const code = roomCodeInput.value.trim();
+    if (code.length !== 4) {
+      alert("4자리 방 코드를 입력해주세요.");
+      return;
+    }
+    
+    const checkRoomRef = ref(db, 'rooms/' + code);
+    const snapshot = await get(checkRoomRef);
+    
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      if (data.status === 'waiting') {
+        // 접속 성공, 상태를 playing으로 변경
+        currentRoomId = code;
+        isHost = false;
+        roomRef = checkRoomRef;
+        
+        await update(roomRef, { status: 'playing' });
+        
+        // 실시간 동기화 리스너 등록
+        onValue(roomRef, (snapshot) => {
+          const roomData = snapshot.val();
+          // roomData.gameState 를 통해 적 위치/상태 동기화 로직 연동
+        });
+
+        alert("접속 성공!");
+        onlineModal.classList.add('hidden');
+        startGameAsOnline(); // 기존 게임 시작 로직에 연동 필요
+      } else {
+        alert("이미 게임이 진행중인 방입니다.");
+      }
+    } else {
+      alert("존재하지 않는 방 코드입니다.");
+    }
+  });
+
+  // ※ 중요: 기존 게임 루프(Game Loop) 내에 상태를 파이어베이스에 업데이트(set/update)하는 코드와,
+  // 파이어베이스에서 받은 데이터를 상대방 캐릭터(2P)에 렌더링하는 코드를 직접 연동하셔야 합니다.
+  
+  window.startGameAsOnline = function() {
+      console.log("온라인 대전 시작! 호스트 여부:", isHost, "방 번호:", currentRoomId);
+      // document.getElementById('startMode').click(); // 예시: 원래의 시작 버튼 트리거
+  };
+
+</script>
+
   </body>
 </html>
 
