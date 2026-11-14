@@ -3054,6 +3054,12 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script><script type="application/json" id="voice-data">
 {
+  "HIGURUMA_GAVEL": "./assets/sfx/higuruma-gavel-reinforce.mp3",
+  "HIGURUMA_GAVEL_GIANT": {"$assetRef": "HIGURUMA_GAVEL"},
+  "HIGURUMA_GAVEL_VOLLEY": {"$assetRef": "HIGURUMA_GAVEL"},
+  "HIGURUMA_CONFISCATION": "./assets/sfx/higuruma-guilty-confiscation.mp3",
+  "HIGURUMA_DEATH_PENALTY": "./assets/sfx/higuruma-guilty-death-penalty.mp3",
+  "HIGURUMA_DOMAIN": "./assets/sfx/higuruma-jufukushishi.mp3",
   "KENPACHI_TWO_HANDED_SLASH": "./assets/sfx/kenpachi-two-handed-slash.MP3",
   "KENPACHI_NOZARASHI": "./assets/sfx/kenpachi-nozarashi.MP3",
   "KENPACHI_BANKAI": "./assets/sfx/kenpachi-bankai.MP3",
@@ -7533,12 +7539,14 @@ function speedOf(e) {
 }
 
 function reduction(e) {
+  if (e.higurumaSwordUntil > t + 1e-8) return .3;
   const a = Math.max(braveActive(e)?.2:0,metalStacks(e)*OPM_BALANCE.spirit.reduction,e.d.id === "tatsumaki" ? .2 : 0,
       e.shadowState?.armorUntil > t && e.shadowState.charges > 0 ? 0.5 : 0,
       deadCalmActive(e) ? 0.75 : 0,
       e.nika ? 0.1 : 0,
       e.bleachDash ? .25 : 0,
       kenpachiBankaiActive(e) ? .2 : 0,
+      e.higurumaGuardUntil > t + 1e-8 ? .2 : 0,
       e.akiGunAttack?.weapon === "AK47" && e.akiGunAttack.firedAt == null &&
         e.akiGunAttack.until > t + 1e-8 ? .25 : 0,
       (e.buff && e.buff.until > t && e.buff.reduce) || 0,
@@ -9959,11 +9967,13 @@ function resolveBallCollision(e, a) {
   const o = e.slot + ":" + a.slot;
   let n = pairs.get(o) || { touch: !1, last: -99 };
   const s = Math.hypot(a.x - e.x, a.z - e.z);
-  if (s > actorRadius(e) + actorRadius(a) + 0.01) return ((n.touch = !1), void pairs.set(o, n));
+  const contactRadius = actorRadius(e) * (e.higurumaGavelUntil > t + 1e-8 ? 1.5 : 1)
+    + actorRadius(a) * (a.higurumaGavelUntil > t + 1e-8 ? 1.5 : 1);
+  if (s > contactRadius + 0.01) return ((n.touch = !1), void pairs.set(o, n));
   if (e.dash || a.dash || e.noContactUntil > t || a.noContactUntil > t)
     return ((n.touch = !0), void pairs.set(o, n));
   const i = unit(a.x - e.x, a.z - e.z),
-    r = Math.max(0, actorRadius(e) + actorRadius(a) - s),
+    r = Math.max(0, contactRadius - s),
     l = e.rootUntil > t || ballFrozen(e) || teachLocked(e) || alchemyLocked(e),
     c = a.rootUntil > t || ballFrozen(a) || teachLocked(a) || alchemyLocked(a),
     h = l ? 0 : c ? 1 : 0.5,
@@ -24869,8 +24879,8 @@ const higurumaCharacter = {
   color: 0xc9a463, radius: 1.2, maxHp: 1190, maxMp: 76, maxSp: 140,
   speed: 39, baseDamage: 44, skillType: "HIGURUMA_GAVEL", specialType: "HIGURUMA_DOMAIN",
   skill: "법봉 강화", special: "영역전개 · 주복사사",
-  desc: "두 강화 중 하나를 같은 확률로 사용합니다. 거대화는 6초간 충돌 피해 +25. 다량화는 0.2초 간격으로 법봉 8개를 던집니다. 속력 65·폭 5·거리 35, 개당 40 피해·대상당 최대 120. 벽이나 상대에 닿으면 사라집니다.",
-  spDesc: "아레나를 일반 60%와 붉은 40%로 나눕니다. 3초 뒤 상대를 1초 멈춰 판결합니다. 일반 구역은 5초간 기술 봉인과 MP·SP 몰수. 붉은 구역은 6초간 처형인의 검과 충돌 피해 +30. 판결 2초 후 거리 12 돌진 3회, 첫 적중당 90·최대 270 피해, 돌진 중 피해 감소 20%.",
+  desc: "두 강화 중 하나를 같은 확률로 사용하며 5초간 받는 피해가 20% 감소합니다. 거대화는 6초간 충돌 피해 +25, 기본 충돌 반경 +50%. 다량화는 0.3초 간격으로 법봉 8개를 던집니다. 속력 58·폭 7·거리 35, 개당 45 피해·대상당 최대 180. 벽이나 상대에 닿으면 사라집니다.",
+  spDesc: "아레나를 일반 60%와 붉은 40%로 나눕니다. 3초 뒤 상대를 1초 멈춰 판결합니다. 일반 구역은 5초간 기술 봉인과 MP·SP 몰수. 붉은 구역은 몰수와 함께 6초간 처형인의 검, 충돌 피해 +50, 받는 피해 30% 감소가 적용됩니다. 판결 2초 후 거리 13 돌진 3회, 첫 적중당 150·최대 450 피해.",
 };
 portraits[CHARACTER_DATABASE.length] = portrait(higurumaCharacter);
 CHARACTER_DATABASE.push(higurumaCharacter);
@@ -26570,8 +26580,8 @@ for(const c of CHARACTER_DATABASE)if(friendlyBleachDescriptions[c.id])Object.ass
 
 
 const PRACTICE_DAMAGE_DETAILS = {...{
-  HIGURUMA_GAVEL_GIANT: "법봉이 커지고 6초간 기본 충돌 피해가 25 증가합니다.",
-  HIGURUMA_GAVEL_VOLLEY: "0.2초 간격으로 법봉 8개를 던집니다. 속력 65·폭 5·거리 35, 개당 40 피해·대상당 최대 120.",
+  HIGURUMA_GAVEL_GIANT: "5초간 받는 피해 20% 감소. 법봉이 커지고 6초간 기본 충돌 피해 +25, 기본 충돌 반경 +50%.",
+  HIGURUMA_GAVEL_VOLLEY: "5초간 받는 피해 20% 감소. 0.3초 간격으로 법봉 8개를 던집니다. 속력 58·폭 7·거리 35, 개당 45 피해·대상당 최대 180.",
   HIGURUMA_DOMAIN: higurumaCharacter.spDesc,
   "KENPACHI_TWO_HANDED_SLASH": "0.2초 준비 후 약하게 추적하며 거리 10을 두 번 돌진합니다. 돌진당 80 피해, 최대 160 피해와 밀어내기를 주며 돌진 중 받는 피해 20% 감소. 두 돌진 사이는 0.1초입니다.",
   "KENPACHI_NOZARASHI": "0.45초 준비 후 상대 방향으로 재조준하고 길이 18·폭 6.5를 내려찍어 150 피해를 한 번 줍니다.",
@@ -29166,7 +29176,7 @@ function higurumaSkillLocked(actor) {
 }
 
 function higurumaCollisionBonus(actor) {
-  if (actor.higurumaSwordUntil > t + 1e-8) return 30;
+  if (actor.higurumaSwordUntil > t + 1e-8) return 50;
   return actor.higurumaGavelUntil > t + 1e-8 ? 25 : 0;
 }
 
@@ -29176,21 +29186,23 @@ function useHigurumaGavel(actor, target) {
 }
 
 function enlargeHigurumaGavel(actor) {
+  actor.higurumaGuardUntil = t + 5;
   actor.higurumaGavelUntil = t + 6;
   skillEvent(actor, "HIGURUMA_GAVEL_GIANT", "buff");
 }
 
 function throwHigurumaGavels(actor) {
+  actor.higurumaGuardUntil = t + 5;
   const impacts = new Map();
   for (let index = 0; index < 8; index++) {
-    schedule(actor, index * .2, () => {
+    schedule(actor, index * .3, () => {
       const target = nearest(actor);
       if (!target) return;
       const direction = unit(target.x - actor.x, target.z - actor.z);
       const shot = { owner: actor, x: actor.x, z: actor.z, direction, remaining: 35, impacts, mesh: null };
       if (!headless && world) {
         shot.mesh = makeHigurumaGavel();
-        shot.mesh.scale.setScalar(1.35);
+        shot.mesh.scale.setScalar(1.89);
         shot.mesh.position.set(shot.x, 1.25, shot.z);
         world.add(shot.mesh);
       }
@@ -29207,7 +29219,7 @@ function advanceHigurumaGavels(dt) {
       removeMesh(shot.mesh);
       return false;
     }
-    const intended = Math.min(shot.remaining, 65 * dt);
+    const intended = Math.min(shot.remaining, 58 * dt);
     const wall = boundedTravel(shot, direction, intended, 0);
     const obstacle = alchemyObstacle(owner, shot, direction, wall, true, true, true);
     const reach = obstacle?.distance ?? wall;
@@ -29218,7 +29230,7 @@ function advanceHigurumaGavels(dt) {
       const dx = target.x - shot.x, dz = target.z - shot.z;
       const along = dx * direction.x + dz * direction.z;
       const lateral = dx * direction.z - dz * direction.x;
-      const span = (actorRadius(target) + 2.5) ** 2 - lateral ** 2;
+      const span = (actorRadius(target) + 3.5) ** 2 - lateral ** 2;
       if (span < 0) continue;
       const halfChord = Math.sqrt(span);
       const entry = Math.max(0, along - halfChord);
@@ -29228,10 +29240,10 @@ function advanceHigurumaGavels(dt) {
         firstDistance = entry;
       }
     }
-    if (first && (impacts.get(first) || 0) < 3) {
+    if (first && (impacts.get(first) || 0) < 4) {
       impacts.set(first, (impacts.get(first) || 0) + 1);
       withDamageOrigin(owner, false, () => {
-        withAlchemyHitMode("ranged", () => hurt(owner, first, 40));
+        withAlchemyHitMode("ranged", () => hurt(owner, first, 45));
       }, HIGURUMA_NAMES.HIGURUMA_GAVEL_VOLLEY);
     }
     if (first || obstacle || wall < intended - 1e-8 || intended >= shot.remaining - 1e-8) {
@@ -29310,14 +29322,12 @@ function applyHigurumaVerdicts(court) {
     target.higurumaSpotlight = { x: target.x, z: target.z, until: t + 1 };
     const red = target.x * normal.x + target.z * normal.z >= threshold;
     if (red) sentenced.push(target);
-    else {
-      target.higurumaConfiscation = { owner, until: t + 5 };
-      confiscated = true;
-    }
+    else confiscated = true;
+    target.higurumaConfiscation = { owner, until: t + 5 };
     skillEvent(owner, red ? "HIGURUMA_DEATH_PENALTY" : "HIGURUMA_CONFISCATION", "verdict",
       { target: target.slot });
   }
-  if (confiscated) higurumaVerdictCue(owner, "HIGURUMA_CONFISCATION");
+  if (confiscated && !sentenced.length) higurumaVerdictCue(owner, "HIGURUMA_CONFISCATION");
   if (sentenced.length) {
     higurumaVerdictCue(owner, "HIGURUMA_DEATH_PENALTY");
     owner.higurumaSwordUntil = t + 6;
@@ -29363,8 +29373,8 @@ function updateHigurumaCourts() {
     if (!target) continue;
     execution.remaining--;
     withDamageOrigin(owner, true, () => {
-      opmDash(owner, target, 12, 80, null, 0xffdc45, .2, victim => {
-        withDamageOrigin(owner, true, () => hurt(owner, victim, 90, "special"),
+      opmDash(owner, target, 13, 80, null, 0xffdc45, 0, victim => {
+        withDamageOrigin(owner, true, () => hurt(owner, victim, 150, "special"),
           HIGURUMA_NAMES.HIGURUMA_DEATH_PENALTY);
       });
     }, HIGURUMA_NAMES.HIGURUMA_DEATH_PENALTY);
@@ -29451,7 +29461,16 @@ function addHigurumaGear(actor, avatar) {
   ring.rotation.x = Math.PI/2;
   aura.visible = false;
   avatar.add(aura);
-  actor.higurumaGear = { gavel,sword,aura };
+  const guardAura = new THREE.Group();
+  for (let i = 0; i < 12; i++) {
+    const angle = i * Math.PI / 6;
+    const wisp = higurumaPart(guardAura, new THREE.OctahedronGeometry(.18),
+      i % 2 ? 0x298dff : 0x81dcff, 1.75 * Math.sin(angle), 0, 1.75 * Math.cos(angle), true);
+    wisp.scale.set(.65, 2.4, .65);
+  }
+  guardAura.visible = false;
+  avatar.add(guardAura);
+  actor.higurumaGear = { gavel,sword,aura,guardAura };
 }
 
 function updateHigurumaGear(actor) {
@@ -29459,8 +29478,15 @@ function updateHigurumaGear(actor) {
   if (!gear) return;
   const armed = actor.higurumaSwordUntil > t + 1e-8;
   gear.gavel.visible = !armed;
-  gear.gavel.scale.setScalar(actor.higurumaGavelUntil > t + 1e-8 ? 2.15 : 1);
+  gear.gavel.scale.setScalar(actor.higurumaGavelUntil > t + 1e-8 ? 4.3 : 1);
   gear.sword.visible = gear.aura.visible = armed;
+  gear.guardAura.visible = actor.higurumaGuardUntil > t + 1e-8;
+  if (gear.guardAura.visible) {
+    gear.guardAura.rotation.y = -t * 3.2;
+    gear.guardAura.children.forEach((wisp, i) => {
+      wisp.position.y = -.75 + ((t * 1.9 + i / 12) % 1) * 2.3;
+    });
+  }
   if (!armed) return;
   gear.aura.rotation.y = t * 2.8;
   gear.aura.children.slice(0,12).forEach((ray,index) => {
