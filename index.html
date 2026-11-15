@@ -2789,9 +2789,6 @@ body.startup-loading { overflow: hidden; }
   .online-code-input { min-height: 44px; width: 100%; text-align: center; color: #fff;
     background: #13202c; border: 1px solid #81b7ff; border-radius: 8px;
     font: inherit; font-weight: 700; font-size: 1.2rem; letter-spacing: .3em; }
-  .online-guest #arena { touch-action: auto; }
-  #onlineArenaImage { display: block; width: 100%; height: 100%; object-fit: contain; background: #121e27; }
-  .online-guest .arena-zoom-hint { display: none; }
   .online-battle [aria-disabled="true"] { cursor: default; opacity: .65; }
   .online-battle #pause[hidden] { display: none; }
   #modalActions:has(.online-code-input) { flex-wrap: wrap; }
@@ -16760,6 +16757,7 @@ function frame(timestamp) {
   const realDt = Math.min(.08, elapsedDt);
   last = timestamp;
   if (onlineSession?.slot === 1 && ["battle", "result"].includes(onlineSession.phase)) {
+    renderOnlineArena(onlineSession, timestamp, realDt);
     requestAnimationFrame(frame);
     return;
   }
@@ -16780,7 +16778,7 @@ function frame(timestamp) {
   updateArenaShake(0);
   updateCinemaCamera(running&&!paused ? realDt : 0);
   renderFrame(visualDt);
-  onlineCaptureFrame(timestamp);
+  publishOnlineScene(timestamp);
   requestAnimationFrame(frame);
 }
 
@@ -18397,7 +18395,7 @@ function showBanner(e, a) {
   ((o.className = "skill-banner"),
     (o.alt = e.castName),
     $("arena").append(o),
-    activeBanners.push({ x: e.x, z: e.z, image: o, born: t }));
+    activeBanners.push({ x: e.x, z: e.z, image: o, born: t, key: a, slot: e.slot }));
 }
 
 function updateBanners() {
@@ -27486,10 +27484,10 @@ function cinemaFramePoints(live) {
   }
   return points;
 }
-function updateCinemaCamera(realDt) {
+function updateCinemaCamera(realDt, viewOnly = false) {
   if (!camera || !renderer || renderer.domElement.parentElement !== $('arena')) return;
   const live=actors.filter(a=>a.alive), end=cinema.ending;
-  const active=running&&!practiceActive;
+  const active=(running||viewOnly)&&!practiceActive;
   if(!active && !end)return;
   const follow=end?.hit ? [...live,end.hit.victim] : live;
   if(!follow.length)return;
@@ -29708,8 +29706,6 @@ function updateHigurumaCourtVisuals() {
 }
 
 const ONLINE_PROTOCOL = 4;
-const ONLINE_FRAME_INTERVAL = 125;
-const ONLINE_FRAME_LIMIT = 16400;
 const onlineFirebaseConfig = {
   apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
   authDomain: "bounce-characters-fight.firebaseapp.com",
@@ -29955,8 +29951,7 @@ function closeOnlineRoom(session = onlineSession) {
       writeOnlineRoom(session, "guestClosed", true);
     leave.then(() => session.disconnect?.cancel()).catch(() => {});
   }
-  session.image?.remove();
-  document.body.classList.remove("online-battle", "online-guest");
+  document.body.classList.remove("online-battle", "online-guest", "time-stopped");
   $("pause").hidden = false;
   $("onlineStatus").hidden = true;
   home();
@@ -29989,6 +29984,8 @@ function enterOnlineSelection(session) {
   } else {
     listenOnlineRoom(session, "match", match => {
       if (!match || session.phase !== "selection") return;
+      if (match.arenaRenderer !== ONLINE_SCENE_VERSION)
+        throw new Error("호스트가 이전 버전을 사용하고 있습니다. 두 기기에서 페이지를 새로고침하고 새 방을 만들어 주세요.");
       const picks = [match.p1, match.p2];
       if (picks.some(id => onlineFighterIndex(id) < 0)) throw new Error("선택된 캐릭터를 찾을 수 없습니다.");
       session.picks = picks;
@@ -29997,6 +29994,7 @@ function enterOnlineSelection(session) {
       listenOnlineRoom(session, "state", state => applyOnlineState(session, state));
       listenOnlineRoom(session, "result", result => {
         if (!result || typeof result.title !== "string" || typeof result.summary !== "string") return;
+        if (result.frame) applyOnlineScene(session, result.frame, performance.now(), true);
         if (result.hud) applyOnlineHud(result.hud);
         session.phase = "result";
         showModal("온라인 2P · 경기 결과", result.title, result.summary,
@@ -30004,18 +30002,6 @@ function enterOnlineSelection(session) {
       });
     });
   }
-}
-
-function prepareOnlineCapture(session) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 480;
-  canvas.height = 270;
-  const context = canvas.getContext("2d", { alpha: false });
-  if (!context) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
-  const compact = document.createElement("canvas");
-  compact.width = 320;
-  compact.height = 180;
-  session.capture = { canvas, context, compact, last: -Infinity };
 }
 
 function onlineFighterIndex(id) {
@@ -30072,16 +30058,16 @@ function startOnlineMatchIfReady(session) {
   const launch = async () => {
     if (onlineSession !== session) return;
     try {
-      prepareOnlineCapture(session);
       chosen = indices;
       manual = true;
       document.body.classList.add("online-battle");
       $("pause").hidden = true;
       startBattleNow(track);
+      initOnlineArena(session);
       running = false;
       $("battleMode").textContent = "온라인 2P · 1P 호스트";
       await onlineDeadline(writeOnlineRoom(session, "match", {
-        p1: session.picks[0], p2: session.picks[1], track,
+        p1: session.picks[0], p2: session.picks[1], track, arenaRenderer: ONLINE_SCENE_VERSION,
       }), "Firebase가 경기 시작에 응답하지 않았습니다.");
       if (onlineSession !== session) return;
       session.phase = "battle";
@@ -30095,28 +30081,34 @@ function startOnlineMatchIfReady(session) {
 
 function openOnlineViewer(session, track) {
   session.phase = "battle";
-  running = false;
-  paused = false;
+  running = paused = false;
   manual = true;
-  actors = [];
+  arenaZoom = 1;
+  clearWorld();
+  setArenaSize(2);
+  const indices = session.picks.map(onlineFighterIndex);
+  actors = indices.map((index, slot) => makeActor(index, slot));
+  t = 0;
   document.body.classList.add("online-battle", "online-guest");
   $("pause").hidden = true;
   $("battleMode").textContent = "온라인 2P · 2P 게스트";
   $("exit").textContent = "나가기";
   $("modal").classList.add("hidden");
   setScreen("battle", track);
-  const image = document.createElement("img");
-  image.id = "onlineArenaImage";
-  image.alt = "호스트의 전투 화면을 기다리는 중";
-  image.draggable = false;
-  session.image = image;
-  $("arena").append(image);
-  buildHud(session.picks.map((id, slot) => ({ d: CHARACTER_DATABASE[onlineFighterIndex(id)], slot })), true);
+  $("arena").append(renderer.domElement);
+  resize();
+  for (const actor of actors) {
+    model(actor, true);
+    preloadFighterBanners(actor.d);
+  }
+  initOnlineArena(session);
+  for (const actor of actors) actor.mesh.visible = false;
+  buildHud(actors, true);
   for (const slot of [0, 1]) {
     for (const resource of ["mp", "sp"]) $(resource + "b" + slot).disabled = true;
     if ($("f" + slot).querySelector(".rare-cast")) $("rareb" + slot).disabled = true;
   }
-  queueResources(matchAssetUrls(session.picks.map(onlineFighterIndex), track), true);
+  queueResources(matchAssetUrls(indices, track), true);
 }
 
 function routeOnlineCast(slot, skill) {
@@ -30143,85 +30135,6 @@ function applyOnlineCast(slot, skill) {
     return;
   }
   applyLocalCast(slot, skill === "sp");
-}
-
-function onlineCaptureFrame(timestamp) {
-  const session = onlineSession;
-  if (!session?.capture || session.phase !== "battle" || session.sendingFrame) return;
-  const { canvas, context, last } = session.capture;
-  if (timestamp - last < ONLINE_FRAME_INTERVAL) return;
-  session.capture.last = timestamp;
-  const source = renderer.domElement;
-  if (!source.width || !source.height) return;
-  const arena = $("arena");
-  if (!arena.clientWidth || !arena.clientHeight) return;
-  const fit = Math.min(canvas.width / source.width, canvas.height / source.height);
-  const width = source.width * fit, height = source.height * fit;
-  const left = (canvas.width - width) / 2, top = (canvas.height - height) / 2;
-  const scaleX = width / arena.clientWidth, scaleY = height / arena.clientHeight;
-  context.fillStyle = "#121e27";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.save();
-  context.beginPath();
-  context.rect(left, top, width, height);
-  context.clip();
-  const bounds = arena.getBoundingClientRect();
-  const view = source.getBoundingClientRect();
-  context.filter = getComputedStyle(source).filter;
-  context.drawImage(source, left + (view.left - bounds.left - arena.clientLeft) * scaleX,
-    top + (view.top - bounds.top - arena.clientTop) * scaleY, width, height);
-  context.filter = "none";
-  if (cinema.dim > 0) {
-    context.fillStyle = "rgba(0, 0, 0, " + cinema.dim + ")";
-    context.fillRect(left, top, width, height);
-  }
-  for (const { image } of activeBanners) {
-    if (!image.complete || !image.naturalWidth) continue;
-    const rect = image.getBoundingClientRect();
-    context.globalAlpha = Number(image.style.opacity || 1);
-    context.drawImage(image, left + (rect.left - bounds.left - arena.clientLeft) * scaleX,
-      top + (rect.top - bounds.top - arena.clientTop) * scaleY, rect.width * scaleX, rect.height * scaleY);
-  }
-  context.globalAlpha = 1;
-  if (timeStop) {
-    context.font = "bold 15px sans-serif";
-    context.textAlign = "right";
-    context.fillStyle = "#dec9ff";
-    context.fillText("TIME STOP", left + width - 14, top + 22);
-  }
-  context.restore();
-  session.sendingFrame = true;
-  const { compact } = session.capture;
-  const hud = collectOnlineHud();
-  const voices = session.voices?.slice() || [];
-  encodeOnlineFrame(canvas, compact).then(frame => {
-    if (!frame || onlineSession !== session || session.phase !== "battle") return;
-    return writeOnlineRoom(session, "state", { frame, hud, voices });
-  }).catch(error => {
-    if (onlineSession === session) onlineError(session, error);
-  }).finally(() => { session.sendingFrame = false; });
-}
-
-function encodeOnlineCanvas(canvas, type, quality) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => {
-      if (!blob || blob.size > (ONLINE_FRAME_LIMIT - 32) * 3 / 4) {
-        resolve(null);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(blob);
-    }, type, quality);
-  });
-}
-
-async function encodeOnlineFrame(canvas, compact) {
-  const main = await encodeOnlineCanvas(canvas, "image/webp", .55);
-  if (main) return main;
-  compact.getContext("2d").drawImage(canvas, 0, 0, compact.width, compact.height);
-  return encodeOnlineCanvas(compact, "image/jpeg", .4);
 }
 
 function collectOnlineHud() {
@@ -30280,8 +30193,7 @@ function recordOnlineVoice(type) {
 
 function applyOnlineState(session, state) {
   if (!state || !["battle", "result"].includes(session.phase)) return;
-  if (typeof state.frame === "string" && state.frame.length <= ONLINE_FRAME_LIMIT &&
-      /^data:image\/(?:webp|jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(state.frame)) session.image.src = state.frame;
+  applyOnlineScene(session, state.frame);
   if (session.phase !== "battle") return;
   if (state.hud) applyOnlineHud(state.hud);
   if (!Array.isArray(state.voices)) return;
@@ -30298,10 +30210,498 @@ function publishOnlineResult(title, summary) {
   if (session?.slot !== 0 || session.phase !== "battle") return false;
   updateHud();
   session.phase = "result";
-  writeOnlineRoom(session, "result", { title, summary, hud: collectOnlineHud() })
+  writeOnlineRoom(session, "result", { title, summary, hud: collectOnlineHud(), frame: collectOnlineScene(session) })
     .catch(error => console.warn("Online result:", error));
   showModal("온라인 2P · 경기 결과", title, summary, [["모드 선택", () => closeOnlineRoom(session), true]]);
   return true;
+}
+
+// Send world-space draw state. The guest only interpolates presentation between host samples.
+const ONLINE_SCENE_INTERVAL = 80;
+const ONLINE_SCENE_LIMIT = 16400;
+const ONLINE_SCENE_VERSION = 1;
+const ONLINE_EFFECT_LIMIT = 120;
+const onlineTransform = new THREE.Object3D();
+const onlineWorldPose = new THREE.Matrix4();
+const onlineInstancePose = new THREE.Matrix4();
+
+function onlineRound(value, digits = 1000) {
+  return Math.round(value * digits) / digits;
+}
+
+function onlinePose(node) {
+  return [...node.position, ...node.quaternion, ...node.scale].map(value => onlineRound(value));
+}
+
+function onlineValidPose(pose) {
+  return Array.isArray(pose) && pose.length === 10 &&
+    pose.every(value => Number.isFinite(value) && Math.abs(value) <= 10000);
+}
+
+function onlineSetPose(node, pose) {
+  node.position.fromArray(pose);
+  node.quaternion.fromArray(pose, 3).normalize();
+  node.scale.fromArray(pose, 7);
+}
+
+function onlineMaterials(node) {
+  return node.material ? [node.material].flat() : [];
+}
+
+function onlineMaterialState(material) {
+  return [material.color?.getHex() ?? -1, onlineRound(material.opacity),
+    material.emissive?.getHex() ?? -1, +material.transparent];
+}
+
+function onlineSame(a, b) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function onlineModelParts(root) {
+  const parts = [];
+  root.traverse(node => parts.push({
+    node, parent: node.parent, pose: onlinePose(node), visible: +node.visible,
+    materials: onlineMaterials(node).map(onlineMaterialState),
+  }));
+  return parts;
+}
+
+function initOnlineArena(session) {
+  session.arena = {
+    models: actors.map(actor => onlineModelParts(actor.mesh)),
+    objects: new WeakMap(), geometry: new WeakMap(), effects: new Map(), assets: new Map(),
+    moves: new Map(), banners: new Map(), nextId: 0, seq: 0, last: -Infinity,
+  };
+}
+
+function onlineFighterState(parts) {
+  return parts.flatMap((entry, index) => {
+    const {node} = entry;
+    if (index > 0 && node.parent !== entry.parent) return [[index, 0]];
+    if (index === 0 && node.parent !== world) return [[0, 0]];
+    const pose = onlinePose(node);
+    const visible = +node.visible;
+    const material = onlineMaterials(node).map(onlineMaterialState);
+    const changes = material.flatMap((state, i) => onlineSame(state, entry.materials[i] || []) ? [] : [[i, ...state]]);
+    if (index && visible === entry.visible && onlineSame(pose, entry.pose) && !changes.length) return [];
+    return [[index, visible, pose, changes]];
+  });
+}
+
+const ONLINE_GEOMETRY_ARGS = {
+  BoxGeometry: ["width", "height", "depth", "widthSegments", "heightSegments", "depthSegments"],
+  PlaneGeometry: ["width", "height", "widthSegments", "heightSegments"],
+  SphereGeometry: ["radius", "widthSegments", "heightSegments", "phiStart", "phiLength", "thetaStart", "thetaLength"],
+  CylinderGeometry: ["radiusTop", "radiusBottom", "height", "radialSegments", "heightSegments", "openEnded", "thetaStart", "thetaLength"],
+  ConeGeometry: ["radius", "height", "radialSegments", "heightSegments", "openEnded", "thetaStart", "thetaLength"],
+  TorusGeometry: ["radius", "tube", "radialSegments", "tubularSegments", "arc"],
+  RingGeometry: ["innerRadius", "outerRadius", "thetaSegments", "phiSegments", "thetaStart", "thetaLength"],
+  CircleGeometry: ["radius", "segments", "thetaStart", "thetaLength"],
+  IcosahedronGeometry: ["radius", "detail"],
+  DodecahedronGeometry: ["radius", "detail"],
+  OctahedronGeometry: ["radius", "detail"],
+  TetrahedronGeometry: ["radius", "detail"],
+};
+
+function onlineGeometryState(geometry, kind) {
+  if (!geometry) return [];
+  const { parameters, type, attributes, index } = geometry;
+  const args = ONLINE_GEOMETRY_ARGS[type];
+  const position = attributes.position;
+  if (!position?.count) return [];
+  if (parameters && args) return [type, ...args.map(key =>
+    typeof parameters[key] === "number" ? onlineRound(parameters[key]) : parameters[key] ?? null)];
+  if (type === "TubeGeometry" && parameters?.path) {
+    return ["tube", onlineRound(parameters.radius), parameters.path.getPoints(12).map(point =>
+      [...point].map(value => onlineRound(value, 100)))];
+  }
+  if (position.count <= 220 && (!index || index.count <= 720)) {
+    const coords = [];
+    for (let i = 0; i < position.count; i++) coords.push(
+      onlineRound(position.getX(i), 100), onlineRound(position.getY(i), 100), onlineRound(position.getZ(i), 100));
+    return ["vertices", coords, index ? Array.from(index.array) : []];
+  }
+  // Sample large custom buffers so transient meshes fit alongside actor state.
+  const coords = [];
+  const groupSize = kind === "mesh" ? 3 : kind === "segments" ? 2 : 1;
+  const count = Math.floor((index?.count ?? position.count) / groupSize);
+  const stride = Math.max(1, Math.ceil(count / Math.floor(150 / groupSize)));
+  for (let group = 0; group < count; group += stride) {
+    for (let vertex = 0; vertex < groupSize; vertex++) {
+      const source = group * groupSize + vertex;
+      const i = index ? index.getX(source) : source;
+      coords.push(onlineRound(position.getX(i), 100), onlineRound(position.getY(i), 100),
+        onlineRound(position.getZ(i), 100));
+    }
+  }
+  return ["vertices", coords, []];
+}
+
+function onlineEffectKind(node) {
+  return node.isSprite ? "sprite" : node.isLineSegments ? "segments" : node.isLine ? "line" :
+    node.isPoints ? "points" : node.isMesh ? "mesh" : "";
+}
+
+function onlineEffectMaterial(node) {
+  const material = onlineMaterials(node)[0];
+  if (!material) return [0xffffff, 1, 0, 0, 1, 1, 0, 0, 0];
+  const shaderColor = Object.values(material.uniforms || {}).find(({ value }) => value?.isColor)?.value;
+  const color = (material.color || shaderColor)?.getHex() ?? 0xadc5df;
+  return [color, onlineRound(material.isShaderMaterial ? Math.min(material.opacity, .38) : material.opacity),
+    +material.transparent, material.side, +material.depthWrite, +material.depthTest,
+    +(material.blending === THREE.AdditiveBlending), +!!material.map,
+    +(material.isMeshStandardMaterial || material.isMeshPhongMaterial)];
+}
+
+function onlineSceneEffects(arena, roomBudget) {
+  const base = new Set(arena.models.flatMap(parts => parts.filter(({node, parent}) => node.parent === parent).map(({node}) => node)));
+  const candidates = [];
+  world.traverseVisible(node => {
+    if (base.has(node) || node === stormMesh || node.parent === stormMesh) return;
+    const kind = onlineEffectKind(node);
+    if (!kind || !node.material) return;
+    candidates.push({node, kind});
+  });
+  const effects = [], definitions = [], included = new Map();
+  let size = 0;
+  for (const {node, kind} of candidates) {
+    if (effects.length >= ONLINE_EFFECT_LIMIT) break;
+    let id = arena.objects.get(node);
+    if (!id) { id = ++arena.nextId; arena.objects.set(node, id); }
+    const geometry = node.geometry;
+    const position = geometry?.attributes.position;
+    const version = position?.version ?? 0;
+    let cached = geometry && arena.geometry.get(geometry);
+    if (geometry && (!cached || cached.version !== version)) {
+      cached = { version, id: ++arena.nextId, spec: onlineGeometryState(geometry, kind) };
+      arena.geometry.set(geometry, cached);
+    }
+    const spec = cached && !included.has(cached.id) ? [cached.id, cached.spec] : null;
+    const specSize = spec ? JSON.stringify(spec).length + 1 : 0;
+    if (size + specSize > roomBudget) continue;
+    const style = onlineEffectMaterial(node);
+    const count = node.isInstancedMesh ? Math.min(node.count, 32) : 1;
+    for (let index = 0; index < count && effects.length < ONLINE_EFFECT_LIMIT; index++) {
+      onlineWorldPose.copy(node.matrixWorld);
+      if (node.isInstancedMesh) {
+        node.getMatrixAt(index, onlineInstancePose);
+        onlineWorldPose.multiply(onlineInstancePose);
+      }
+      onlineWorldPose.decompose(onlineTransform.position, onlineTransform.quaternion, onlineTransform.scale);
+      let instanceStyle = style;
+      if (node.instanceColor) {
+        const color = new THREE.Color();
+        node.getColorAt(index, color);
+        instanceStyle = [color.getHex(), ...style.slice(1)];
+      }
+      const row = [node.isInstancedMesh ? id + "." + index : id, kind, cached?.id ?? 0, onlinePose(onlineTransform),
+        instanceStyle, node.renderOrder];
+      const rowSize = JSON.stringify(row).length + 1;
+      const needed = spec && !included.has(cached.id) ? specSize : 0;
+      if (size + needed + rowSize > roomBudget) break;
+      if (needed) {
+        definitions.push(spec);
+        included.set(cached.id, true);
+      }
+      effects.push(row);
+      size += needed + rowSize;
+    }
+  }
+  return [effects, definitions];
+}
+
+function collectOnlineScene(session) {
+  const {arena} = session;
+  if (!arena || !world) return null;
+  world.updateMatrixWorld(true);
+  const view = {
+    seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
+    fighters: arena.models.map(onlineFighterState),
+    motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
+    storm: stormMesh ? [stormX, stormZ, stormUntil].map(value => onlineRound(value)) : null,
+    banners: activeBanners.slice(-8).map(({x, z, key, slot, born, image}) =>
+      [onlineRound(x), onlineRound(z), key, slot, onlineRound(born), image.alt.slice(0, 80)]),
+    stopped: !!timeStop,
+  };
+  const size = JSON.stringify(view).length;
+  [view.effects, view.geometry] = onlineSceneEffects(arena, Math.max(0, ONLINE_SCENE_LIMIT - size - 64));
+  let encoded = JSON.stringify(view);
+  if (encoded.length > ONLINE_SCENE_LIMIT) {
+    // Keep root poses, positions and meters available even in an unusually complex scene.
+    view.fighters = view.fighters.map(parts => parts.slice(0, 1));
+    view.effects = view.geometry = [];
+    encoded = JSON.stringify(view);
+  }
+  return encoded;
+}
+
+function publishOnlineScene(timestamp) {
+  const session = onlineSession;
+  if (session?.slot !== 0 || session.phase !== "battle" || session.sendingFrame ||
+      timestamp - session.arena.last < ONLINE_SCENE_INTERVAL) return;
+  session.arena.last = timestamp;
+  const frame = collectOnlineScene(session);
+  if (!frame) return;
+  session.sendingFrame = true;
+  writeOnlineRoom(session, "state", { frame, hud: collectOnlineHud(), voices: session.voices || [] })
+    .catch(error => { if (onlineSession === session) onlineError(session, error); })
+    .finally(() => { session.sendingFrame = false; });
+}
+
+function onlineEffectGeometry(spec, kind) {
+  if (!Array.isArray(spec) || typeof spec[0] !== "string") return null;
+  const [type, ...args] = spec;
+  const keys = Object.hasOwn(ONLINE_GEOMETRY_ARGS, type) && ONLINE_GEOMETRY_ARGS[type];
+  if (keys) {
+    if (args.length !== keys.length || args.some(value => value !== null && typeof value !== "boolean" &&
+        (!Number.isFinite(value) || Math.abs(value) > 1000))) return null;
+    return new THREE[type](...args.map((value, i) => {
+      if (value === null) return undefined;
+      if (keys[i] === "detail") return Math.floor(Math.max(0, Math.min(3, value)));
+      if (/segments$/i.test(keys[i])) return Math.floor(Math.max(1, Math.min(48, value)));
+      return value;
+    }));
+  }
+  if (type === "tube") {
+    const [radius, points] = args;
+    if (!Number.isFinite(radius) || radius <= 0 || radius > 100 || !Array.isArray(points) ||
+        points.length < 2 || points.length > 13 || !points.every(point => onlineVector(point, 3))) return null;
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p))),
+      points.length - 1, radius, 5, false);
+  }
+  if (type === "vertices") {
+    const [coords, indices] = args;
+    if (!Array.isArray(coords) || coords.length % 3 || coords.length < 3 || coords.length > 660 ||
+        !onlineVector(coords, coords.length) || !Array.isArray(indices) || indices.length > 720 ||
+        indices.some(i => !Number.isInteger(i) || i < 0 || i >= coords.length / 3)) return null;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
+    if (indices.length) geometry.setIndex(indices);
+    if (kind === "mesh") geometry.computeVertexNormals();
+    return geometry;
+  }
+  return null;
+}
+
+const ONLINE_EFFECT_CONSTRUCTORS = {
+  mesh: THREE.Mesh, line: THREE.Line, segments: THREE.LineSegments, points: THREE.Points,
+};
+
+let onlineGlowTexture;
+function onlineEffectGlow() {
+  if (onlineGlowTexture) return onlineGlowTexture;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 48;
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createRadialGradient(24, 24, 0, 24, 24, 24);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(.38, "rgba(255,255,255,.62)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 48, 48);
+  onlineGlowTexture = new THREE.CanvasTexture(canvas);
+  sharedTextures.add(onlineGlowTexture);
+  return onlineGlowTexture;
+}
+
+function onlineDrawMaterial(kind, style) {
+  const params = {
+    color: style[0], opacity: style[1], transparent: !!style[2], side: style[3],
+    depthWrite: !!style[4], depthTest: !!style[5],
+    blending: style[6] ? THREE.AdditiveBlending : THREE.NormalBlending,
+  };
+  if (kind === "sprite") return new THREE.SpriteMaterial({ ...params, map: onlineEffectGlow() });
+  if (kind === "points") return new THREE.PointsMaterial({ ...params, size: .2 });
+  if (kind === "line" || kind === "segments") return new THREE.LineBasicMaterial(params);
+  if (style[7]) return new THREE.MeshBasicMaterial({ ...params, map: onlineEffectGlow() });
+  return style[8] ? new THREE.MeshStandardMaterial(params) : new THREE.MeshBasicMaterial(params);
+}
+
+function onlineVector(values, length) {
+  return Array.isArray(values) && values.length === length &&
+    values.every(value => Number.isFinite(value) && Math.abs(value) <= 10000);
+}
+
+function onlineStyle(style) {
+  return Array.isArray(style) && style.length === 9 && style.every(Number.isFinite) &&
+    Number.isInteger(style[0]) && style[0] >= 0 && style[0] <= 0xffffff &&
+    style[1] >= 0 && style[1] <= 1 && [0, 1, 2].includes(style[3]);
+}
+
+function onlineSetModelMaterial(material, state) {
+  if (!material || !Array.isArray(state) || state.length !== 4 || !state.every(Number.isFinite)) return;
+  if (state[0] >= 0 && state[0] <= 0xffffff) material.color?.setHex(state[0]);
+  if (state[2] >= 0 && state[2] <= 0xffffff) material.emissive?.setHex(state[2]);
+  if (state[1] >= 0 && state[1] <= 1) material.opacity = state[1];
+  if (material.transparent !== !!state[3]) {
+    material.transparent = !!state[3];
+    material.needsUpdate = true;
+  }
+}
+
+function onlineApplyFighter(arena, parts, states, interpolate) {
+  const changes = new Map(states.filter(row => Array.isArray(row)).map(row => [row[0], row]));
+  for (const [index, entry] of parts.entries()) {
+    const {node} = entry;
+    const next = changes.get(index);
+    node.visible = !!(next?.[1] ?? entry.visible);
+    const target = onlineValidPose(next?.[2]) ? next[2] : entry.pose;
+    const current = onlinePose(node);
+    if (index === 0 && interpolate &&
+        Math.hypot(target[0] - current[0], target[2] - current[2]) < 12) {
+      arena.moves.set(node, {from: current, to: target});
+    } else {
+      onlineSetPose(node, target);
+    }
+    const deltas = Array.isArray(next?.[3]) ? next[3] : [];
+    const materialChanges = new Map(deltas.filter(Array.isArray).map(change => [change[0], change.slice(1)]));
+    for (const [index, material] of onlineMaterials(node).entries()) {
+      onlineSetModelMaterial(material, materialChanges.get(index) || entry.materials[index]);
+    }
+  }
+}
+
+function onlineUpdateEffects(arena, rows, definitions, interpolate) {
+  const descriptions = new Map(definitions.filter(Array.isArray).slice(0, ONLINE_EFFECT_LIMIT));
+  const current = new Set(), usedGeometry = new Set();
+  for (const row of rows.slice(0, ONLINE_EFFECT_LIMIT)) {
+    if (!Array.isArray(row)) continue;
+    const [id, kind, geometryId, pose, style, order] = row;
+    if ((!Number.isSafeInteger(id) && (typeof id !== "string" || !/^\d{1,12}\.\d{1,2}$/.test(id))) ||
+        current.has(id) || !onlineValidPose(pose) || !onlineStyle(style) ||
+        typeof kind !== "string" || (kind !== "sprite" && !Object.hasOwn(ONLINE_EFFECT_CONSTRUCTORS, kind))) continue;
+    let effect = arena.effects.get(id);
+    const geometryKey = kind + "/" + geometryId;
+    let geometry = arena.assets.get(geometryKey);
+    if (kind !== "sprite" && Number.isSafeInteger(geometryId) && !geometry) {
+      geometry = onlineEffectGeometry(descriptions.get(geometryId), kind);
+      if (geometry) arena.assets.set(geometryKey, geometry);
+    }
+    if (kind !== "sprite" && !geometry) continue;
+    if (effect && (effect.kind !== kind || effect.geometry !== geometry)) {
+      effect.mesh.removeFromParent();
+      effect.mesh.material.dispose();
+      effect = null;
+    }
+    const existed = !!effect;
+    if (!effect) {
+      const material = onlineDrawMaterial(kind, style);
+      const mesh = kind === "sprite" ? new THREE.Sprite(material) :
+        new ONLINE_EFFECT_CONSTRUCTORS[kind](geometry, material);
+      world.add(mesh);
+      effect = { kind, geometry, mesh, style };
+      arena.effects.set(id, effect);
+    } else if (!onlineSame(effect.style, style)) {
+      const material = effect.mesh.material;
+      material.color.setHex(style[0]);
+      material.opacity = style[1];
+      if (!onlineSame(effect.style.slice(2), style.slice(2))) {
+        effect.mesh.material = onlineDrawMaterial(kind, style);
+        material.dispose();
+      }
+      effect.style = style;
+    }
+    if (geometry) usedGeometry.add(geometryKey);
+    current.add(id);
+    effect.mesh.renderOrder = Number.isFinite(order) ? order : 0;
+    if (existed && interpolate) arena.moves.set(effect.mesh, {from: onlinePose(effect.mesh), to: pose});
+    else onlineSetPose(effect.mesh, pose);
+  }
+  for (const [id, effect] of arena.effects) {
+    if (current.has(id)) continue;
+    effect.mesh.removeFromParent();
+    effect.mesh.material.dispose();
+    arena.effects.delete(id);
+  }
+  for (const [id, geometry] of arena.assets) {
+    if (usedGeometry.has(id)) continue;
+    geometry.dispose();
+    arena.assets.delete(id);
+  }
+}
+
+function onlineUpdateBanners(arena, banners) {
+  const keys = new Set();
+  for (const row of banners.slice(0, 8)) {
+    if (!Array.isArray(row)) continue;
+    const [x, z, key, slot, born, label] = row;
+    if (!onlineVector([x, z, born], 3) || typeof key !== "string" || !/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(key) ||
+        ![0, 1].includes(slot) || typeof label !== "string" || label.length > 80) continue;
+    const id = key + "/" + slot + "/" + born;
+    keys.add(id);
+    if (arena.banners.has(id)) continue;
+    showBanner({x, z, slot, castName: label, d: actors[slot].d}, key);
+    const banner = activeBanners.at(-1);
+    if (!banner) continue;
+    banner.born = born;
+    arena.banners.set(id, banner);
+  }
+  for (const [id, banner] of arena.banners) {
+    if (keys.has(id)) continue;
+    banner.image.remove();
+    const index = activeBanners.indexOf(banner);
+    if (index >= 0) activeBanners.splice(index, 1);
+    arena.banners.delete(id);
+  }
+}
+
+function applyOnlineScene(session, encoded, now = performance.now(), final = false) {
+  if (typeof encoded !== "string" || encoded.length > ONLINE_SCENE_LIMIT) return;
+  let view;
+  try {
+    view = JSON.parse(encoded);
+  } catch {
+    return;
+  }
+  const {arena} = session;
+  if (!Number.isSafeInteger(view?.seq) || view.seq <= arena.seq ||
+      !Number.isFinite(view.time) || !Number.isFinite(view.cameraTime) ||
+      !Array.isArray(view.fighters) || view.fighters.length !== 2 || !view.fighters.every(Array.isArray) ||
+      !Array.isArray(view.motion) || view.motion.length !== 2 || !view.motion.every(row => onlineVector(row, 5))) return;
+  arena.blendStarted = now;
+  arena.blendDuration = final || !arena.seq ? 1 :
+    Math.max(30, Math.min(125, now - (arena.receivedAt ?? now - ONLINE_SCENE_INTERVAL)));
+  arena.receivedAt = now;
+  arena.moves.clear();
+  arena.seq = view.seq;
+  t = view.time;
+  cinema.real = view.cameraTime;
+
+  for (const [slot, actor] of actors.entries()) {
+    [actor.x, actor.z, actor.dx, actor.dz, actor.alive] = view.motion[slot];
+    actor.alive = !!actor.alive;
+    onlineApplyFighter(arena, arena.models[slot], view.fighters[slot], !final && arena.blendDuration > 1);
+  }
+  if (onlineVector(view.storm, 3)) {
+    const [x, z, until] = view.storm;
+    if (!stormMesh || stormX !== x || stormZ !== z || stormUntil !== until) {
+      [stormX, stormZ, stormUntil] = view.storm;
+      stormEffect();
+    }
+  } else if (stormMesh) clearStormVisual();
+  onlineUpdateEffects(arena, Array.isArray(view.effects) ? view.effects : [],
+    Array.isArray(view.geometry) ? view.geometry : [], !final && arena.blendDuration > 1);
+  if (Array.isArray(view.banners)) onlineUpdateBanners(arena, view.banners);
+  document.body.classList.toggle("time-stopped", view.stopped === true);
+}
+
+const onlineFromRotation = new THREE.Quaternion(), onlineToRotation = new THREE.Quaternion();
+
+function renderOnlineArena(session, timestamp, dt) {
+  const {arena} = session;
+  const blend = Math.min(1, Math.max(0, (timestamp - (arena.blendStarted ?? timestamp)) / (arena.blendDuration || 1)));
+  for (const [node, {from, to}] of arena.moves) {
+    node.position.set(...[0, 1, 2].map(i => THREE.MathUtils.lerp(from[i], to[i], blend)));
+    node.scale.set(...[7, 8, 9].map(i => THREE.MathUtils.lerp(from[i], to[i], blend)));
+    onlineFromRotation.fromArray(from, 3).normalize();
+    onlineToRotation.fromArray(to, 3).normalize();
+    node.quaternion.copy(onlineFromRotation).slerp(onlineToRotation, blend);
+  }
+  if (blend >= 1) arena.moves.clear();
+  updateCinemaCamera(dt, true);
+  updateStormMesh();
+  updateBanners();
+  renderer.render(scene, camera);
 }
 
 // bootstrap.js
