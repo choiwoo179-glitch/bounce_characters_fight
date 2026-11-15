@@ -2794,9 +2794,7 @@ body.startup-loading { overflow: hidden; }
   .online-guest .arena-zoom-hint { display: none; }
   .online-battle [aria-disabled="true"] { cursor: default; opacity: .65; }
   .online-battle #pause[hidden] { display: none; }
-  .online-direct-code { flex: 0 0 100%; width: 100%; padding: 10px; border: 1px solid #81b7ff;
-    border-radius: 8px; color: #fff; background: #13202c; font: 13px ui-monospace, monospace; resize: vertical; }
-  #modalActions:has(.online-code-input, .online-direct-code) { flex-wrap: wrap; }
+  #modalActions:has(.online-code-input) { flex-wrap: wrap; }
 </style>
 </head>
   <body class="startup-loading">
@@ -19057,7 +19055,7 @@ function initUI() {
     document.addEventListener("keydown", (e) => {
       if (!$("modal").classList.contains("hidden")) {
         if ("Tab" === e.key) {
-          const a = [...$("modalActions").querySelectorAll("button, input, textarea")];
+          const a = [...$("modalActions").querySelectorAll("button, input")];
           if (!a.length) return;
           const o =
             (a.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + a.length) % a.length;
@@ -29709,43 +29707,52 @@ function updateHigurumaCourtVisuals() {
   }
 }
 
-const ONLINE_PROTOCOL = 2;
-const ONLINE_PEER_PREFIX = "bounce-characters-fight-online-v2-";
-let onlineSession = null;
-let onlinePeerLibrary;
+const ONLINE_PROTOCOL = 3;
+const onlineFirebaseConfig = {
+  apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
+  authDomain: "bounce-characters-fight.firebaseapp.com",
+  databaseURL: "https://bounce-characters-fight-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bounce-characters-fight",
+  appId: "1:231389962267:web:689eb2fbce34b6e107d8be"
+};
 
-async function loadOnlinePeer() {
-  const constructor = () => window.Peer || window.peerjs?.Peer;
-  if (typeof constructor() === "function") return constructor();
-  if (!onlinePeerLibrary) {
-    onlinePeerLibrary = (async () => {
-      for (const source of [
-        "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
-        "https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js",
-      ]) {
-        const Peer = await new Promise(resolve => {
-          const script = document.createElement("script");
-          const timeout = setTimeout(() => done(), 4500);
-          function done(value) {
-            clearTimeout(timeout);
-            script.onload = script.onerror = null;
-            script.remove();
-            resolve(value);
-          }
-          script.src = source;
-          script.onerror = () => done();
-          script.onload = () => done(constructor());
-          document.head.append(script);
-        });
-        if (typeof Peer === "function") return Peer;
-      }
-      throw new Error("온라인 연결 모듈을 불러오지 못했습니다. 연결 코드를 교환해 접속할 수 있습니다.");
-    })().catch(error => {
-      onlinePeerLibrary = null;
-      throw error;
-    });
+let onlineSession = null;
+let onlineDatabasePromise;
+let onlineAuthPromise;
+
+function loadOnlineDatabase() {
+  if (!onlineDatabasePromise) {
+    onlineDatabasePromise = Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"),
+    ]).then(([{ initializeApp }, sdk]) => ({
+      sdk,
+      open: sdk.getDatabase(initializeApp(onlineFirebaseConfig, "bcf-open")),
+      protected: sdk.getDatabase(initializeApp(onlineFirebaseConfig, "bcf-protected")),
+    })).catch(error => { onlineDatabasePromise = null; throw error; });
   }
-  return onlinePeerLibrary;
+  return onlineDatabasePromise;
+}
+
+async function protectedOnlineUser(app) {
+  if (!onlineAuthPromise) {
+    onlineAuthPromise = import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js")
+      .then(sdk => ({ sdk, auth: sdk.initializeAuth(app, { persistence: sdk.inMemoryPersistence }) }))
+      .catch(error => { onlineAuthPromise = null; throw error; });
+  }
+  const { sdk, auth } = await onlineAuthPromise;
+  return (auth.currentUser || (await sdk.signInAnonymously(auth)).user).uid;
+}
+
+function onlineDeadline(promise, message, ms = 10000) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  })]).finally(() => clearTimeout(timer));
+}
+
+function onlinePermissionDenied(error) {
+  return /permission.denied/i.test(error?.code || error?.message || "");
 }
 
 function onlineRoomMenu() {
@@ -29753,7 +29760,6 @@ function onlineRoomMenu() {
   showModal("온라인 2P", "친구와 대전", "방 코드를 공유해 1대1로 대전하세요.", [
     ["방 만들기", () => openOnlineRoom("host"), true],
     ["상대방 방 들어가기", onlineJoinMenu, false],
-    ["연결 코드 직접 교환", onlineDirectMenu, false],
     ["취소", () => $("modal").classList.add("hidden"), false],
   ]);
 }
@@ -29790,89 +29796,177 @@ function onlineError(session, error) {
   if (onlineSession !== session || session.phase === "result") return;
   console.warn("Online 2P:", error);
   let message = error?.message || "연결을 완료하지 못했습니다.";
-  if (error?.type === "peer-unavailable") message = "해당 방에 연결할 수 없습니다. 상대가 방을 열어 둔 상태인지 확인하세요.";
-  else if (["network", "server-error", "socket-error", "socket-closed", "disconnected"].includes(error?.type))
-    message = "온라인 연결 서버에 접속할 수 없습니다. 인터넷 연결을 확인해 주세요.";
+  if (["auth/configuration-not-found", "auth/operation-not-allowed", "auth/admin-restricted-operation"].includes(error?.code)) {
+    message = "현재 /rooms 규칙이 로그인 없는 접속을 허용하지 않고, Firebase 익명 로그인도 꺼져 있습니다. Firebase Authentication에서 익명 로그인을 켜고 Realtime Database에 온라인 방 규칙을 게시하세요.";
+  } else if (onlinePermissionDenied(error)) {
+    message = "Firebase가 방 접근을 거부했습니다. 방이 이미 찼는지, Realtime Database에 bcfOnlineV1 규칙이 게시됐는지 확인하세요.";
+  } else if (/failed to fetch|importing a module script failed|error loading dynamically imported module/i.test(message)) {
+    message = "Firebase 모듈을 불러오지 못했습니다. 브라우저에서 www.gstatic.com 접속을 확인하세요.";
+  }
   closeOnlineRoom(session);
   showModal("온라인 2P", "연결 종료", message, [
-    ["다시 시도", onlineRoomMenu, true], ["연결 코드 직접 교환", onlineDirectMenu, false],
-    ["닫기", () => $("modal").classList.add("hidden"), false],
+    ["다시 시도", onlineRoomMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
   ]);
+}
+
+function onlineProgress(session, title, message) {
+  showModal("온라인 2P", title, message, [["취소", () => closeOnlineRoom(session), false]]);
 }
 
 async function openOnlineRoom(role, code) {
   if (onlineSession) return;
   const session = { slot: role === "host" ? 0 : 1, code, picks: [], phase: "connecting" };
   onlineSession = session;
-  showModal("온라인 2P", "온라인 모듈 불러오는 중", "4자리 방 연결을 준비하고 있습니다.", [
-    ["취소", () => closeOnlineRoom(session), false],
-  ]);
+  onlineProgress(session, "Firebase 연결 중", "Realtime Database를 준비하고 있습니다.");
   try {
     checkOnlineSupport(session);
-    const Peer = await loadOnlinePeer();
+    const database = await onlineDeadline(loadOnlineDatabase(), "Firebase 모듈을 불러오는 시간이 초과됐습니다.");
     if (onlineSession !== session) return;
-    showModal("온라인 2P", "방 연결 서버 접속 중", "서버 응답을 기다리고 있습니다.", [
-      ["취소", () => closeOnlineRoom(session), false],
-    ]);
-    registerOnlinePeer(session, Peer);
+    session.sdk = database.sdk;
+    // Separate numeric ranges make a code resolve to one database path on both devices.
+    if (role === "host" || Number(code) < 5500) {
+      try {
+        return await connectRoomStore(session, database.open, "rooms", crypto.randomUUID());
+      } catch (error) {
+        if (role !== "host" || session.room || !onlinePermissionDenied(error)) throw error;
+      }
+    }
+    if (onlineSession !== session) return;
+    onlineProgress(session, "방 연결 중", "접근 규칙이 적용된 방을 확인하고 있습니다.");
+    const uid = await onlineDeadline(protectedOnlineUser(database.protected.app), "Firebase 로그인 시간이 초과됐습니다.");
+    if (onlineSession !== session) return;
+    await connectRoomStore(session, database.protected, "bcfOnlineV1", uid);
   } catch (error) {
     onlineError(session, error);
   }
 }
 
-function registerOnlinePeer(session, Peer, attempt = 0) {
+async function connectRoomStore(session, db, rootPath, uid) {
+  const sdk = session.sdk;
   const host = session.slot === 0;
-  if (host) session.code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, "0");
-  const peer = host ? new Peer(ONLINE_PEER_PREFIX + session.code) : new Peer();
-  session.peer = peer;
-  const active = () => onlineSession === session && session.peer === peer;
-  const fail = error => { if (active()) onlineError(session, error); };
-  clearTimeout(session.connectTimer);
-  session.connectTimer = setTimeout(() => fail(new Error("방 연결 서버가 응답하지 않습니다.")), 9000);
-  peer.on("error", error => {
-    if (!active()) return;
-    if (host && error.type === "unavailable-id" && session.phase === "connecting" && attempt < 7) {
-      session.peer = null;
-      peer.destroy();
-      registerOnlinePeer(session, Peer, attempt + 1);
-      return;
-    }
-    // PeerServer can disconnect while an established direct match still works.
-    if (session.channel?.open && ["network", "disconnected", "socket-closed"].includes(error.type)) return;
-    fail(error);
-  });
-  peer.on("disconnected", () => {
-    if (!session.channel?.open) fail({ type: "disconnected" });
-  });
-  peer.on("close", () => fail(new Error("온라인 연결이 끊겼습니다.")));
-  if (host) peer.on("connection", channel => {
-    if (!active() || session.channel || channel.label !== "bcf-v2") {
-      channel.close();
-      return;
-    }
-    bindOnlineChannel(session, channel);
-  });
-  else peer.on("call", call => acceptOnlineVideo(session, call));
-  peer.on("open", () => {
-    if (!active()) return;
-    clearTimeout(session.connectTimer);
-    if (host) {
-      session.phase = "waiting";
-      showModal("온라인 2P · 호스트", "방 코드 " + session.code,
-        "상대에게 4자리 코드를 알려주세요. 입장하면 캐릭터 선택 화면이 열립니다.", [
-          ["취소", () => closeOnlineRoom(session), false],
-        ]);
-    } else {
-      showModal("온라인 2P", "호스트 방 입장 중", "방 " + session.code + "의 호스트와 연결하고 있습니다.", [
-        ["취소", () => closeOnlineRoom(session), false],
-      ]);
-      const channel = peer.connect(ONLINE_PEER_PREFIX + session.code, {
-        label: "bcf-v2", serialization: "none", reliable: true,
+  const publicRoom = rootPath === "rooms";
+  session.uid = uid;
+  if (host) {
+    onlineProgress(session, "방 만드는 중", "Realtime Database에서 4자리 방 코드를 확보하고 있습니다.");
+    let denied;
+    for (let attempt = 0; attempt < 8 && onlineSession === session; attempt++) {
+      session.code = String((publicRoom ? 1000 : 5500) + crypto.getRandomValues(new Uint32Array(1))[0] % 4500);
+      const room = sdk.ref(db, rootPath + "/" + session.code);
+      const claim = sdk.runTransaction(room, value => {
+        if (onlineSession !== session || value) return;
+        const data = { hostUid: uid, createdAt: sdk.serverTimestamp() };
+        return publicRoom ? { ...data, protocol: ONLINE_PROTOCOL } : data;
+      }, { applyLocally: false }).then(result => {
+        if (result.committed && onlineSession !== session) sdk.remove(room).catch(() => {});
+        return result;
       });
-      if (channel) bindOnlineChannel(session, channel);
-      else fail(new Error("방에 입장할 수 없습니다."));
+      try {
+        const result = await onlineDeadline(claim, "방 만들기 요청 시간이 초과됐습니다.");
+        if (onlineSession !== session) return;
+        if (!result.committed) continue;
+        session.room = room;
+        break;
+      } catch (error) {
+        if (!onlinePermissionDenied(error) || denied) throw error;
+        // An occupied protected room may deny the initial transaction read.
+        denied = error;
+      }
     }
-  });
+    if (onlineSession !== session) return;
+    if (!session.room) throw denied || new Error("빈 방 코드를 확보하지 못했습니다. 다시 시도해 주세요.");
+    session.disconnect = sdk.onDisconnect(session.room);
+    await onlineDeadline(session.disconnect.remove(), "방 연결을 등록하지 못했습니다.");
+    if (onlineSession !== session) return;
+    session.phase = "waiting";
+    showModal("온라인 2P · 호스트", "방 코드 " + session.code,
+      "이 숫자 4자리만 상대에게 알려주세요.", [["취소", () => closeOnlineRoom(session), false]]);
+  } else {
+    onlineProgress(session, "방 입장 중", "방 " + session.code + "을 찾고 있습니다.");
+    const room = sdk.ref(db, rootPath + "/" + session.code);
+    const initial = (await onlineDeadline(sdk.get(room), "방 조회 시간이 초과됐습니다.")).val();
+    if (onlineSession !== session) return;
+    if (!initial?.hostUid || (publicRoom && initial.protocol !== ONLINE_PROTOCOL)) {
+      throw new Error("해당 코드의 방을 찾을 수 없습니다. 호스트의 코드와 방 상태를 확인하세요.");
+    }
+    if (initial.guestUid || initial.guestClosed) throw new Error("이미 다른 상대가 입장한 방입니다.");
+    const guest = sdk.child(room, "guestUid");
+    const closed = sdk.child(room, "guestClosed");
+    const claim = sdk.runTransaction(publicRoom ? room : guest, value => {
+      if (onlineSession !== session) return;
+      if (!publicRoom) return value ? undefined : uid;
+      // The SDK can initially pass null before it has the server's value.
+      if (value === null) return null;
+      if (value?.hostUid === initial.hostUid && !value.guestUid && !value.guestClosed) return { ...value, guestUid: uid };
+    }, { applyLocally: false }).then(result => {
+      const joined = result.committed && (!publicRoom || result.snapshot.val()?.guestUid === uid);
+      if (joined && onlineSession !== session) sdk.set(closed, true).catch(() => {});
+      return joined;
+    });
+    const joined = await onlineDeadline(claim, "방 입장 요청 시간이 초과됐습니다.");
+    if (onlineSession !== session) return;
+    if (!joined) throw new Error("방이 닫혔거나 이미 다른 상대가 입장했습니다.");
+    session.room = room;
+    session.hostUid = initial.hostUid;
+    session.disconnect = sdk.onDisconnect(closed);
+    await onlineDeadline(session.disconnect.set(true), "입장 상태를 등록하지 못했습니다.");
+    if (onlineSession !== session) return;
+  }
+  session.unsubscribe = sdk.onValue(session.room, snapshot => {
+    if (onlineSession !== session) return;
+    const room = snapshot.val();
+    if (!room || room.guestClosed || room.hostUid !== (host ? uid : session.hostUid) ||
+        (!host && room.guestUid !== uid)) {
+      onlineError(session, new Error("상대방이 방을 나갔습니다."));
+      return;
+    }
+    if (!room.guestUid) return;
+    if (!session.nativePeer) {
+      try {
+        enterOnlineSelection(session);
+        startRoomPeer(session);
+      } catch (error) {
+        onlineError(session, error);
+        return;
+      }
+    }
+    const remote = host ? room.answer : room.offer;
+    if (typeof remote === "string" && !session.settingRemote) {
+      session.settingRemote = true;
+      acceptRoomSignal(session, remote).catch(error => onlineError(session, error));
+    }
+  }, error => onlineError(session, error));
+}
+
+function startRoomPeer(session) {
+  const peer = createOnlinePeer(session);
+  if (session.slot === 0) {
+    prepareOnlineCapture(session);
+    peer.addTrack(session.stream.getVideoTracks()[0], session.stream);
+    listenOnlineChannel(session, peer.createDataChannel("bcf-v3"));
+    publishRoomSignal(session, "offer", peer.createOffer()).catch(error => onlineError(session, error));
+  } else {
+    peer.addEventListener("track", ({ streams, track }) => {
+      attachOnlineVideo(session, streams[0] || new MediaStream([track]));
+    });
+    peer.addEventListener("datachannel", ({ channel }) => {
+      if (onlineSession === session && !session.channel && channel.label === "bcf-v3") listenOnlineChannel(session, channel);
+      else channel.close();
+    });
+  }
+}
+
+async function publishRoomSignal(session, key, generated) {
+  const description = await localOnlineDescription(session.nativePeer, await generated);
+  if (onlineSession !== session) return;
+  const { sdk, room } = session;
+  await onlineDeadline(sdk.set(sdk.child(room, key), description.sdp), "Firebase에 연결 정보를 전송하지 못했습니다.");
+}
+
+async function acceptRoomSignal(session, sdp) {
+  const host = session.slot === 0;
+  if (sdp.length > 32768 || !sdp.startsWith("v=0")) throw new Error("방의 연결 정보가 올바르지 않습니다.");
+  await session.nativePeer.setRemoteDescription({ type: host ? "answer" : "offer", sdp });
+  if (onlineSession === session && !host) await publishRoomSignal(session, "answer", session.nativePeer.createAnswer());
 }
 
 function closeOnlineRoom(session = onlineSession) {
@@ -29880,7 +29974,12 @@ function closeOnlineRoom(session = onlineSession) {
   onlineSession = null;
   clearTimeout(session.connectTimer);
   clearTimeout(session.mediaTimer);
-  session.peer?.destroy();
+  session.unsubscribe?.();
+  if (session.room) {
+    const { sdk, room } = session;
+    const leave = session.slot === 0 ? sdk.remove(room) : sdk.set(sdk.child(room, "guestClosed"), true);
+    leave.then(() => session.disconnect?.cancel()).catch(() => {});
+  }
   session.nativePeer?.close();
   for (const track of session.stream?.getTracks() || []) track.stop();
   if (session.video) {
@@ -29899,7 +29998,7 @@ function enterOnlineSelection(session) {
   $("modal").classList.add("hidden");
   selection();
   session.mediaTimer = setTimeout(() => onlineError(session,
-    new Error("상대와 영상 연결을 완료하지 못했습니다. 다른 네트워크에서 다시 시도해 주세요.")), 30000);
+    new Error("상대와 영상 연결을 완료하지 못했습니다. 다른 네트워크에서 다시 시도해 주세요.")), 40000);
 }
 
 function prepareOnlineCapture(session) {
@@ -29913,34 +30012,6 @@ function prepareOnlineCapture(session) {
   if (!session.stream.getVideoTracks().length) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
   context.fillStyle = "#121e27";
   context.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function makeOnlineVideoCall(session) {
-  prepareOnlineCapture(session);
-  const call = session.peer.call(session.channel.peer, session.stream);
-  if (!call) throw new Error("영상 연결을 열 수 없습니다.");
-  watchOnlineVideoCall(session, call);
-}
-
-function watchOnlineVideoCall(session, call) {
-  session.call = call;
-  call.on("error", error => onlineError(session, error));
-  call.on("close", () => onlineError(session, new Error("상대와의 영상 연결이 끊겼습니다.")));
-}
-
-function acceptOnlineVideo(session, call) {
-  if (onlineSession !== session || session.phase !== "selection" || session.call ||
-      call.peer !== session.channel?.peer) {
-    call.close();
-    return;
-  }
-  try {
-    watchOnlineVideoCall(session, call);
-    call.on("stream", stream => attachOnlineVideo(session, stream));
-    call.answer();
-  } catch (error) {
-    onlineError(session, error);
-  }
 }
 
 function checkOnlineSupport(session) {
@@ -29962,7 +30033,8 @@ function attachOnlineVideo(session, stream) {
 }
 
 function announceOnlineVideo(session) {
-  if (session.slot !== 1 || session.phase !== "selection" || !session.video || session.mediaReady) return;
+  if (session.slot !== 1 || session.phase !== "selection" || !session.channel?.open ||
+      !session.video || session.mediaReady) return;
   if (!onlineSend(session, "video-ready")) {
     onlineError(session, new Error("영상 연결 상태를 상대에게 전송하지 못했습니다."));
     return;
@@ -29972,95 +30044,7 @@ function announceOnlineVideo(session) {
   updateOnlineSelectionStatus();
 }
 
-function onlineDirectMenu() {
-  showModal("온라인 2P", "연결 코드 직접 교환", "두 사람 모두 이 메뉴를 열고 역할을 선택하세요.", [
-    ["호스트 · 연결 코드 만들기", () => openDirectRoom(0), true],
-    ["게스트 · 받은 코드 입력", () => openDirectRoom(1), false],
-    ["뒤로", onlineRoomMenu, false],
-  ]);
-}
-
-function encodeDirectCode(description) {
-  return "BCF2-" + btoa(JSON.stringify({ type: description.type, sdp: description.sdp }));
-}
-
-function decodeDirectCode(value, type) {
-  const code = value.replace(/\s/g, "");
-  if (code.length < 10 || code.length > 65536 || !code.startsWith("BCF2-")) return null;
-  try {
-    const description = JSON.parse(atob(code.slice(5)));
-    if (description?.type === type && typeof description.sdp === "string" && description.sdp.startsWith("v=0")) {
-      return { type, sdp: description.sdp };
-    }
-  } catch {}
-  return null;
-}
-
-function directCodeField(label, value) {
-  const input = document.createElement("textarea");
-  input.className = "online-direct-code";
-  input.setAttribute("aria-label", label);
-  input.spellcheck = false;
-  input.maxLength = 65536;
-  input.rows = 3;
-  if (value) {
-    input.readOnly = true;
-    input.value = value;
-  } else input.placeholder = label;
-  $("modalActions").prepend(input);
-  return input;
-}
-
-function copyDirectCode(input) {
-  if (!input?.isConnected) return;
-  input.select();
-  const copy = navigator.clipboard?.writeText(input.value);
-  if (!copy) {
-    $("modalText").textContent = "선택된 코드를 복사해서 상대에게 보내세요.";
-    return;
-  }
-  copy.then(
-    () => { if (input.isConnected) $("modalText").textContent = "복사했습니다. 이 코드를 상대에게 보내세요."; },
-    () => { if (input.isConnected) $("modalText").textContent = "선택된 코드를 복사해서 상대에게 보내세요."; },
-  );
-}
-
-function directProgress(session, title) {
-  showModal("온라인 2P · 직접 연결", title, "연결 상태를 확인하고 있습니다.", [
-    ["취소", () => closeOnlineRoom(session), false],
-  ]);
-}
-
-function showDirectCodes(session, description, next) {
-  let outgoing, incoming;
-  const offer = description.type === "offer";
-  const submit = async () => {
-    if (onlineSession !== session || session.applyingAnswer) return;
-    const answer = decodeDirectCode(incoming.value, "answer");
-    if (!answer) {
-      $("modalText").textContent = "상대가 만든 응답 코드를 통째로 붙여넣으세요.";
-      incoming.focus();
-      return;
-    }
-    session.applyingAnswer = true;
-    try {
-      directProgress(session, "상대와 연결 중");
-      await next(answer);
-    } catch (error) {
-      onlineError(session, error);
-    }
-  };
-  const buttons = [["코드 복사", () => copyDirectCode(outgoing), true]];
-  if (offer) buttons.push(["응답 코드 확인", submit, false]);
-  buttons.push(["취소", () => closeOnlineRoom(session), false]);
-  showModal("온라인 2P · 직접 연결", offer ? "호스트 연결 코드" : "게스트 응답 코드",
-    offer ? "첫 번째 코드를 게스트에게 보내세요. 게스트의 응답은 아래 두 번째 칸에 붙여넣으세요." :
-      "이 코드를 호스트에게 보내세요. 호스트가 입력하면 캐릭터 선택 화면이 열립니다.", buttons);
-  if (offer) incoming = directCodeField("게스트 응답 코드 붙여넣기");
-  outgoing = directCodeField(offer ? "호스트 연결 코드" : "게스트 응답 코드", encodeDirectCode(description));
-}
-
-function listenDirectChannel(session, channel) {
+function listenOnlineChannel(session, channel) {
   const eventName = { data: "message", open: "open", close: "close", error: "error" };
   bindOnlineChannel(session, {
     get open() { return channel.readyState === "open"; },
@@ -30073,7 +30057,7 @@ function listenDirectChannel(session, channel) {
   });
 }
 
-function createDirectPeer(session) {
+function createOnlinePeer(session) {
   const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
   session.nativePeer = peer;
   peer.addEventListener("connectionstatechange", () => {
@@ -30083,7 +30067,7 @@ function createDirectPeer(session) {
   return peer;
 }
 
-async function localDirectDescription(peer, description) {
+async function localOnlineDescription(peer, description) {
   await peer.setLocalDescription(description);
   if (peer.iceGatheringState !== "complete") {
     await new Promise(resolve => {
@@ -30099,62 +30083,6 @@ async function localDirectDescription(peer, description) {
     });
   }
   return peer.localDescription;
-}
-
-async function openDirectRoom(slot) {
-  if (onlineSession) return;
-  const session = { slot, picks: [], phase: "connecting" };
-  onlineSession = session;
-  try {
-    checkOnlineSupport(session);
-    if (slot === 0) {
-      directProgress(session, "호스트 연결 코드 만드는 중");
-      const peer = createDirectPeer(session);
-      prepareOnlineCapture(session);
-      peer.addTrack(session.stream.getVideoTracks()[0], session.stream);
-      const channel = peer.createDataChannel("bcf-v2");
-      const offer = await localDirectDescription(peer, await peer.createOffer());
-      if (onlineSession !== session) return;
-      showDirectCodes(session, offer, async answer => {
-        listenDirectChannel(session, channel);
-        await peer.setRemoteDescription(answer);
-      });
-    } else {
-      let input;
-      const respond = async () => {
-        if (onlineSession !== session || session.nativePeer) return;
-        const offer = decodeDirectCode(input.value, "offer");
-        if (!offer) {
-          $("modalText").textContent = "호스트가 만든 연결 코드를 통째로 붙여넣으세요.";
-          input.focus();
-          return;
-        }
-        try {
-          directProgress(session, "게스트 응답 코드 만드는 중");
-          const peer = createDirectPeer(session);
-          peer.addEventListener("track", ({ streams, track }) => {
-            attachOnlineVideo(session, streams[0] || new MediaStream([track]));
-          });
-          peer.addEventListener("datachannel", ({ channel }) => {
-            if (onlineSession === session && !session.channel && channel.label === "bcf-v2") listenDirectChannel(session, channel);
-            else channel.close();
-          });
-          await peer.setRemoteDescription(offer);
-          const answer = await localDirectDescription(peer, await peer.createAnswer());
-          if (onlineSession === session && session.phase === "connecting") showDirectCodes(session, answer);
-        } catch (error) {
-          onlineError(session, error);
-        }
-      };
-      showModal("온라인 2P · 직접 연결", "호스트 연결 코드 입력", "호스트에게 받은 연결 코드를 붙여넣으세요.", [
-        ["응답 코드 만들기", respond, true], ["취소", () => closeOnlineRoom(session), false],
-      ]);
-      input = directCodeField("호스트 연결 코드 붙여넣기");
-      input.focus();
-    }
-  } catch (error) {
-    onlineError(session, error);
-  }
 }
 
 function onlineSend(session, type, values = {}) {
@@ -30173,31 +30101,16 @@ function bindOnlineChannel(session, channel) {
   const active = () => onlineSession === session && session.channel === channel;
   const failed = error => {
     if (!active()) return;
-    if (session.slot === 0 && session.phase === "waiting") {
-      clearTimeout(session.connectTimer);
-      session.channel = null;
-      channel.close();
-      return;
-    }
     onlineError(session, error);
   };
   clearTimeout(session.connectTimer);
-  session.connectTimer = setTimeout(() => failed(new Error("방 입장 시간이 초과됐습니다. 코드를 확인해 주세요.")), 22000);
+  session.connectTimer = setTimeout(() => failed(new Error("상대와의 연결 시간이 초과됐습니다.")), 35000);
   const opened = () => {
-    if (!active() || session.phase === "selection") return;
+    if (!active()) return;
     clearTimeout(session.connectTimer);
-    try {
-      enterOnlineSelection(session);
-      if (session.nativePeer) {
-        announceOnlineVideo(session);
-      } else if (session.slot === 0) {
-        // Guest enters selection before it receives a separate media offer.
-        // Wait for its first data message so the media handler is ready.
-        if (!onlineSend(session, "room-ready")) throw new Error("방 입장을 확인하지 못했습니다.");
-      }
-    } catch (error) {
-      onlineError(session, error);
-    }
+    if (session.picks[session.slot]) sendOnlinePick(session);
+    announceOnlineVideo(session);
+    updateOnlineSelectionStatus();
   };
   channel.on("open", opened);
   channel.on("close", () => failed(new Error("상대와의 연결이 끊겼습니다.")));
@@ -30232,23 +30145,12 @@ function confirmOnlineFighter(slot) {
 }
 
 function handleOnlineMessage(session, msg) {
-  if (session.phase === "selection") {
-    if (session.slot === 1 && msg.type === "room-ready") {
-      if (!onlineSend(session, "room-accepted")) onlineError(session, new Error("방 입장을 확인하지 못했습니다."));
-      return;
-    }
-    if (session.slot === 0 && msg.type === "room-accepted" && !session.call) {
-      try { makeOnlineVideoCall(session); }
-      catch (error) { onlineError(session, error); }
-      return;
-    }
-    if (session.slot === 0 && msg.type === "video-ready" && (session.call || session.nativePeer)) {
-      session.mediaReady = true;
-      clearTimeout(session.mediaTimer);
-      updateOnlineSelectionStatus();
-      startOnlineMatchIfReady(session);
-      return;
-    }
+  if (session.phase === "selection" && session.slot === 0 && msg.type === "video-ready") {
+    session.mediaReady = true;
+    clearTimeout(session.mediaTimer);
+    updateOnlineSelectionStatus();
+    startOnlineMatchIfReady(session);
+    return;
   }
   if (msg.type === "pick" && session.phase === "selection") {
     const other = 1 - session.slot;
@@ -30284,7 +30186,7 @@ function updateOnlineSelectionStatus() {
   status.hidden = !session || session.phase !== "selection";
   if (status.hidden) return;
   status.textContent = [
-    (session.nativePeer ? "직접 연결" : "방 " + session.code) + " · " + (session.slot + 1) + "P",
+    ("방 " + session.code) + " · " + (session.slot + 1) + "P",
     session.mediaReady ? "연결됨" : "화면 연결 중",
     session.picks[0] && session.picks[1] ? "양쪽 선택 완료 · 경기 준비 중" :
       session.picks[session.slot] ? "선택 완료 · 상대를 기다리는 중" : "내 캐릭터를 선택하세요",
