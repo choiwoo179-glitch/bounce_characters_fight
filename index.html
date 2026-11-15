@@ -2794,7 +2794,9 @@ body.startup-loading { overflow: hidden; }
   .online-guest .arena-zoom-hint { display: none; }
   .online-battle [aria-disabled="true"] { cursor: default; opacity: .65; }
   .online-battle #pause[hidden] { display: none; }
-  #modalActions:has(.online-code-input) { flex-wrap: wrap; }
+  .online-direct-code { flex: 0 0 100%; width: 100%; padding: 10px; border: 1px solid #81b7ff;
+    border-radius: 8px; color: #fff; background: #13202c; font: 13px ui-monospace, monospace; resize: vertical; }
+  #modalActions:has(.online-code-input, .online-direct-code) { flex-wrap: wrap; }
 </style>
 </head>
   <body class="startup-loading">
@@ -19055,7 +19057,7 @@ function initUI() {
     document.addEventListener("keydown", (e) => {
       if (!$("modal").classList.contains("hidden")) {
         if ("Tab" === e.key) {
-          const a = [...$("modalActions").querySelectorAll("button, input")];
+          const a = [...$("modalActions").querySelectorAll("button, input, textarea")];
           if (!a.length) return;
           const o =
             (a.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + a.length) % a.length;
@@ -29712,26 +29714,33 @@ const ONLINE_PEER_PREFIX = "bounce-characters-fight-online-v2-";
 let onlineSession = null;
 let onlinePeerLibrary;
 
-function loadOnlinePeer() {
-  if (typeof window.Peer === "function") return Promise.resolve(window.Peer);
+async function loadOnlinePeer() {
+  const constructor = () => window.Peer || window.peerjs?.Peer;
+  if (typeof constructor() === "function") return constructor();
   if (!onlinePeerLibrary) {
-    onlinePeerLibrary = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js";
-      const timeout = setTimeout(fail, 12000);
-      function fail() {
-        clearTimeout(timeout);
-        script.remove();
-        reject(new Error("온라인 연결 모듈을 불러올 수 없습니다. 인터넷 연결을 확인해 주세요."));
+    onlinePeerLibrary = (async () => {
+      for (const source of [
+        "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js",
+        "https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js",
+      ]) {
+        const Peer = await new Promise(resolve => {
+          const script = document.createElement("script");
+          const timeout = setTimeout(() => done(), 4500);
+          function done(value) {
+            clearTimeout(timeout);
+            script.onload = script.onerror = null;
+            script.remove();
+            resolve(value);
+          }
+          script.src = source;
+          script.onerror = () => done();
+          script.onload = () => done(constructor());
+          document.head.append(script);
+        });
+        if (typeof Peer === "function") return Peer;
       }
-      script.onerror = fail;
-      script.onload = () => {
-        clearTimeout(timeout);
-        if (typeof window.Peer === "function") resolve(window.Peer);
-        else fail();
-      };
-      document.head.append(script);
-    }).catch(error => {
+      throw new Error("온라인 연결 모듈을 불러오지 못했습니다. 연결 코드를 교환해 접속할 수 있습니다.");
+    })().catch(error => {
       onlinePeerLibrary = null;
       throw error;
     });
@@ -29744,6 +29753,7 @@ function onlineRoomMenu() {
   showModal("온라인 2P", "친구와 대전", "방 코드를 공유해 1대1로 대전하세요.", [
     ["방 만들기", () => openOnlineRoom("host"), true],
     ["상대방 방 들어가기", onlineJoinMenu, false],
+    ["연결 코드 직접 교환", onlineDirectMenu, false],
     ["취소", () => $("modal").classList.add("hidden"), false],
   ]);
 }
@@ -29785,7 +29795,8 @@ function onlineError(session, error) {
     message = "온라인 연결 서버에 접속할 수 없습니다. 인터넷 연결을 확인해 주세요.";
   closeOnlineRoom(session);
   showModal("온라인 2P", "연결 종료", message, [
-    ["다시 시도", onlineRoomMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
+    ["다시 시도", onlineRoomMenu, true], ["연결 코드 직접 교환", onlineDirectMenu, false],
+    ["닫기", () => $("modal").classList.add("hidden"), false],
   ]);
 }
 
@@ -29793,16 +29804,17 @@ async function openOnlineRoom(role, code) {
   if (onlineSession) return;
   const session = { slot: role === "host" ? 0 : 1, code, picks: [], phase: "connecting" };
   onlineSession = session;
-  showModal("온라인 2P", "온라인 연결 중", "잠시 기다려 주세요.", [
+  showModal("온라인 2P", "온라인 모듈 불러오는 중", "4자리 방 연결을 준비하고 있습니다.", [
     ["취소", () => closeOnlineRoom(session), false],
   ]);
   try {
-    if (!window.isSecureContext || typeof RTCPeerConnection !== "function" ||
-        (session.slot === 0 && typeof HTMLCanvasElement.prototype.captureStream !== "function")) {
-      throw new Error("온라인 2P는 HTTPS 또는 localhost에서 WebRTC를 지원하는 브라우저로 열어 주세요.");
-    }
+    checkOnlineSupport(session);
     const Peer = await loadOnlinePeer();
-    if (onlineSession === session) registerOnlinePeer(session, Peer);
+    if (onlineSession !== session) return;
+    showModal("온라인 2P", "방 연결 서버 접속 중", "서버 응답을 기다리고 있습니다.", [
+      ["취소", () => closeOnlineRoom(session), false],
+    ]);
+    registerOnlinePeer(session, Peer);
   } catch (error) {
     onlineError(session, error);
   }
@@ -29816,7 +29828,7 @@ function registerOnlinePeer(session, Peer, attempt = 0) {
   const active = () => onlineSession === session && session.peer === peer;
   const fail = error => { if (active()) onlineError(session, error); };
   clearTimeout(session.connectTimer);
-  session.connectTimer = setTimeout(() => fail(new Error("온라인 서버 연결 시간이 초과됐습니다.")), 15000);
+  session.connectTimer = setTimeout(() => fail(new Error("방 연결 서버가 응답하지 않습니다.")), 9000);
   peer.on("error", error => {
     if (!active()) return;
     if (host && error.type === "unavailable-id" && session.phase === "connecting" && attempt < 7) {
@@ -29851,6 +29863,9 @@ function registerOnlinePeer(session, Peer, attempt = 0) {
           ["취소", () => closeOnlineRoom(session), false],
         ]);
     } else {
+      showModal("온라인 2P", "호스트 방 입장 중", "방 " + session.code + "의 호스트와 연결하고 있습니다.", [
+        ["취소", () => closeOnlineRoom(session), false],
+      ]);
       const channel = peer.connect(ONLINE_PEER_PREFIX + session.code, {
         label: "bcf-v2", serialization: "none", reliable: true,
       });
@@ -29866,6 +29881,7 @@ function closeOnlineRoom(session = onlineSession) {
   clearTimeout(session.connectTimer);
   clearTimeout(session.mediaTimer);
   session.peer?.destroy();
+  session.nativePeer?.close();
   for (const track of session.stream?.getTracks() || []) track.stop();
   if (session.video) {
     session.video.srcObject = null;
@@ -29886,7 +29902,7 @@ function enterOnlineSelection(session) {
     new Error("상대와 영상 연결을 완료하지 못했습니다. 다른 네트워크에서 다시 시도해 주세요.")), 30000);
 }
 
-function makeOnlineVideoCall(session) {
+function prepareOnlineCapture(session) {
   const canvas = document.createElement("canvas");
   canvas.width = 960;
   canvas.height = 540;
@@ -29895,11 +29911,15 @@ function makeOnlineVideoCall(session) {
   session.capture = { canvas, context, last: -Infinity };
   session.stream = canvas.captureStream(30);
   if (!session.stream.getVideoTracks().length) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
+  context.fillStyle = "#121e27";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function makeOnlineVideoCall(session) {
+  prepareOnlineCapture(session);
   const call = session.peer.call(session.channel.peer, session.stream);
   if (!call) throw new Error("영상 연결을 열 수 없습니다.");
   watchOnlineVideoCall(session, call);
-  context.fillStyle = "#121e27";
-  context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function watchOnlineVideoCall(session, call) {
@@ -29915,24 +29935,223 @@ function acceptOnlineVideo(session, call) {
     return;
   }
   try {
-    const video = document.createElement("video");
-    video.id = "onlineArenaVideo";
-    video.autoplay = video.playsInline = video.muted = true;
-    video.setAttribute("aria-label", "호스트의 전투 화면");
-    session.video = video;
     watchOnlineVideoCall(session, call);
-    call.on("stream", stream => {
-      if (onlineSession !== session || session.mediaReady || !stream.getVideoTracks().length) return;
-      video.srcObject = stream;
-      session.mediaReady = true;
-      clearTimeout(session.mediaTimer);
-      if (!onlineSend(session, "video-ready")) {
-        onlineError(session, new Error("영상 연결 상태를 상대에게 전송하지 못했습니다."));
-        return;
-      }
-      updateOnlineSelectionStatus();
-    });
+    call.on("stream", stream => attachOnlineVideo(session, stream));
     call.answer();
+  } catch (error) {
+    onlineError(session, error);
+  }
+}
+
+function checkOnlineSupport(session) {
+  if (!window.isSecureContext || typeof RTCPeerConnection !== "function" ||
+      (session.slot === 0 && typeof HTMLCanvasElement.prototype.captureStream !== "function")) {
+    throw new Error("온라인 2P는 HTTPS 또는 localhost에서 WebRTC를 지원하는 브라우저로 열어 주세요.");
+  }
+}
+
+function attachOnlineVideo(session, stream) {
+  if (onlineSession !== session || session.video || !stream.getVideoTracks().length) return;
+  const video = document.createElement("video");
+  video.id = "onlineArenaVideo";
+  video.autoplay = video.playsInline = video.muted = true;
+  video.setAttribute("aria-label", "호스트의 전투 화면");
+  video.srcObject = stream;
+  session.video = video;
+  announceOnlineVideo(session);
+}
+
+function announceOnlineVideo(session) {
+  if (session.slot !== 1 || session.phase !== "selection" || !session.video || session.mediaReady) return;
+  if (!onlineSend(session, "video-ready")) {
+    onlineError(session, new Error("영상 연결 상태를 상대에게 전송하지 못했습니다."));
+    return;
+  }
+  session.mediaReady = true;
+  clearTimeout(session.mediaTimer);
+  updateOnlineSelectionStatus();
+}
+
+function onlineDirectMenu() {
+  showModal("온라인 2P", "연결 코드 직접 교환", "두 사람 모두 이 메뉴를 열고 역할을 선택하세요.", [
+    ["호스트 · 연결 코드 만들기", () => openDirectRoom(0), true],
+    ["게스트 · 받은 코드 입력", () => openDirectRoom(1), false],
+    ["뒤로", onlineRoomMenu, false],
+  ]);
+}
+
+function encodeDirectCode(description) {
+  return "BCF2-" + btoa(JSON.stringify({ type: description.type, sdp: description.sdp }));
+}
+
+function decodeDirectCode(value, type) {
+  const code = value.replace(/\s/g, "");
+  if (code.length < 10 || code.length > 65536 || !code.startsWith("BCF2-")) return null;
+  try {
+    const description = JSON.parse(atob(code.slice(5)));
+    if (description?.type === type && typeof description.sdp === "string" && description.sdp.startsWith("v=0")) {
+      return { type, sdp: description.sdp };
+    }
+  } catch {}
+  return null;
+}
+
+function directCodeField(label, value) {
+  const input = document.createElement("textarea");
+  input.className = "online-direct-code";
+  input.setAttribute("aria-label", label);
+  input.spellcheck = false;
+  input.maxLength = 65536;
+  input.rows = 3;
+  if (value) {
+    input.readOnly = true;
+    input.value = value;
+  } else input.placeholder = label;
+  $("modalActions").prepend(input);
+  return input;
+}
+
+function copyDirectCode(input) {
+  if (!input?.isConnected) return;
+  input.select();
+  const copy = navigator.clipboard?.writeText(input.value);
+  if (!copy) {
+    $("modalText").textContent = "선택된 코드를 복사해서 상대에게 보내세요.";
+    return;
+  }
+  copy.then(
+    () => { if (input.isConnected) $("modalText").textContent = "복사했습니다. 이 코드를 상대에게 보내세요."; },
+    () => { if (input.isConnected) $("modalText").textContent = "선택된 코드를 복사해서 상대에게 보내세요."; },
+  );
+}
+
+function directProgress(session, title) {
+  showModal("온라인 2P · 직접 연결", title, "연결 상태를 확인하고 있습니다.", [
+    ["취소", () => closeOnlineRoom(session), false],
+  ]);
+}
+
+function showDirectCodes(session, description, next) {
+  let outgoing, incoming;
+  const offer = description.type === "offer";
+  const submit = async () => {
+    if (onlineSession !== session || session.applyingAnswer) return;
+    const answer = decodeDirectCode(incoming.value, "answer");
+    if (!answer) {
+      $("modalText").textContent = "상대가 만든 응답 코드를 통째로 붙여넣으세요.";
+      incoming.focus();
+      return;
+    }
+    session.applyingAnswer = true;
+    try {
+      directProgress(session, "상대와 연결 중");
+      await next(answer);
+    } catch (error) {
+      onlineError(session, error);
+    }
+  };
+  const buttons = [["코드 복사", () => copyDirectCode(outgoing), true]];
+  if (offer) buttons.push(["응답 코드 확인", submit, false]);
+  buttons.push(["취소", () => closeOnlineRoom(session), false]);
+  showModal("온라인 2P · 직접 연결", offer ? "호스트 연결 코드" : "게스트 응답 코드",
+    offer ? "첫 번째 코드를 게스트에게 보내세요. 게스트의 응답은 아래 두 번째 칸에 붙여넣으세요." :
+      "이 코드를 호스트에게 보내세요. 호스트가 입력하면 캐릭터 선택 화면이 열립니다.", buttons);
+  if (offer) incoming = directCodeField("게스트 응답 코드 붙여넣기");
+  outgoing = directCodeField(offer ? "호스트 연결 코드" : "게스트 응답 코드", encodeDirectCode(description));
+}
+
+function listenDirectChannel(session, channel) {
+  const eventName = { data: "message", open: "open", close: "close", error: "error" };
+  bindOnlineChannel(session, {
+    get open() { return channel.readyState === "open"; },
+    dataChannel: channel,
+    on(name, handler) {
+      channel.addEventListener(eventName[name], event => handler(name === "data" ? event.data : event));
+    },
+    send(data) { channel.send(data); },
+    close() { channel.close(); },
+  });
+}
+
+function createDirectPeer(session) {
+  const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  session.nativePeer = peer;
+  peer.addEventListener("connectionstatechange", () => {
+    if (peer.connectionState === "failed")
+      onlineError(session, new Error("두 기기 사이에 직접 연결이 열리지 않았습니다. 같은 네트워크에서 다시 시도해 주세요."));
+  });
+  return peer;
+}
+
+async function localDirectDescription(peer, description) {
+  await peer.setLocalDescription(description);
+  if (peer.iceGatheringState !== "complete") {
+    await new Promise(resolve => {
+      const done = () => {
+        clearTimeout(timeout);
+        peer.removeEventListener("icegatheringstatechange", check);
+        resolve();
+      };
+      const check = () => { if (peer.iceGatheringState === "complete") done(); };
+      const timeout = setTimeout(done, 7000);
+      peer.addEventListener("icegatheringstatechange", check);
+      check();
+    });
+  }
+  return peer.localDescription;
+}
+
+async function openDirectRoom(slot) {
+  if (onlineSession) return;
+  const session = { slot, picks: [], phase: "connecting" };
+  onlineSession = session;
+  try {
+    checkOnlineSupport(session);
+    if (slot === 0) {
+      directProgress(session, "호스트 연결 코드 만드는 중");
+      const peer = createDirectPeer(session);
+      prepareOnlineCapture(session);
+      peer.addTrack(session.stream.getVideoTracks()[0], session.stream);
+      const channel = peer.createDataChannel("bcf-v2");
+      const offer = await localDirectDescription(peer, await peer.createOffer());
+      if (onlineSession !== session) return;
+      showDirectCodes(session, offer, async answer => {
+        listenDirectChannel(session, channel);
+        await peer.setRemoteDescription(answer);
+      });
+    } else {
+      let input;
+      const respond = async () => {
+        if (onlineSession !== session || session.nativePeer) return;
+        const offer = decodeDirectCode(input.value, "offer");
+        if (!offer) {
+          $("modalText").textContent = "호스트가 만든 연결 코드를 통째로 붙여넣으세요.";
+          input.focus();
+          return;
+        }
+        try {
+          directProgress(session, "게스트 응답 코드 만드는 중");
+          const peer = createDirectPeer(session);
+          peer.addEventListener("track", ({ streams, track }) => {
+            attachOnlineVideo(session, streams[0] || new MediaStream([track]));
+          });
+          peer.addEventListener("datachannel", ({ channel }) => {
+            if (onlineSession === session && !session.channel && channel.label === "bcf-v2") listenDirectChannel(session, channel);
+            else channel.close();
+          });
+          await peer.setRemoteDescription(offer);
+          const answer = await localDirectDescription(peer, await peer.createAnswer());
+          if (onlineSession === session && session.phase === "connecting") showDirectCodes(session, answer);
+        } catch (error) {
+          onlineError(session, error);
+        }
+      };
+      showModal("온라인 2P · 직접 연결", "호스트 연결 코드 입력", "호스트에게 받은 연결 코드를 붙여넣으세요.", [
+        ["응답 코드 만들기", respond, true], ["취소", () => closeOnlineRoom(session), false],
+      ]);
+      input = directCodeField("호스트 연결 코드 붙여넣기");
+      input.focus();
+    }
   } catch (error) {
     onlineError(session, error);
   }
@@ -29964,12 +30183,14 @@ function bindOnlineChannel(session, channel) {
   };
   clearTimeout(session.connectTimer);
   session.connectTimer = setTimeout(() => failed(new Error("방 입장 시간이 초과됐습니다. 코드를 확인해 주세요.")), 22000);
-  channel.on("open", () => {
-    if (!active()) return;
+  const opened = () => {
+    if (!active() || session.phase === "selection") return;
     clearTimeout(session.connectTimer);
     try {
       enterOnlineSelection(session);
-      if (session.slot === 0) {
+      if (session.nativePeer) {
+        announceOnlineVideo(session);
+      } else if (session.slot === 0) {
         // Guest enters selection before it receives a separate media offer.
         // Wait for its first data message so the media handler is ready.
         if (!onlineSend(session, "room-ready")) throw new Error("방 입장을 확인하지 못했습니다.");
@@ -29977,7 +30198,8 @@ function bindOnlineChannel(session, channel) {
     } catch (error) {
       onlineError(session, error);
     }
-  });
+  };
+  channel.on("open", opened);
   channel.on("close", () => failed(new Error("상대와의 연결이 끊겼습니다.")));
   channel.on("error", failed);
   channel.on("data", data => {
@@ -29986,6 +30208,7 @@ function bindOnlineChannel(session, channel) {
     try { msg = JSON.parse(data); } catch { return; }
     if (msg?.protocol === ONLINE_PROTOCOL) handleOnlineMessage(session, msg);
   });
+  if (channel.open) opened();
 }
 
 function onlineFighterIndex(id) {
@@ -30019,7 +30242,7 @@ function handleOnlineMessage(session, msg) {
       catch (error) { onlineError(session, error); }
       return;
     }
-    if (session.slot === 0 && msg.type === "video-ready" && session.call) {
+    if (session.slot === 0 && msg.type === "video-ready" && (session.call || session.nativePeer)) {
       session.mediaReady = true;
       clearTimeout(session.mediaTimer);
       updateOnlineSelectionStatus();
@@ -30061,7 +30284,7 @@ function updateOnlineSelectionStatus() {
   status.hidden = !session || session.phase !== "selection";
   if (status.hidden) return;
   status.textContent = [
-    "방 " + session.code + " · " + (session.slot + 1) + "P",
+    (session.nativePeer ? "직접 연결" : "방 " + session.code) + " · " + (session.slot + 1) + "P",
     session.mediaReady ? "연결됨" : "화면 연결 중",
     session.picks[0] && session.picks[1] ? "양쪽 선택 완료 · 경기 준비 중" :
       session.picks[session.slot] ? "선택 완료 · 상대를 기다리는 중" : "내 캐릭터를 선택하세요",
