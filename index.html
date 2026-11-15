@@ -9992,6 +9992,8 @@ function resolveBallCollision(e, a) {
     if (eBankai) queueKenpachiBankaiContact(e, a);
     if (aBankai) queueKenpachiBankaiContact(a, e);
     if (t - n.last >= 0.25 - 1e-8) {
+      if (e.higurumaGavelUntil > t + 1e-8 || a.higurumaGavelUntil > t + 1e-8)
+        higurumaGavelFracture((e.x + a.x) / 2, (e.z + a.z) / 2, i);
       if (!eBankai) hurt(e, a, collisionDamage(e, a), "collision");
       if (!aBankai) hurt(a, e, collisionDamage(a, e), "collision");
       for (const o of [e, a]) (mpGain(o, 10), spGain(o, 8));
@@ -29242,9 +29244,14 @@ function advanceHigurumaGavels(dt) {
     }
     if (first && (impacts.get(first) || 0) < 4) {
       impacts.set(first, (impacts.get(first) || 0) + 1);
+      const queued = damageQueue.length;
       withDamageOrigin(owner, false, () => {
         withAlchemyHitMode("ranged", () => hurt(owner, first, 34));
       }, HIGURUMA_NAMES.HIGURUMA_GAVEL_VOLLEY);
+      if (!headless && world && damageQueue.length > queued) {
+        const { x, z } = first;
+        damageQueue.at(-1).onConfirmedHit = () => higurumaGavelSmoke(x, z);
+      }
     }
     if (first || obstacle || wall < intended - 1e-8 || intended >= shot.remaining - 1e-8) {
       removeMesh(shot.mesh);
@@ -29428,6 +29435,87 @@ function makeHigurumaGavel() {
   const band = higurumaPart(gavel, new THREE.CylinderGeometry(.226,.226,.22,16), 0xd4a84f, 0,.79,0);
   band.rotation.z = Math.PI/2;
   return gavel;
+}
+
+function higurumaGavelSmoke(x, z) {
+  const group = new THREE.Group();
+  group.name = "higuruma-gavel-impact-smoke";
+  group.position.set(x, .8, z);
+  const shape = reuseEffectGeometry("higuruma-smoke-puff", () => new THREE.IcosahedronGeometry(1, 2));
+  const puffs = Array.from({ length: 12 }, (_, i) => {
+    const angle = i * 2.39996;
+    const mesh = opmPart(group, shape, i % 3 ? 0xd0d0cc : 0x878987, 0, 0, 0, .65);
+    mesh.material.emissiveIntensity = .12;
+    mesh.rotation.set(angle, angle * .6, 0);
+    return { mesh, angle, delay: (i % 4) * .035, size: .55 + (i % 5) * .13 };
+  });
+  const animate = progress => {
+    for (const { mesh, angle, delay, size } of puffs) {
+      const age = Math.max(0, (progress - delay) / (1 - delay));
+      const spread = .15 + 2.7 * (1 - (1 - age) ** 2);
+      mesh.position.set(Math.cos(angle) * spread, .15 + age * (1.0 + size), Math.sin(angle) * spread);
+      const growth = size * (.45 + 1.45 * Math.sqrt(age));
+      mesh.scale.set(growth, growth * .79, growth);
+      mesh.userData.akiCustomOpacity = .65 * Math.min(1, age * 18) * (1 - age) ** 1.45;
+      if (progress <= delay) mesh.material.opacity = 0;
+    }
+  };
+  animate(0);
+  akiEffect(group, .85, animate);
+}
+
+function higurumaGavelFracture(x, z, direction) {
+  if (headless || !world) return;
+  const life = 2.6;
+  const heading = Math.atan2(direction.z, direction.x);
+  for (const [offset, length] of [[-.55, 4.6], [1.45, 3.8], [3.35, 4.3]]) {
+    const angle = heading + offset;
+    alchemyGroundCracks(x, z, { x: Math.cos(angle), z: Math.sin(angle) }, length, 2.2, life);
+  }
+  const group = new THREE.Group();
+  group.name = "higuruma-gavel-impact-rubble";
+  group.position.set(x, .045, z);
+  group.rotation.y = -heading;
+
+  const crater = new THREE.Shape();
+  for (let i = 0; i < 15; i++) {
+    const angle = i * Math.PI * 2 / 15;
+    const radius = 1.65 + .30 * Math.sin(i * 5.2);
+    const px = Math.cos(angle) * radius * 1.18, py = Math.sin(angle) * radius;
+    if (i === 0) crater.moveTo(px, py);
+    else crater.lineTo(px, py);
+  }
+  crater.closePath();
+  const base = new THREE.Mesh(new THREE.ShapeGeometry(crater),
+    new THREE.MeshBasicMaterial({ color: 0x332822, transparent: true, opacity: .85, depthWrite: false }));
+  base.rotation.x = -Math.PI / 2;
+  group.add(base);
+
+  const stone = reuseEffectGeometry("higuruma-rubble-stone", () => new THREE.DodecahedronGeometry(1));
+  const colors = [0xcab8a3, 0xa5907b, 0x817468, 0xddd2c1];
+  const shards = Array.from({ length: 23 }, (_, i) => {
+    const angle = i * 2.39996;
+    const radius = .35 + 2.45 * Math.sqrt(i / 22);
+    const mesh = opmPart(group, stone, colors[i % colors.length], 0, 0, 0, .97);
+    mesh.material.roughness = .94;
+    const size = .19 + (i % 7) * .073;
+    mesh.scale.set(size, size * .33, size * (.60 + (i % 4) * .14));
+    return { mesh, angle, radius, height: size * .30, hop: .18 + (i % 6) * .105 };
+  });
+  const animate = progress => {
+    const launch = Math.min(1, progress * life / .31);
+    const travel = 1 - (1 - launch) ** 2;
+    const fade = Math.min(1, (1 - progress) * 4);
+    base.userData.akiCustomOpacity = .85 * fade;
+    for (const { mesh, angle, radius, height, hop } of shards) {
+      mesh.position.set(Math.cos(angle) * radius * (1.18 * travel + .12), height + Math.sin(Math.PI * launch) * hop,
+        Math.sin(angle) * radius * (travel + .12));
+      mesh.rotation.set(.2 * Math.sin(angle) + (1 - launch) * hop, angle + travel * 1.4, .26 * Math.cos(angle));
+      mesh.userData.akiCustomOpacity = .97 * fade;
+    }
+  };
+  animate(0);
+  akiEffect(group, life, animate);
 }
 
 function makeHigurumaSword() {
