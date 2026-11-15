@@ -29707,52 +29707,36 @@ function updateHigurumaCourtVisuals() {
   }
 }
 
-const ONLINE_ROOM_PATH = "bcfOnlineV1";
-const ONLINE_PROTOCOL = 1;
-const onlineFirebaseConfig = {
-  apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
-  authDomain: "bounce-characters-fight.firebaseapp.com",
-  databaseURL: "https://bounce-characters-fight-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "bounce-characters-fight",
-  storageBucket: "bounce-characters-fight.firebasestorage.app",
-  messagingSenderId: "231389962267",
-  appId: "1:231389962267:web:689eb2fbce34b6e107d8be",
-  measurementId: "G-8F7QLR4VRC"
-};
-
+const ONLINE_PROTOCOL = 2;
+const ONLINE_PEER_PREFIX = "bounce-characters-fight-online-v2-";
 let onlineSession = null;
-let onlineFirebasePromise;
+let onlinePeerLibrary;
 
-function loadOnlineFirebase() {
-  if (!onlineFirebasePromise) {
-    const cdn = "https://www.gstatic.com/firebasejs/13.3.0/";
-    onlineFirebasePromise = Promise.all([
-      import(cdn + "firebase-app.js"),
-      import(cdn + "firebase-auth.js"),
-      import(cdn + "firebase-database.js"),
-    ]).then(async ([appSdk, authSdk, dbSdk]) => {
-      const app = appSdk.getApps()[0] || appSdk.initializeApp(onlineFirebaseConfig);
-      const auth = authSdk.initializeAuth(app, { persistence: authSdk.inMemoryPersistence });
-      return { ...dbSdk, auth, signIn: authSdk.signInAnonymously, db: dbSdk.getDatabase(app) };
+function loadOnlinePeer() {
+  if (typeof window.Peer === "function") return Promise.resolve(window.Peer);
+  if (!onlinePeerLibrary) {
+    onlinePeerLibrary = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js";
+      const timeout = setTimeout(fail, 12000);
+      function fail() {
+        clearTimeout(timeout);
+        script.remove();
+        reject(new Error("온라인 연결 모듈을 불러올 수 없습니다. 인터넷 연결을 확인해 주세요."));
+      }
+      script.onerror = fail;
+      script.onload = () => {
+        clearTimeout(timeout);
+        if (typeof window.Peer === "function") resolve(window.Peer);
+        else fail();
+      };
+      document.head.append(script);
     }).catch(error => {
-      onlineFirebasePromise = null;
+      onlinePeerLibrary = null;
       throw error;
     });
   }
-  return onlineFirebasePromise.then(async sdk => {
-    if (!sdk.auth.currentUser) await sdk.signIn(sdk.auth);
-    return sdk;
-  });
-}
-
-function onlineWithDeadline(promise, ms, message) {
-  let timer;
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]).finally(() => clearTimeout(timer));
+  return onlinePeerLibrary;
 }
 
 function onlineRoomMenu() {
@@ -29793,13 +29777,12 @@ function onlineJoinMenu() {
 }
 
 function onlineError(session, error) {
-  if (onlineSession !== session) return;
-  if (session.phase === "result") return;
+  if (onlineSession !== session || session.phase === "result") return;
   console.warn("Online 2P:", error);
   let message = error?.message || "연결을 완료하지 못했습니다.";
-  if (error?.code === "auth/operation-not-allowed") message = "Firebase Authentication에서 익명 로그인을 활성화하세요.";
-  else if (/permission.denied/i.test(error?.code || message)) message = "방을 읽거나 쓸 권한이 없습니다. 방이 이미 찼거나 Firebase 데이터베이스 규칙 설정이 필요합니다.";
-  else if (/failed to fetch|network-request-failed|importing a module script failed/i.test(message)) message = "Firebase에 연결할 수 없습니다. 인터넷 연결과 배포 주소를 확인하세요.";
+  if (error?.type === "peer-unavailable") message = "해당 방에 연결할 수 없습니다. 상대가 방을 열어 둔 상태인지 확인하세요.";
+  else if (["network", "server-error", "socket-error", "socket-closed", "disconnected"].includes(error?.type))
+    message = "온라인 연결 서버에 접속할 수 없습니다. 인터넷 연결을 확인해 주세요.";
   closeOnlineRoom(session);
   showModal("온라인 2P", "연결 종료", message, [
     ["다시 시도", onlineRoomMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
@@ -29808,111 +29791,85 @@ function onlineError(session, error) {
 
 async function openOnlineRoom(role, code) {
   if (onlineSession) return;
-  const session = { role, slot: role === "host" ? 0 : 1, code, picks: [], phase: "connecting" };
+  const session = { slot: role === "host" ? 0 : 1, code, picks: [], phase: "connecting" };
   onlineSession = session;
-  showModal("온라인 2P", "Firebase 연결 중", "잠시 기다려 주세요.", [
+  showModal("온라인 2P", "온라인 연결 중", "잠시 기다려 주세요.", [
     ["취소", () => closeOnlineRoom(session), false],
   ]);
   try {
     if (!window.isSecureContext || typeof RTCPeerConnection !== "function" ||
-        typeof HTMLCanvasElement.prototype.captureStream !== "function") {
+        (session.slot === 0 && typeof HTMLCanvasElement.prototype.captureStream !== "function")) {
       throw new Error("온라인 2P는 HTTPS 또는 localhost에서 WebRTC를 지원하는 브라우저로 열어 주세요.");
     }
-    const sdk = await onlineWithDeadline(loadOnlineFirebase(), 15000, "Firebase 연결 시간이 초과됐습니다.");
-    if (onlineSession !== session) return;
-    session.sdk = sdk;
-    const uid = sdk.auth.currentUser.uid;
-    if (role === "host") {
-      let denied;
-      for (let attempt = 0; attempt < 8; attempt++) {
-        session.code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, "0");
-        const room = sdk.ref(sdk.db, ONLINE_ROOM_PATH + "/" + session.code);
-        // The database rule atomically rejects writes to occupied, unexpired codes.
-        const claim = sdk.set(room, { hostUid: uid, createdAt: sdk.serverTimestamp() }).then(() => {
-          if (onlineSession !== session) return sdk.remove(room);
-        });
-        try {
-          await onlineWithDeadline(claim, 10000, "방 만들기 요청 시간이 초과됐습니다.");
-        } catch (error) {
-          if (onlineSession !== session) return;
-          if (!/permission.denied/i.test(error.code || error.message)) throw error;
-          denied = error;
-          continue;
-        }
-        if (onlineSession !== session) return;
-        session.room = room;
-        break;
-      }
-      if (!session.room) throw denied || new Error("빈 방 코드를 확보하지 못했습니다. 다시 시도해 주세요.");
-      session.disconnect = sdk.onDisconnect(session.room);
-      await onlineWithDeadline(session.disconnect.remove(), 8000, "방 연결을 유지할 수 없습니다.");
-      if (onlineSession !== session) return;
-      showModal("온라인 2P · 호스트", "방 코드 " + session.code,
-        "상대에게 4자리 코드를 알려주세요. 입장하면 캐릭터 선택 화면이 열립니다.", [
-          ["취소", () => closeOnlineRoom(session), false],
-        ]);
-    } else {
-      const room = sdk.ref(sdk.db, ONLINE_ROOM_PATH + "/" + code);
-      const found = (await onlineWithDeadline(sdk.get(room), 10000, "방을 찾는 요청 시간이 초과됐습니다.")).val();
-      if (onlineSession !== session) return;
-      if (!found?.hostUid) throw new Error("해당 코드의 방이 없습니다. 상대의 코드를 확인해 주세요.");
-      if (found.guestUid || found.guestClosed) throw new Error("이미 다른 상대가 입장했습니다.");
-      const guest = sdk.child(room, "guestUid");
-      const closed = sdk.child(room, "guestClosed");
-      const claim = sdk.runTransaction(guest, value =>
-        onlineSession === session && !value ? uid : undefined,
-        { applyLocally: false }).then(result => {
-          if (result.committed && onlineSession !== session) sdk.set(closed, true).catch(() => {});
-          return result;
-        });
-      const result = await onlineWithDeadline(claim, 10000, "방 입장 요청 시간이 초과됐습니다.");
-      if (!result.committed) throw new Error("이미 다른 상대가 입장했습니다.");
-      if (onlineSession !== session) return;
-      session.room = room;
-      session.disconnect = sdk.onDisconnect(closed);
-      await onlineWithDeadline(session.disconnect.set(true), 8000, "방 연결을 유지할 수 없습니다.");
-      if (onlineSession !== session) return;
-    }
-    session.unsubscribe = sdk.onValue(session.room, snapshot => {
-      if (onlineSession !== session) return;
-      const room = snapshot.val();
-      if (!room || room.guestClosed) {
-        onlineError(session, new Error("상대방이 방을 나갔습니다."));
-        return;
-      }
-      if (!room.guestUid) return;
-      if (!session.peer) {
-        try { startOnlineSelection(session); }
-        catch (error) { onlineError(session, error); return; }
-      }
-      const remote = session.slot === 0 ? room.answer : room.offer;
-      if (remote && !session.settingRemote) {
-        session.settingRemote = true;
-        acceptOnlineSignal(session, remote).catch(error => onlineError(session, error));
-      }
-    }, error => onlineError(session, error));
+    const Peer = await loadOnlinePeer();
+    if (onlineSession === session) registerOnlinePeer(session, Peer);
   } catch (error) {
     onlineError(session, error);
   }
 }
 
+function registerOnlinePeer(session, Peer, attempt = 0) {
+  const host = session.slot === 0;
+  if (host) session.code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, "0");
+  const peer = host ? new Peer(ONLINE_PEER_PREFIX + session.code) : new Peer();
+  session.peer = peer;
+  const active = () => onlineSession === session && session.peer === peer;
+  const fail = error => { if (active()) onlineError(session, error); };
+  clearTimeout(session.connectTimer);
+  session.connectTimer = setTimeout(() => fail(new Error("온라인 서버 연결 시간이 초과됐습니다.")), 15000);
+  peer.on("error", error => {
+    if (!active()) return;
+    if (host && error.type === "unavailable-id" && session.phase === "connecting" && attempt < 7) {
+      session.peer = null;
+      peer.destroy();
+      registerOnlinePeer(session, Peer, attempt + 1);
+      return;
+    }
+    // PeerServer can disconnect while an established direct match still works.
+    if (session.channel?.open && ["network", "disconnected", "socket-closed"].includes(error.type)) return;
+    fail(error);
+  });
+  peer.on("disconnected", () => {
+    if (!session.channel?.open) fail({ type: "disconnected" });
+  });
+  peer.on("close", () => fail(new Error("온라인 연결이 끊겼습니다.")));
+  if (host) peer.on("connection", channel => {
+    if (!active() || session.channel || channel.label !== "bcf-v2") {
+      channel.close();
+      return;
+    }
+    bindOnlineChannel(session, channel);
+  });
+  else peer.on("call", call => acceptOnlineVideo(session, call));
+  peer.on("open", () => {
+    if (!active()) return;
+    clearTimeout(session.connectTimer);
+    if (host) {
+      session.phase = "waiting";
+      showModal("온라인 2P · 호스트", "방 코드 " + session.code,
+        "상대에게 4자리 코드를 알려주세요. 입장하면 캐릭터 선택 화면이 열립니다.", [
+          ["취소", () => closeOnlineRoom(session), false],
+        ]);
+    } else {
+      const channel = peer.connect(ONLINE_PEER_PREFIX + session.code, {
+        label: "bcf-v2", serialization: "none", reliable: true,
+      });
+      if (channel) bindOnlineChannel(session, channel);
+      else fail(new Error("방에 입장할 수 없습니다."));
+    }
+  });
+}
+
 function closeOnlineRoom(session = onlineSession) {
   if (!session || onlineSession !== session) return;
   onlineSession = null;
-  session.unsubscribe?.();
   clearTimeout(session.connectTimer);
-  clearTimeout(session.dropTimer);
-  session.channel?.close();
-  session.peer?.close();
+  clearTimeout(session.mediaTimer);
+  session.peer?.destroy();
   for (const track of session.stream?.getTracks() || []) track.stop();
   if (session.video) {
     session.video.srcObject = null;
     session.video.remove();
-  }
-  if (session.room) {
-    const { sdk, room } = session;
-    const leave = session.slot === 0 ? sdk.remove(room) : sdk.set(sdk.child(room, "guestClosed"), true);
-    leave.then(() => session.disconnect?.cancel()).catch(() => {});
   }
   document.body.classList.remove("online-battle", "online-guest");
   $("pause").hidden = false;
@@ -29920,88 +29877,72 @@ function closeOnlineRoom(session = onlineSession) {
   home();
 }
 
-function startOnlineSelection(session) {
+function enterOnlineSelection(session) {
   session.phase = "selection";
   mode = 2;
   $("modal").classList.add("hidden");
   selection();
-  const peer = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  });
-  session.peer = peer;
-  session.connectTimer = setTimeout(() => onlineError(session,
-    new Error("화면 연결 시간이 초과됐습니다. 제한된 네트워크에서는 TURN 서버가 필요할 수 있습니다.")), 40000);
-  peer.onconnectionstatechange = () => {
-    if (onlineSession !== session) return;
-    clearTimeout(session.dropTimer);
-    if (peer.connectionState === "failed") {
-      onlineError(session, new Error("상대와 화면을 연결할 수 없습니다."));
-    } else if (peer.connectionState === "disconnected") {
-      session.dropTimer = setTimeout(() => onlineError(session, new Error("상대와의 연결이 끊겼습니다.")), 9000);
-    }
-  };
-  if (session.slot === 0) {
-    const canvas = document.createElement("canvas");
-    canvas.width = 960;
-    canvas.height = 540;
-    const context = canvas.getContext("2d", { alpha: false });
-    session.capture = { canvas, context, last: -Infinity };
-    session.stream = canvas.captureStream(30);
-    const video = session.stream.getVideoTracks()[0];
-    if (!video) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
-    peer.addTrack(video, session.stream);
-    bindOnlineChannel(session, peer.createDataChannel("bcf-v1"));
-    publishOnlineSignal(session, "offer", peer.createOffer()).catch(error => onlineError(session, error));
-  } else {
+  session.mediaTimer = setTimeout(() => onlineError(session,
+    new Error("상대와 영상 연결을 완료하지 못했습니다. 다른 네트워크에서 다시 시도해 주세요.")), 30000);
+}
+
+function makeOnlineVideoCall(session) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 960;
+  canvas.height = 540;
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
+  session.capture = { canvas, context, last: -Infinity };
+  session.stream = canvas.captureStream(30);
+  if (!session.stream.getVideoTracks().length) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
+  const call = session.peer.call(session.channel.peer, session.stream);
+  if (!call) throw new Error("영상 연결을 열 수 없습니다.");
+  watchOnlineVideoCall(session, call);
+  context.fillStyle = "#121e27";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function watchOnlineVideoCall(session, call) {
+  session.call = call;
+  call.on("error", error => onlineError(session, error));
+  call.on("close", () => onlineError(session, new Error("상대와의 영상 연결이 끊겼습니다.")));
+}
+
+function acceptOnlineVideo(session, call) {
+  if (onlineSession !== session || session.phase !== "selection" || session.call ||
+      call.peer !== session.channel?.peer) {
+    call.close();
+    return;
+  }
+  try {
     const video = document.createElement("video");
     video.id = "onlineArenaVideo";
     video.autoplay = video.playsInline = video.muted = true;
     video.setAttribute("aria-label", "호스트의 전투 화면");
     session.video = video;
-    peer.ontrack = event => {
-      video.srcObject = event.streams[0] || new MediaStream([event.track]);
-      video.play().catch(() => {});
-    };
-    peer.ondatachannel = event => {
-      if (event.channel.label === "bcf-v1" && !session.channel) bindOnlineChannel(session, event.channel);
-    };
-  }
-}
-
-async function publishOnlineSignal(session, field, description) {
-  const peer = session.peer;
-  await peer.setLocalDescription(await description);
-  if (onlineSession !== session) return;
-  if (peer.iceGatheringState !== "complete") {
-    await new Promise(resolve => {
-      const done = () => {
-        clearTimeout(timeout);
-        peer.removeEventListener("icegatheringstatechange", check);
-        resolve();
-      };
-      const check = () => { if (peer.iceGatheringState === "complete") done(); };
-      const timeout = setTimeout(done, 6500);
-      peer.addEventListener("icegatheringstatechange", check);
-      check();
+    watchOnlineVideoCall(session, call);
+    call.on("stream", stream => {
+      if (onlineSession !== session || session.mediaReady || !stream.getVideoTracks().length) return;
+      video.srcObject = stream;
+      session.mediaReady = true;
+      clearTimeout(session.mediaTimer);
+      if (!onlineSend(session, "video-ready")) {
+        onlineError(session, new Error("영상 연결 상태를 상대에게 전송하지 못했습니다."));
+        return;
+      }
+      updateOnlineSelectionStatus();
     });
-  }
-  if (onlineSession !== session) return;
-  const { sdk } = session;
-  await sdk.set(sdk.child(session.room, field), peer.localDescription.sdp);
-}
-
-async function acceptOnlineSignal(session, sdp) {
-  const host = session.slot === 0;
-  await session.peer.setRemoteDescription({ type: host ? "answer" : "offer", sdp });
-  if (onlineSession === session && !host) {
-    await publishOnlineSignal(session, "answer", session.peer.createAnswer());
+    call.answer();
+  } catch (error) {
+    onlineError(session, error);
   }
 }
 
 function onlineSend(session, type, values = {}) {
-  if (session.channel?.readyState !== "open" || session.channel.bufferedAmount > 32768) return false;
+  const channel = session.channel;
+  if (!channel?.open || channel.dataChannel?.bufferedAmount > 32768) return false;
   try {
-    session.channel.send(JSON.stringify({ protocol: ONLINE_PROTOCOL, type, ...values }));
+    channel.send(JSON.stringify({ protocol: ONLINE_PROTOCOL, type, ...values }));
     return true;
   } catch {
     return false;
@@ -30010,21 +29951,41 @@ function onlineSend(session, type, values = {}) {
 
 function bindOnlineChannel(session, channel) {
   session.channel = channel;
-  channel.onopen = () => {
-    if (onlineSession !== session) return;
+  const active = () => onlineSession === session && session.channel === channel;
+  const failed = error => {
+    if (!active()) return;
+    if (session.slot === 0 && session.phase === "waiting") {
+      clearTimeout(session.connectTimer);
+      session.channel = null;
+      channel.close();
+      return;
+    }
+    onlineError(session, error);
+  };
+  clearTimeout(session.connectTimer);
+  session.connectTimer = setTimeout(() => failed(new Error("방 입장 시간이 초과됐습니다. 코드를 확인해 주세요.")), 22000);
+  channel.on("open", () => {
+    if (!active()) return;
     clearTimeout(session.connectTimer);
-    if (session.picks[session.slot]) sendOnlinePick(session);
-    updateOnlineSelectionStatus();
-    startOnlineMatchIfReady(session);
-  };
-  channel.onclose = () => onlineError(session, new Error("상대와의 연결이 끊겼습니다."));
-  channel.onmessage = event => {
-    if (onlineSession !== session || typeof event.data !== "string" || event.data.length > 4096) return;
+    try {
+      enterOnlineSelection(session);
+      if (session.slot === 0) {
+        // Guest enters selection before it receives a separate media offer.
+        // Wait for its first data message so the media handler is ready.
+        if (!onlineSend(session, "room-ready")) throw new Error("방 입장을 확인하지 못했습니다.");
+      }
+    } catch (error) {
+      onlineError(session, error);
+    }
+  });
+  channel.on("close", () => failed(new Error("상대와의 연결이 끊겼습니다.")));
+  channel.on("error", failed);
+  channel.on("data", data => {
+    if (!active() || typeof data !== "string" || data.length > 4096) return;
     let msg;
-    try { msg = JSON.parse(event.data); } catch { return; }
-    if (msg?.protocol !== ONLINE_PROTOCOL) return;
-    handleOnlineMessage(session, msg);
-  };
+    try { msg = JSON.parse(data); } catch { return; }
+    if (msg?.protocol === ONLINE_PROTOCOL) handleOnlineMessage(session, msg);
+  });
 }
 
 function onlineFighterIndex(id) {
@@ -30043,11 +30004,29 @@ function confirmOnlineFighter(slot) {
   session.picks[slot] = CHARACTER_DATABASE[index].id;
   chosen[slot] = index;
   drawSelection();
-  if (session.channel?.readyState === "open") sendOnlinePick(session);
+  if (session.channel?.open) sendOnlinePick(session);
   startOnlineMatchIfReady(session);
 }
 
 function handleOnlineMessage(session, msg) {
+  if (session.phase === "selection") {
+    if (session.slot === 1 && msg.type === "room-ready") {
+      if (!onlineSend(session, "room-accepted")) onlineError(session, new Error("방 입장을 확인하지 못했습니다."));
+      return;
+    }
+    if (session.slot === 0 && msg.type === "room-accepted" && !session.call) {
+      try { makeOnlineVideoCall(session); }
+      catch (error) { onlineError(session, error); }
+      return;
+    }
+    if (session.slot === 0 && msg.type === "video-ready" && session.call) {
+      session.mediaReady = true;
+      clearTimeout(session.mediaTimer);
+      updateOnlineSelectionStatus();
+      startOnlineMatchIfReady(session);
+      return;
+    }
+  }
   if (msg.type === "pick" && session.phase === "selection") {
     const other = 1 - session.slot;
     const index = onlineFighterIndex(msg.fighter);
@@ -30083,7 +30062,7 @@ function updateOnlineSelectionStatus() {
   if (status.hidden) return;
   status.textContent = [
     "방 " + session.code + " · " + (session.slot + 1) + "P",
-    session.channel?.readyState === "open" ? "연결됨" : "화면 연결 중",
+    session.mediaReady ? "연결됨" : "화면 연결 중",
     session.picks[0] && session.picks[1] ? "양쪽 선택 완료 · 경기 준비 중" :
       session.picks[session.slot] ? "선택 완료 · 상대를 기다리는 중" : "내 캐릭터를 선택하세요",
   ].join(" · ");
@@ -30091,7 +30070,7 @@ function updateOnlineSelectionStatus() {
 
 function startOnlineMatchIfReady(session) {
   if (onlineSession !== session || session.slot !== 0 || session.phase !== "selection" ||
-      session.channel?.readyState !== "open" || !session.picks[0] || !session.picks[1]) return;
+      !session.channel?.open || !session.mediaReady || !session.picks[0] || !session.picks[1]) return;
   session.phase = "loading";
   const track = randomBattleTrack();
   const indices = session.picks.map(onlineFighterIndex);
