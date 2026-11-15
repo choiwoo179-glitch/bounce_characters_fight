@@ -2783,6 +2783,19 @@ body.startup-loading { overflow: hidden; }
   body.battle-theme:not(.practice-mode) #arena { min-height: 180px; }
 }
 </style>
+<style id="online-style">
+  #onlineMode { width: 100%; margin: 0 0 12px; min-height: 48px; border-color: #81b7ff; }
+  #onlineStatus { color: #d2e8ff; margin: 0; }
+  .online-code-input { min-height: 44px; width: 100%; text-align: center; color: #fff;
+    background: #13202c; border: 1px solid #81b7ff; border-radius: 8px;
+    font: inherit; font-weight: 700; font-size: 1.2rem; letter-spacing: .3em; }
+  .online-guest #arena { touch-action: auto; }
+  #onlineArenaVideo { display: block; width: 100%; height: 100%; object-fit: contain; background: #121e27; }
+  .online-guest .arena-zoom-hint { display: none; }
+  .online-battle [aria-disabled="true"] { cursor: default; opacity: .65; }
+  .online-battle #pause[hidden] { display: none; }
+  #modalActions:has(.online-code-input) { flex-wrap: wrap; }
+</style>
 </head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
@@ -2867,7 +2880,9 @@ body.startup-loading { overflow: hidden; }
             <button type="button" id="resourceRetry" hidden>실패한 파일 다시 받기</button>
           </details>
           <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
+          
           <div class="home-controls"><div class="modes" id="modes"></div>
+          <button type="button" id="onlineMode" class="mode"><b>온라인 2P</b><small>방 코드로 대전</small></button>
             <div class="options">
               <button type="button" id="startMode" class="start-mode">시작하기</button>
               <label class="skill-mode-switch">
@@ -2893,6 +2908,7 @@ body.startup-loading { overflow: hidden; }
           <div>
             <div class="eyebrow">CHOOSE YOUR FIGHTER</div>
             <h2 id="selectTitle"></h2>
+          <p id="onlineStatus" class="hint" role="status" hidden></p>
           </div>
           <div class="slots" id="slots"></div>
           <button class="quiet" id="back">← 모드 선택</button>
@@ -10632,6 +10648,7 @@ function clearSelectionPreviews() {
 }
 
 function selectPlayer(e) {
+  if (onlineSession && e !== onlineSession.slot) return;
   ((selectionClick = null),
     (selectionSlot = e),
     drawSelection(),
@@ -10639,6 +10656,7 @@ function selectPlayer(e) {
 }
 
 function previewFighter(e) {
+  if (onlineSession?.picks[onlineSession.slot]) return;
   ((selectionClick = null),
     (selectionChoices[selectionSlot] = e),
     (chosen[selectionSlot] = void 0),
@@ -10659,6 +10677,7 @@ function clickFighter(e) {
 }
 
 function confirmFighter(e) {
+  if (onlineSession) return confirmOnlineFighter(e);
   if (
     ((selectionClick = null), (chosen[e] = selectionChoices[e]), chosen.every((e) => void 0 !== e))
   ) {
@@ -10697,6 +10716,7 @@ function renderSelectionInfo(){
  <div class="profile-page-content ${second?'profile-detail-page':'profile-summary-page'}"><h2>${actor.name}</h2>${second?`<div class="profile-detail-skills"><section class="profile-skill"><h3>MP · ${actor.skill}</h3><p>${actor.desc}</p></section><section class="profile-skill"><h3>SP · ${actor.special}</h3><p>${actor.spDesc}</p></section></div>`:`${characterTags(actor)}<p class="fighter-role">${actor.role}</p><div class="profile-stats">${stats.map(([name,value])=>`<div><span>${name}</span><b>${value}</b></div>`).join('')}</div><div class="profile-skill-names"><div><small>MP · 스킬</small><strong>${actor.skill}</strong></div><div><small>SP · 스페셜 스킬</small><strong>${actor.special}</strong></div></div>`}</div>
  <footer class="profile-page-footer"><span>좌우로 드래그 · 터치하여 넘기기</span><button type="button" class="selection-practice" id="practiceSelectedFighter">이 캐릭터 연습</button></footer>`;
  $("practiceSelectedFighter").onclick = practiceFromSelection;
+  $("practiceSelectedFighter").hidden = !!onlineSession;
  bindProfileSwipe(panel);
  const fitSkillNames=()=>{panel.querySelectorAll('.profile-skill-names strong').forEach(text=>{text.style.fontSize='';text.title=text.textContent;const width=text.clientWidth;if(width>0&&text.scrollWidth>width){const size=parseFloat(getComputedStyle(text).fontSize);text.style.fontSize=Math.max(7,size*width/text.scrollWidth-.2)+'px';}});};
  requestAnimationFrame(fitSkillNames);
@@ -10727,7 +10747,7 @@ function drawSelection() {
     ($("fighterWindows").innerHTML = selectionChoices
       .map((e, a) => {
         const o = CHARACTER_DATABASE[e],
-          n = void 0 !== chosen[a];
+          n = void 0 !== chosen[a], remoteSlot = !!onlineSession && a !== onlineSession.slot;
         return (
           '<div class="fighter-window ' +
           (a === selectionSlot ? "window-active " : "") +
@@ -10738,7 +10758,7 @@ function drawSelection() {
           hex(o.color) +
           '"><button class="player-tab" aria-pressed="' +
           (a === selectionSlot) +
-          '">P' +
+          (remoteSlot ? '" disabled>P' : '">P') +
           (a + 1) +
           "<span>" +
           (n ? "READY" : "SELECT") +
@@ -10753,13 +10773,13 @@ function drawSelection() {
           '</h3></div><button class="confirm-fighter ' +
           (n ? "" : "primary") +
           '" ' +
-          (n ? "disabled" : "") +
+          (n || remoteSlot ? "disabled" : "") +
           ' aria-label="P' +
           (a + 1) +
           " " +
           o.name +
           ' 선택하기">' +
-          (n ? "선택 완료" : "선택하기") +
+          (n ? "선택 완료" : remoteSlot ? "상대 선택 대기" : "선택하기") +
           "</button></div>"
         );
       })
@@ -10777,6 +10797,7 @@ function drawSelection() {
           }));
       }),
     renderSelectionInfo(),
+    updateOnlineSelectionStatus(),
     drawSelectionRoster(),
     updateSelectionModels(),
     resize());
@@ -10827,6 +10848,10 @@ function startBattleNow(track) {
 }
 
 function requestCast(slot, special) {
+  if (!routeOnlineCast(slot, special ? "sp" : "mp")) applyLocalCast(slot, special);
+}
+
+function applyLocalCast(slot, special) {
   if (practiceActive) {
     if (slot === 0) {
       const skill = practiceSkills(CHARACTER_DATABASE[practiceIndex]).find(entry => entry.special === special);
@@ -16734,6 +16759,10 @@ function frame(timestamp) {
   const elapsedDt = Math.max(0, (timestamp-last)/1000 || 0);
   const realDt = Math.min(.08, elapsedDt);
   last = timestamp;
+  if (onlineSession?.slot === 1 && ["battle", "result"].includes(onlineSession.phase)) {
+    requestAnimationFrame(frame);
+    return;
+  }
   let visualDt = 0;
   if (running && !paused) {
     visualDt = tickCinemaBattle(cinema.ending ? elapsedDt : realDt);
@@ -16751,6 +16780,7 @@ function frame(timestamp) {
   updateArenaShake(0);
   updateCinemaCamera(running&&!paused ? realDt : 0);
   renderFrame(visualDt);
+  onlineCaptureFrame(timestamp);
   requestAnimationFrame(frame);
 }
 
@@ -18483,7 +18513,7 @@ function selection(snapshot) {
   }
   ((chosen = returning ? snapshot.chosen : Array(e).fill(void 0)),
     (selectionChoices = returning ? snapshot.choices : Array.from({ length: e }, (_, index) => index)),
-    (selectionSlot = returning ? snapshot.slot : 0),
+    (selectionSlot = returning ? snapshot.slot : onlineSession?.slot ?? 0),
     (selectionClick = null),
     (manual = returning ? snapshot.manual : $("manual").checked),
     clearWorld(),
@@ -18667,16 +18697,16 @@ function renderSelectionPreviews(e) {
   }
 }
 
-function buildHud() {
+function buildHud(fighters = actors, remote = false) {
   const hud = $("hud");
   hud.style.removeProperty("grid-template-columns");
-  hud.classList.toggle("duel-hud", actors.length === 2);
-  hud.innerHTML = actors
+  hud.classList.toggle("duel-hud", fighters.length === 2);
+  hud.innerHTML = fighters
     .map((e) => {
       const right = e.slot % 2 === 1;
       return `<section class="fighter ${right ? "fighter-right" : "fighter-left"}" id="f${e.slot}" style="--accent:${hex(e.d.color)}" aria-label="${e.slot + 1}P ${e.d.short} 상태">
       <div class="fighter-vitals">
-        <div class="fighter-avatar"><img id="fighterPortrait${e.slot}" src="${hudPortrait(e)}" alt="${e.d.name}" draggable="false"></div>
+        <div class="fighter-avatar"><img id="fighterPortrait${e.slot}" src="${remote ? fighterPortrait(e.d) : hudPortrait(e)}" alt="${e.d.name}" draggable="false"></div>
         <div class="fighter-gauges">${["hp", "mp", "sp"].map((a) => `<div class="gauge gauge-${a}"><div class="track"><div class="fill" id="${a + e.slot}"></div><span class="gauge-label">${a.toUpperCase()}</span><output id="${a}v${e.slot}"></output></div></div>`).join("")}</div>
       </div>
       <div class="fighter-copy">
@@ -18686,14 +18716,14 @@ function buildHud() {
     </section>`;
     })
     .join("");
-  if (actors.length === 2) {
+  if (fighters.length === 2) {
     const vs = document.createElement("span");
     vs.className = "hud-versus";
     vs.textContent = "VS";
     vs.setAttribute("aria-hidden", "true");
     hud.append(vs);
   }
-  for (const e of actors) {
+  for (const e of fighters) {
     if (e.d.id === "gojo") {
       const button = document.createElement("button");
       button.id = "rareb" + e.slot;
@@ -18701,6 +18731,7 @@ function buildHud() {
       button.textContent = "허식 무라사키";
       button.title = "MP 70 / SP 80~100";
       button.onclick = () => {
+        if (routeOnlineCast(e.slot, "rare")) return;
         if (running && !paused && manual && !(mode === 1 && e.slot === 1)) castHollowPurple(e);
         updateHud();
       };
@@ -18708,10 +18739,16 @@ function buildHud() {
         .querySelector(".fighter-copy")
         .append(button);
     }
+    if (onlineSession && e.slot !== onlineSession.slot) {
+      for (const id of ["mpb", "spb", ...(e.d.id === "gojo" ? ["rareb"] : [])]) {
+        $(id + e.slot).tabIndex = -1;
+        $(id + e.slot).setAttribute("aria-disabled", "true");
+      }
+    }
     $("mpb" + e.slot).onclick = () => requestCast(e.slot, false);
     $("spb" + e.slot).onclick = () => requestCast(e.slot, true);
   }
-  updateHud();
+  if (!remote) updateHud();
 }
 
 function updateHud() {
@@ -18788,6 +18825,7 @@ function updateHud() {
       $(resource + "name" + slot).textContent = name;
     }
   }
+  sendOnlineHud();
 }
 
 function showModal(e, a, o, n) {
@@ -18850,6 +18888,8 @@ function finish() {
         : "도전 종료"
       : "P" + (a.slot + 1) + " " + a.d.short + " 승리"
     : "무승부";
+  if (publishOnlineResult(n, Math.floor(t) + "초 · " +
+      (a ? "남은 HP " + Math.ceil(a.hp) + " / " + a.maxHp : "모든 전사가 동시에 쓰러졌습니다."))) return;
   const s = [];
   (o && stage < 5
     ? s.push([
@@ -18926,6 +18966,7 @@ function finish() {
 }
 
 function togglePause() {
+  if (onlineSession) return;
   if (running) {
     paused = !paused;
     for (const e of voiceClips) paused ? e.pause() : muted || e.play().catch(() => {});
@@ -18992,9 +19033,11 @@ function initUI() {
     $("manual").addEventListener("change", updateSkillModeHint),
     window.matchMedia?.("(any-pointer: coarse)").addEventListener?.("change", updateSkillModeHint),
     chooseMode(1),
-    ($("back").onclick = home),
+    ($("onlineMode").onclick = onlineRoomMenu),
+    ($("back").onclick = () => onlineSession ? closeOnlineRoom() : home()),
     ($("pause").onclick = togglePause),
     ($("exit").onclick = () => {
+      if (onlineSession) return closeOnlineRoom();
       if(practiceActive)return exitPractice();
       const e = paused;
       ((paused = !0),
@@ -19012,7 +19055,7 @@ function initUI() {
     document.addEventListener("keydown", (e) => {
       if (!$("modal").classList.contains("hidden")) {
         if ("Tab" === e.key) {
-          const a = [...$("modalActions").querySelectorAll("button")];
+          const a = [...$("modalActions").querySelectorAll("button, input")];
           if (!a.length) return;
           const o =
             (a.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + a.length) % a.length;
@@ -27374,7 +27417,7 @@ function tickCinemaBattle(realDt) {
   if (cinema.ending) return clock.visualDt;
   if (cinema.stop <= 0 && cinema.buffered.length) {
     const buffered = cinema.buffered.splice(0);
-    for (const [slot,special] of buffered) requestCast(slot,special);
+    for (const [slot,special] of buffered) applyLocalCast(slot,special);
   }
   let elapsed = 0;
   accumulator += clock.dt;
@@ -29107,7 +29150,7 @@ function matchAssetUrls(indices, track) {
   return urls.filter(Boolean);
 }
 
-function withMatchResources(indices, track, launch) {
+function withMatchResources(indices, track, launch, isCurrent = () => true) {
   if (matchLoading) return;
   if (headless) return launch();
   const tasks = queueResources(matchAssetUrls(indices, track), true);
@@ -29119,6 +29162,7 @@ function withMatchResources(indices, track, launch) {
   $("modal").focus();
   return waitForResources(tasks, 5000).then(() => {
     matchLoading = false;
+    if (!isCurrent()) return;
     paused = wasPaused;
     $("modal").classList.add("hidden");
     launch();
@@ -29661,6 +29705,550 @@ function updateHigurumaCourtVisuals() {
       if (light.visible) light.position.set(actor.x,0,actor.z);
     }
   }
+}
+
+const ONLINE_ROOM_PATH = "bcfOnlineV1";
+const ONLINE_PROTOCOL = 1;
+const onlineFirebaseConfig = {
+  apiKey: "AIzaSyD6GvcuBcvE_sXyrq59At51WX1qJ6FAEEA",
+  authDomain: "bounce-characters-fight.firebaseapp.com",
+  databaseURL: "https://bounce-characters-fight-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bounce-characters-fight",
+  storageBucket: "bounce-characters-fight.firebasestorage.app",
+  messagingSenderId: "231389962267",
+  appId: "1:231389962267:web:689eb2fbce34b6e107d8be",
+  measurementId: "G-8F7QLR4VRC"
+};
+
+let onlineSession = null;
+let onlineFirebasePromise;
+
+function loadOnlineFirebase() {
+  if (!onlineFirebasePromise) {
+    const cdn = "https://www.gstatic.com/firebasejs/13.3.0/";
+    onlineFirebasePromise = Promise.all([
+      import(cdn + "firebase-app.js"),
+      import(cdn + "firebase-auth.js"),
+      import(cdn + "firebase-database.js"),
+    ]).then(async ([appSdk, authSdk, dbSdk]) => {
+      const app = appSdk.getApps()[0] || appSdk.initializeApp(onlineFirebaseConfig);
+      const auth = authSdk.initializeAuth(app, { persistence: authSdk.inMemoryPersistence });
+      return { ...dbSdk, auth, signIn: authSdk.signInAnonymously, db: dbSdk.getDatabase(app) };
+    }).catch(error => {
+      onlineFirebasePromise = null;
+      throw error;
+    });
+  }
+  return onlineFirebasePromise.then(async sdk => {
+    if (!sdk.auth.currentUser) await sdk.signIn(sdk.auth);
+    return sdk;
+  });
+}
+
+function onlineWithDeadline(promise, ms, message) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+function onlineRoomMenu() {
+  if (onlineSession) return;
+  showModal("온라인 2P", "친구와 대전", "방 코드를 공유해 1대1로 대전하세요.", [
+    ["방 만들기", () => openOnlineRoom("host"), true],
+    ["상대방 방 들어가기", onlineJoinMenu, false],
+    ["취소", () => $("modal").classList.add("hidden"), false],
+  ]);
+}
+
+function onlineJoinMenu() {
+  const input = document.createElement("input");
+  input.className = "online-code-input";
+  input.type = "text";
+  input.inputMode = "numeric";
+  input.maxLength = 4;
+  input.autocomplete = "off";
+  input.placeholder = "0000";
+  input.setAttribute("aria-label", "4자리 방 코드");
+  const join = () => {
+    const code = input.value.trim();
+    if (!/^\d{4}$/.test(code)) {
+      $("modalText").textContent = "숫자 4자리를 입력하세요.";
+      input.focus();
+      return;
+    }
+    openOnlineRoom("guest", code);
+  };
+  showModal("온라인 2P", "상대방 방 들어가기", "호스트에게 받은 4자리 코드를 입력하세요.", [
+    ["입장", join, true], ["취소", onlineRoomMenu, false],
+  ]);
+  $("modalActions").prepend(input);
+  input.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.repeat) join();
+  });
+  input.focus();
+}
+
+function onlineError(session, error) {
+  if (onlineSession !== session) return;
+  if (session.phase === "result") return;
+  console.warn("Online 2P:", error);
+  let message = error?.message || "연결을 완료하지 못했습니다.";
+  if (error?.code === "auth/operation-not-allowed") message = "Firebase Authentication에서 익명 로그인을 활성화하세요.";
+  else if (/permission.denied/i.test(error?.code || message)) message = "방을 읽거나 쓸 권한이 없습니다. 방이 이미 찼거나 Firebase 데이터베이스 규칙 설정이 필요합니다.";
+  else if (/failed to fetch|network-request-failed|importing a module script failed/i.test(message)) message = "Firebase에 연결할 수 없습니다. 인터넷 연결과 배포 주소를 확인하세요.";
+  closeOnlineRoom(session);
+  showModal("온라인 2P", "연결 종료", message, [
+    ["다시 시도", onlineRoomMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
+  ]);
+}
+
+async function openOnlineRoom(role, code) {
+  if (onlineSession) return;
+  const session = { role, slot: role === "host" ? 0 : 1, code, picks: [], phase: "connecting" };
+  onlineSession = session;
+  showModal("온라인 2P", "Firebase 연결 중", "잠시 기다려 주세요.", [
+    ["취소", () => closeOnlineRoom(session), false],
+  ]);
+  try {
+    if (!window.isSecureContext || typeof RTCPeerConnection !== "function" ||
+        typeof HTMLCanvasElement.prototype.captureStream !== "function") {
+      throw new Error("온라인 2P는 HTTPS 또는 localhost에서 WebRTC를 지원하는 브라우저로 열어 주세요.");
+    }
+    const sdk = await onlineWithDeadline(loadOnlineFirebase(), 15000, "Firebase 연결 시간이 초과됐습니다.");
+    if (onlineSession !== session) return;
+    session.sdk = sdk;
+    const uid = sdk.auth.currentUser.uid;
+    if (role === "host") {
+      let denied;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        session.code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 10000).padStart(4, "0");
+        const room = sdk.ref(sdk.db, ONLINE_ROOM_PATH + "/" + session.code);
+        // The database rule atomically rejects writes to occupied, unexpired codes.
+        const claim = sdk.set(room, { hostUid: uid, createdAt: sdk.serverTimestamp() }).then(() => {
+          if (onlineSession !== session) return sdk.remove(room);
+        });
+        try {
+          await onlineWithDeadline(claim, 10000, "방 만들기 요청 시간이 초과됐습니다.");
+        } catch (error) {
+          if (onlineSession !== session) return;
+          if (!/permission.denied/i.test(error.code || error.message)) throw error;
+          denied = error;
+          continue;
+        }
+        if (onlineSession !== session) return;
+        session.room = room;
+        break;
+      }
+      if (!session.room) throw denied || new Error("빈 방 코드를 확보하지 못했습니다. 다시 시도해 주세요.");
+      session.disconnect = sdk.onDisconnect(session.room);
+      await onlineWithDeadline(session.disconnect.remove(), 8000, "방 연결을 유지할 수 없습니다.");
+      if (onlineSession !== session) return;
+      showModal("온라인 2P · 호스트", "방 코드 " + session.code,
+        "상대에게 4자리 코드를 알려주세요. 입장하면 캐릭터 선택 화면이 열립니다.", [
+          ["취소", () => closeOnlineRoom(session), false],
+        ]);
+    } else {
+      const room = sdk.ref(sdk.db, ONLINE_ROOM_PATH + "/" + code);
+      const found = (await onlineWithDeadline(sdk.get(room), 10000, "방을 찾는 요청 시간이 초과됐습니다.")).val();
+      if (onlineSession !== session) return;
+      if (!found?.hostUid) throw new Error("해당 코드의 방이 없습니다. 상대의 코드를 확인해 주세요.");
+      if (found.guestUid || found.guestClosed) throw new Error("이미 다른 상대가 입장했습니다.");
+      const guest = sdk.child(room, "guestUid");
+      const closed = sdk.child(room, "guestClosed");
+      const claim = sdk.runTransaction(guest, value =>
+        onlineSession === session && !value ? uid : undefined,
+        { applyLocally: false }).then(result => {
+          if (result.committed && onlineSession !== session) sdk.set(closed, true).catch(() => {});
+          return result;
+        });
+      const result = await onlineWithDeadline(claim, 10000, "방 입장 요청 시간이 초과됐습니다.");
+      if (!result.committed) throw new Error("이미 다른 상대가 입장했습니다.");
+      if (onlineSession !== session) return;
+      session.room = room;
+      session.disconnect = sdk.onDisconnect(closed);
+      await onlineWithDeadline(session.disconnect.set(true), 8000, "방 연결을 유지할 수 없습니다.");
+      if (onlineSession !== session) return;
+    }
+    session.unsubscribe = sdk.onValue(session.room, snapshot => {
+      if (onlineSession !== session) return;
+      const room = snapshot.val();
+      if (!room || room.guestClosed) {
+        onlineError(session, new Error("상대방이 방을 나갔습니다."));
+        return;
+      }
+      if (!room.guestUid) return;
+      if (!session.peer) {
+        try { startOnlineSelection(session); }
+        catch (error) { onlineError(session, error); return; }
+      }
+      const remote = session.slot === 0 ? room.answer : room.offer;
+      if (remote && !session.settingRemote) {
+        session.settingRemote = true;
+        acceptOnlineSignal(session, remote).catch(error => onlineError(session, error));
+      }
+    }, error => onlineError(session, error));
+  } catch (error) {
+    onlineError(session, error);
+  }
+}
+
+function closeOnlineRoom(session = onlineSession) {
+  if (!session || onlineSession !== session) return;
+  onlineSession = null;
+  session.unsubscribe?.();
+  clearTimeout(session.connectTimer);
+  clearTimeout(session.dropTimer);
+  session.channel?.close();
+  session.peer?.close();
+  for (const track of session.stream?.getTracks() || []) track.stop();
+  if (session.video) {
+    session.video.srcObject = null;
+    session.video.remove();
+  }
+  if (session.room) {
+    const { sdk, room } = session;
+    const leave = session.slot === 0 ? sdk.remove(room) : sdk.set(sdk.child(room, "guestClosed"), true);
+    leave.then(() => session.disconnect?.cancel()).catch(() => {});
+  }
+  document.body.classList.remove("online-battle", "online-guest");
+  $("pause").hidden = false;
+  $("onlineStatus").hidden = true;
+  home();
+}
+
+function startOnlineSelection(session) {
+  session.phase = "selection";
+  mode = 2;
+  $("modal").classList.add("hidden");
+  selection();
+  const peer = new RTCPeerConnection({
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  });
+  session.peer = peer;
+  session.connectTimer = setTimeout(() => onlineError(session,
+    new Error("화면 연결 시간이 초과됐습니다. 제한된 네트워크에서는 TURN 서버가 필요할 수 있습니다.")), 40000);
+  peer.onconnectionstatechange = () => {
+    if (onlineSession !== session) return;
+    clearTimeout(session.dropTimer);
+    if (peer.connectionState === "failed") {
+      onlineError(session, new Error("상대와 화면을 연결할 수 없습니다."));
+    } else if (peer.connectionState === "disconnected") {
+      session.dropTimer = setTimeout(() => onlineError(session, new Error("상대와의 연결이 끊겼습니다.")), 9000);
+    }
+  };
+  if (session.slot === 0) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 960;
+    canvas.height = 540;
+    const context = canvas.getContext("2d", { alpha: false });
+    session.capture = { canvas, context, last: -Infinity };
+    session.stream = canvas.captureStream(30);
+    const video = session.stream.getVideoTracks()[0];
+    if (!video) throw new Error("호스트의 게임 화면을 공유할 수 없습니다.");
+    peer.addTrack(video, session.stream);
+    bindOnlineChannel(session, peer.createDataChannel("bcf-v1"));
+    publishOnlineSignal(session, "offer", peer.createOffer()).catch(error => onlineError(session, error));
+  } else {
+    const video = document.createElement("video");
+    video.id = "onlineArenaVideo";
+    video.autoplay = video.playsInline = video.muted = true;
+    video.setAttribute("aria-label", "호스트의 전투 화면");
+    session.video = video;
+    peer.ontrack = event => {
+      video.srcObject = event.streams[0] || new MediaStream([event.track]);
+      video.play().catch(() => {});
+    };
+    peer.ondatachannel = event => {
+      if (event.channel.label === "bcf-v1" && !session.channel) bindOnlineChannel(session, event.channel);
+    };
+  }
+}
+
+async function publishOnlineSignal(session, field, description) {
+  const peer = session.peer;
+  await peer.setLocalDescription(await description);
+  if (onlineSession !== session) return;
+  if (peer.iceGatheringState !== "complete") {
+    await new Promise(resolve => {
+      const done = () => {
+        clearTimeout(timeout);
+        peer.removeEventListener("icegatheringstatechange", check);
+        resolve();
+      };
+      const check = () => { if (peer.iceGatheringState === "complete") done(); };
+      const timeout = setTimeout(done, 6500);
+      peer.addEventListener("icegatheringstatechange", check);
+      check();
+    });
+  }
+  if (onlineSession !== session) return;
+  const { sdk } = session;
+  await sdk.set(sdk.child(session.room, field), peer.localDescription.sdp);
+}
+
+async function acceptOnlineSignal(session, sdp) {
+  const host = session.slot === 0;
+  await session.peer.setRemoteDescription({ type: host ? "answer" : "offer", sdp });
+  if (onlineSession === session && !host) {
+    await publishOnlineSignal(session, "answer", session.peer.createAnswer());
+  }
+}
+
+function onlineSend(session, type, values = {}) {
+  if (session.channel?.readyState !== "open" || session.channel.bufferedAmount > 32768) return false;
+  try {
+    session.channel.send(JSON.stringify({ protocol: ONLINE_PROTOCOL, type, ...values }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function bindOnlineChannel(session, channel) {
+  session.channel = channel;
+  channel.onopen = () => {
+    if (onlineSession !== session) return;
+    clearTimeout(session.connectTimer);
+    if (session.picks[session.slot]) sendOnlinePick(session);
+    updateOnlineSelectionStatus();
+    startOnlineMatchIfReady(session);
+  };
+  channel.onclose = () => onlineError(session, new Error("상대와의 연결이 끊겼습니다."));
+  channel.onmessage = event => {
+    if (onlineSession !== session || typeof event.data !== "string" || event.data.length > 4096) return;
+    let msg;
+    try { msg = JSON.parse(event.data); } catch { return; }
+    if (msg?.protocol !== ONLINE_PROTOCOL) return;
+    handleOnlineMessage(session, msg);
+  };
+}
+
+function onlineFighterIndex(id) {
+  return CHARACTER_DATABASE.findIndex(fighter => fighter.id === id);
+}
+
+function sendOnlinePick(session) {
+  if (!onlineSend(session, "pick", { fighter: session.picks[session.slot] }))
+    onlineError(session, new Error("캐릭터 선택을 상대에게 전송하지 못했습니다."));
+}
+
+function confirmOnlineFighter(slot) {
+  const session = onlineSession;
+  if (session.phase !== "selection" || slot !== session.slot || session.picks[slot]) return;
+  const index = selectionChoices[slot];
+  session.picks[slot] = CHARACTER_DATABASE[index].id;
+  chosen[slot] = index;
+  drawSelection();
+  if (session.channel?.readyState === "open") sendOnlinePick(session);
+  startOnlineMatchIfReady(session);
+}
+
+function handleOnlineMessage(session, msg) {
+  if (msg.type === "pick" && session.phase === "selection") {
+    const other = 1 - session.slot;
+    const index = onlineFighterIndex(msg.fighter);
+    if (index < 0 || session.picks[other]) return;
+    session.picks[other] = msg.fighter;
+    chosen[other] = selectionChoices[other] = index;
+    drawSelection();
+    startOnlineMatchIfReady(session);
+    return;
+  }
+  if (session.slot === 0 && msg.type === "cast" && session.phase === "battle") {
+    const now = performance.now();
+    if (!["mp", "sp", "rare"].includes(msg.skill) || now - (session.lastInput ?? -Infinity) < 35) return;
+    session.lastInput = now;
+    applyOnlineCast(1, msg.skill);
+  } else if (session.slot === 1 && msg.type === "start" && session.phase === "selection" &&
+      session.picks[0] && session.picks[1]) {
+    openOnlineViewer(session, typeof msg.track === "string" && Object.hasOwn(musicAssets, msg.track) ? msg.track : undefined);
+  } else if (session.slot === 1 && session.phase === "battle") {
+    if (msg.type === "hud") applyOnlineHud(msg);
+    if (msg.type === "result" && typeof msg.title === "string" && typeof msg.summary === "string") {
+      session.phase = "result";
+      showModal("온라인 2P · 경기 결과", msg.title, msg.summary,
+        [["모드 선택", () => closeOnlineRoom(session), true]]);
+    }
+  }
+}
+
+function updateOnlineSelectionStatus() {
+  const status = $("onlineStatus");
+  const session = onlineSession;
+  status.hidden = !session || session.phase !== "selection";
+  if (status.hidden) return;
+  status.textContent = [
+    "방 " + session.code + " · " + (session.slot + 1) + "P",
+    session.channel?.readyState === "open" ? "연결됨" : "화면 연결 중",
+    session.picks[0] && session.picks[1] ? "양쪽 선택 완료 · 경기 준비 중" :
+      session.picks[session.slot] ? "선택 완료 · 상대를 기다리는 중" : "내 캐릭터를 선택하세요",
+  ].join(" · ");
+}
+
+function startOnlineMatchIfReady(session) {
+  if (onlineSession !== session || session.slot !== 0 || session.phase !== "selection" ||
+      session.channel?.readyState !== "open" || !session.picks[0] || !session.picks[1]) return;
+  session.phase = "loading";
+  const track = randomBattleTrack();
+  const indices = session.picks.map(onlineFighterIndex);
+  withMatchResources(indices, track, () => {
+    if (onlineSession !== session) return;
+    chosen = indices;
+    session.phase = "battle";
+    manual = true;
+    document.body.classList.add("online-battle");
+    $("pause").hidden = true;
+    startBattleNow(track);
+    $("battleMode").textContent = "온라인 2P · 1P 호스트";
+    if (!onlineSend(session, "start", { track })) {
+      onlineError(session, new Error("경기 시작을 상대에게 전송하지 못했습니다."));
+      return;
+    }
+    sendOnlineHud();
+  }, () => onlineSession === session);
+}
+
+function openOnlineViewer(session, track) {
+  session.phase = "battle";
+  running = false;
+  paused = false;
+  actors = [];
+  document.body.classList.add("online-battle", "online-guest");
+  $("pause").hidden = true;
+  $("battleMode").textContent = "온라인 2P · 2P 게스트";
+  $("exit").textContent = "나가기";
+  $("modal").classList.add("hidden");
+  setScreen("battle", track);
+  $("arena").append(session.video);
+  session.video.play().catch(() => {});
+  buildHud(session.picks.map((id, slot) => ({ d: CHARACTER_DATABASE[onlineFighterIndex(id)], slot })), true);
+  for (const resource of ["mp", "sp"]) $("" + resource + "b1").disabled = true;
+  if ($("f1").querySelector(".rare-cast")) $("rareb1").disabled = true;
+}
+
+function routeOnlineCast(slot, skill) {
+  const session = onlineSession;
+  if (!session) return false;
+  if (session.phase === "battle" && slot === session.slot) {
+    if (slot === 0) applyOnlineCast(slot, skill);
+    else onlineSend(session, "cast", { skill });
+  }
+  return true;
+}
+
+function applyOnlineCast(slot, skill) {
+  if (skill === "rare") {
+    if (!running || paused || cinema.ending || !hollowPurpleReady(actors[slot])) return;
+  }
+  applyLocalCast(slot, skill === "sp");
+}
+
+function onlineCaptureFrame(timestamp) {
+  const session = onlineSession;
+  if (!session?.capture || !["battle", "result"].includes(session.phase)) return;
+  const { canvas, context, last } = session.capture;
+  if (timestamp - last < 32 || !context) return;
+  session.capture.last = timestamp;
+  const source = renderer.domElement;
+  if (!source.width || !source.height) return;
+  const arena = $("arena");
+  if (!arena.clientWidth || !arena.clientHeight) return;
+  const fit = Math.min(canvas.width / source.width, canvas.height / source.height);
+  const width = source.width * fit, height = source.height * fit;
+  const left = (canvas.width - width) / 2, top = (canvas.height - height) / 2;
+  const scaleX = width / arena.clientWidth, scaleY = height / arena.clientHeight;
+  context.fillStyle = "#121e27";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.save();
+  context.beginPath();
+  context.rect(left, top, width, height);
+  context.clip();
+  const bounds = arena.getBoundingClientRect();
+  const view = source.getBoundingClientRect();
+  context.filter = getComputedStyle(source).filter;
+  context.drawImage(source, left + (view.left - bounds.left - arena.clientLeft) * scaleX,
+    top + (view.top - bounds.top - arena.clientTop) * scaleY, width, height);
+  context.filter = "none";
+  if (cinema.dim > 0) {
+    context.fillStyle = "rgba(0, 0, 0, " + cinema.dim + ")";
+    context.fillRect(left, top, width, height);
+  }
+  for (const { image } of activeBanners) {
+    if (!image.complete || !image.naturalWidth) continue;
+    const rect = image.getBoundingClientRect();
+    context.globalAlpha = Number(image.style.opacity || 1);
+    context.drawImage(image, left + (rect.left - bounds.left - arena.clientLeft) * scaleX,
+      top + (rect.top - bounds.top - arena.clientTop) * scaleY, rect.width * scaleX, rect.height * scaleY);
+  }
+  context.globalAlpha = 1;
+  if (timeStop) {
+    context.font = "bold 15px sans-serif";
+    context.textAlign = "right";
+    context.fillStyle = "#dec9ff";
+    context.fillText("TIME STOP", left + width - 14, top + 22);
+  }
+  context.restore();
+}
+
+function sendOnlineHud() {
+  const session = onlineSession;
+  if (session?.slot !== 0 || session.phase !== "battle" || actors.length !== 2) return;
+  const fighters = actors.map(({ slot, alive, d, nika }) => ({
+    alive, speed: $("speed" + slot).textContent,
+    portrait: nika ? "emperor_nika" : d.id === "kenpachi" && kenpachiBankaiActive(actors[slot]) ? "kenpachi_bankai" : "",
+    gauges: ["hp", "mp", "sp"].map(resource => [
+      $(resource + slot).style.width, $(resource + "v" + slot).textContent,
+    ]),
+    skills: ["mp", "sp"].map(resource => {
+      const button = $(resource + "b" + slot);
+      return [button.title, !button.disabled && running && !cinema.ending];
+    }),
+    rare: d.id === "gojo" && !$("rareb" + slot).disabled && running && !cinema.ending,
+  }));
+  onlineSend(session, "hud", { time: $("timer").textContent, fighters });
+}
+
+function applyOnlineHud(msg) {
+  if (!/^\d{2,}:\d{2}$/.test(msg.time) || !Array.isArray(msg.fighters) || msg.fighters.length !== 2) return;
+  $("timer").textContent = msg.time;
+  msg.fighters.forEach((fighter, slot) => {
+    if (!fighter || !Array.isArray(fighter.gauges) || !Array.isArray(fighter.skills)) return;
+    const data = CHARACTER_DATABASE[onlineFighterIndex(onlineSession.picks[slot])];
+    $("f" + slot).classList.toggle("dead", !fighter.alive);
+    if (typeof fighter.speed === "string") $("speed" + slot).textContent = fighter.speed;
+    const alternate = ["emperor_nika", "kenpachi_bankai"].includes(fighter.portrait) && readyPortrait(fighter.portrait);
+    const portrait = alternate || fighterPortrait(data);
+    if ($("fighterPortrait" + slot).getAttribute("src") !== portrait) $("fighterPortrait" + slot).src = portrait;
+    ["hp", "mp", "sp"].forEach((resource, index) => {
+      const gauge = fighter.gauges[index];
+      if (!Array.isArray(gauge) || !/^\d+(\.\d+)?%$/.test(gauge[0]) || typeof gauge[1] !== "string") return;
+      $(resource + slot).style.width = gauge[0];
+      $(resource + "v" + slot).textContent = gauge[1];
+    });
+    ["mp", "sp"].forEach((resource, index) => {
+      const skill = fighter.skills[index];
+      if (!Array.isArray(skill) || typeof skill[0] !== "string") return;
+      const button = $(resource + "b" + slot);
+      button.title = $(resource + "name" + slot).textContent = skill[0];
+      button.disabled = skill[1] !== true || slot !== 1;
+      button.classList.toggle("skill-ready", skill[1] === true);
+    });
+    if (data.id === "gojo") $("rareb" + slot).disabled = fighter.rare !== true || slot !== 1;
+  });
+}
+
+function publishOnlineResult(title, summary) {
+  const session = onlineSession;
+  if (session?.slot !== 0 || session.phase !== "battle") return false;
+  updateHud();
+  session.phase = "result";
+  onlineSend(session, "result", { title, summary });
+  showModal("온라인 2P · 경기 결과", title, summary, [["모드 선택", () => closeOnlineRoom(session), true]]);
+  return true;
 }
 
 // bootstrap.js
