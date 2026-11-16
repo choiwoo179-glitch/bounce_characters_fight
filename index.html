@@ -5578,6 +5578,7 @@ function updateArenaShake(e) {
 }
 
 function resetBattleFeedback() {
+  clearCombatFeedback();
   resetCinema();
   ((arenaShake.strength = arenaShake.remaining = arenaShake.age = 0),
     !headless && $("arena")?.style && ($("arena").style.transform = ""));
@@ -5758,11 +5759,14 @@ function useBitesTheDust(e) {
   }
   (actors.forEach((n, s) => {
     const i = a?.states[s];
-    n === e &&
-      i &&
-      ((n.hp = Math.max(0, Math.min(n.maxHp, i.hp))),
-      (i.mp > n.mp ? gainResource(n, "mp", i.mp - n.mp) : (n.mp = Math.max(0, i.mp))),
-      (n.alive = i.alive && n.hp > 0));
+    if (n === e && i) {
+      const hp = n.hp;
+      n.hp = Math.max(0, Math.min(n.maxHp, i.hp));
+      if (i.mp > n.mp) gainResource(n, "mp", i.mp - n.mp, true);
+      else n.mp = Math.max(0, i.mp);
+      n.alive = i.alive && n.hp > 0;
+      if (n.alive && n.hp > hp) markCombatFeedback(n, "hp");
+    }
     const r = o[s];
     (bitesMovement.paths.push({
       actor: n,
@@ -6829,7 +6833,7 @@ function releaseTeachGrab(e, a) {
         i.teachWallHit &&
           e.alive &&
           n.alive &&
-          (hurt(e, n, 50), mpGain(e, 60), fx("ring", n.x, n.z, 2, 3150143, 0.4)));
+          (hurt(e, n, 50), mpGain(e, 60, true), fx("ring", n.x, n.z, 2, 3150143, 0.4)));
     }));
 }
 
@@ -7410,13 +7414,16 @@ function rikaActive(e) {
   return !!e.rikaUntil && e.rikaUntil > t + 1e-8;
 }
 
-function gainResource(actor, resource, amount) {
+function gainResource(actor, resource, amount, showRecovery = false) {
   const recipient = amount > 0 ? higurumaConfiscator(actor) || actor : actor;
-  recipient[resource] = Math.min(opmResourceMax(recipient, resource), recipient[resource] + amount);
+  const before = recipient[resource];
+  recipient[resource] = Math.min(opmResourceMax(recipient, resource), before + amount);
+  if (resource === "mp" && recipient.mp > before && (showRecovery || recipient !== actor))
+    markCombatFeedback(recipient, "mp");
 }
 
-function mpGain(e, a) {
-  gainResource(e, "mp", a * (braveActive(e)?2:1) * (rikaActive(e) ? 2 : 1) * (e.jackpotUntil > t + 1e-8 ? 3.3 : 1));
+function mpGain(e, a, showRecovery = false) {
+  gainResource(e, "mp", a * (braveActive(e)?2:1) * (rikaActive(e) ? 2 : 1) * (e.jackpotUntil > t + 1e-8 ? 3.3 : 1), showRecovery);
 }
 
 function spGain(e, a) {
@@ -7679,8 +7686,14 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
     });
 }
 
-function heal(e, a) {
-  healQueue.push({ a: e, n: a });
+function heal(actor, amount, feedback = "hp") {
+  healQueue.push({ a: actor, n: amount, feedback });
+}
+
+function restoreHealthNow(actor, amount, feedback = "hp") {
+  const hp = actor.hp;
+  actor.hp = Math.min(actor.maxHp, hp + amount);
+  if (actor.hp > hp) markCombatFeedback(actor, feedback);
 }
 
 function settle() {
@@ -7838,7 +7851,7 @@ function applyQueuedDamage() {
     if (e.magmaCap && (e.magmaCap.get(e.b) || 0) >= 3) continue;
     if (e.lightCap && ((e.n = Math.min(e.n, 120 - (e.lightCap.get(e.b) || 0))), e.n <= 0)) continue;
     if (e.n > 0 && e.a !== e.b && "inosuke" === e.b.d.id && Math.random() < 0.15) continue;
-    e.calmMp && e.b.alive && mpGain(e.b, e.calmMp);
+    e.calmMp && e.b.alive && mpGain(e.b, e.calmMp, true);
     applyAlchemyGuard(e);
     const a = e.b.hp,
       o = Math.min(e.b.hp, e.n);
@@ -7863,11 +7876,14 @@ function applyQueuedDamage() {
       o > 0 &&
         (flashHpLoss(e.b, a, e.b.hp),
         (e.skillHit || e.specialHit) && e.a !== e.b && triggerArenaShake(o)),
-      e.lifesteal && o > 0 && heal(e.a, o * e.lifesteal),
+      e.lifesteal && o > 0 && heal(e.a, o * e.lifesteal, "drain"),
       fx("hit", e.b.x, e.b.z, 0.7, e.a.d.color, 0.18),
       tone(110 + e.n, 0.025, 0.025),
       updateGuyTransforms());
-    if (o > 0) cinemaDamage(e, o);
+    if (o > 0) {
+      markCombatFeedback(e.b, "hit");
+      cinemaDamage(e, o);
+    }
     if(practiceActive)e.b.hp=e.b.maxHp;
   }
   damageQueue = [];
@@ -7901,7 +7917,7 @@ function resolveDeaths() {
 }
 
 function applyQueuedHealing() {
-  for (const e of healQueue) e.a.alive && (e.a.hp = Math.min(e.a.maxHp, e.a.hp + e.n));
+  for (const e of healQueue) if (e.a.alive) restoreHealthNow(e.a, e.n, e.feedback);
   healQueue = [];
 }
 
@@ -7959,7 +7975,7 @@ function useIdleDeathGamble(e) {
           schedule(e, o, () => {
             e.jackpotToken === a && heal(e, HAKARI_CONFIG.healPerSecond);
           });
-      } else (heal(e, 100), gainResource(e, "mp", e.d.maxMp - e.mp));
+      } else (heal(e, 100), gainResource(e, "mp", e.d.maxMp - e.mp, true));
     }));
 }
 
@@ -9605,7 +9621,7 @@ function denjiReward(a, b, state) {
   } else {
     const amount = state.kind === "triangle" ? 30 : 25;
     heal(a, amount);
-    mpGain(a, amount);
+    mpGain(a, amount, true);
   }
 }
 
@@ -10059,7 +10075,7 @@ function takePotion(e, a) {
   ("hp" === a.type
     ? heal(e, 0.1 * e.maxHp)
     : "mp" === a.type
-      ? gainResource(e, "mp", 0.1 * e.d.maxMp)
+      ? gainResource(e, "mp", 0.1 * e.d.maxMp, true)
       : spGain(e, 0.1 * e.d.maxSp),
     removeMesh(a.mesh),
     potions.splice(potions.indexOf(a), 1));
@@ -14337,7 +14353,7 @@ function updateHawks(dt) {
         remove = true;
       }
     if (!remove && f.kind === "rose" && f.distance >= HAWKS_ARC.length) {
-      a.hp = Math.min(a.maxHp, a.hp + 15);
+      restoreHealthNow(a, 15);
       remove = true;
     }
     if (f.distance > 100) remove = true;
@@ -16748,7 +16764,7 @@ function renderFrame(e) {
     updateTransientEffects(e);
     if (!cinema.finished) renderCinemaGhost();
     updateBanners();
-    renderer.render(scene, camera);
+    renderCombatFeedback();
   } finally { t = savedTime; }
 }
 
@@ -26779,7 +26795,7 @@ function useBangGuard(actor) {
   schedule(actor,.5,()=>{
     actor.bangGuardUntil=t+8;
     const token=actor.bangGuardToken=(actor.bangGuardToken||0)+1;
-    for(let i=1;i<=8;i++)schedule(actor,i,()=>{if(actor.bangGuardToken===token){heal(actor,10);mpGain(actor,10);}});
+    for(let i=1;i<=8;i++)schedule(actor,i,()=>{if(actor.bangGuardToken===token){heal(actor,10);mpGain(actor,10,true);}});
   });
 }
 function opmArenaWallHit(actor) {
@@ -30414,8 +30430,10 @@ function collectOnlineScene(session) {
   const {arena} = session;
   if (!arena || !world) return null;
   world.updateMatrixWorld(true);
+  const now = performance.now();
   const view = {
     seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
+    combatFeedback: actors.map(actor => encodeCombatFeedback(actor, now)),
     fighters: arena.models.map(onlineFighterState),
     motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
     storm: stormMesh ? [stormX, stormZ, stormUntil].map(value => onlineRound(value)) : null,
@@ -30671,6 +30689,7 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
     [actor.x, actor.z, actor.dx, actor.dz, actor.alive] = view.motion[slot];
     actor.alive = !!actor.alive;
     onlineApplyFighter(arena, arena.models[slot], view.fighters[slot], !final && arena.blendDuration > 1);
+    applyRemoteCombatFeedback(actor, view.combatFeedback?.[slot], now);
   }
   if (onlineVector(view.storm, 3)) {
     const [x, z, until] = view.storm;
@@ -30701,7 +30720,203 @@ function renderOnlineArena(session, timestamp, dt) {
   updateCinemaCamera(dt, true);
   updateStormMesh();
   updateBanners();
-  renderer.render(scene, camera);
+  renderCombatFeedback(timestamp);
+}
+
+const COMBAT_HIT_MS = 300;
+const RECOVERY_PLUS_MS = 840;
+const RECOVERY_PLUS_COLORS = { hp: 0x9bffd6, drain: 0xff987f, mp: 0x83d8ff };
+const COMBAT_FEEDBACK_TYPES = ["hit", "hp", "drain", "mp"];
+const recoveryPlusGroups = new Map();
+const combatTintMaterials = new Map();
+let recoveryPlusTexture;
+
+function markCombatFeedback(actor, type, now = performance.now()) {
+  if (headless) return;
+  const feedback = actor.combatFeedback ??= {};
+  if (type !== "hit" && now - (feedback[type]?.start ?? -Infinity) < RECOVERY_PLUS_MS) return;
+  feedback[type] = { stamp: now, start: now };
+}
+
+function combatFeedbackDuration(type) {
+  return type === "hit" ? COMBAT_HIT_MS : RECOVERY_PLUS_MS;
+}
+
+function encodeCombatFeedback(actor, now) {
+  return COMBAT_FEEDBACK_TYPES.map(type => {
+    const event = actor.combatFeedback?.[type];
+    const age = event && now - event.start;
+    return event && age >= 0 && age < combatFeedbackDuration(type)
+      ? [event.stamp, Math.round(age)]
+      : null;
+  });
+}
+
+function applyRemoteCombatFeedback(actor, events, now) {
+  if (!Array.isArray(events)) return;
+  const feedback = actor.combatFeedback ??= {};
+  for (const [index, type] of COMBAT_FEEDBACK_TYPES.entries()) {
+    const pair = events[index];
+    if (!Array.isArray(pair) || pair.length !== 2) continue;
+    const [stamp, age] = pair;
+    if (!Number.isFinite(stamp) || stamp <= (feedback[type]?.stamp ?? -Infinity) ||
+        !Number.isFinite(age) || age < 0 || age >= combatFeedbackDuration(type)) continue;
+    feedback[type] = { stamp, start: now - age };
+  }
+}
+
+function plusTexture() {
+  if (recoveryPlusTexture) return recoveryPlusTexture;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  const glow = ctx.createRadialGradient(32, 32, 3, 32, 32, 30);
+  glow.addColorStop(0, "rgba(255,255,255,.45)");
+  glow.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.beginPath();
+  ctx.moveTo(32, 16);
+  ctx.lineTo(32, 48);
+  ctx.moveTo(16, 32);
+  ctx.lineTo(48, 32);
+  ctx.lineWidth = 8;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#fff";
+  ctx.stroke();
+  recoveryPlusTexture = new THREE.CanvasTexture(canvas);
+  recoveryPlusTexture.colorSpace = THREE.SRGBColorSpace;
+  return recoveryPlusTexture;
+}
+
+function updateRecoveryPluses(actor, now) {
+  let groups = recoveryPlusGroups.get(actor);
+  for (const [index, type] of COMBAT_FEEDBACK_TYPES.slice(1).entries()) {
+    const event = actor.combatFeedback?.[type];
+    const elapsed = event ? now - event.start : Infinity;
+    let group = groups?.get(type);
+    if (!actor.alive || !actor.mesh?.visible || elapsed >= RECOVERY_PLUS_MS) {
+      if (group) {
+        group.removeFromParent();
+        group.children.forEach(sprite => sprite.material.dispose());
+        groups.delete(type);
+      }
+      continue;
+    }
+    if (!group) {
+      group = new THREE.Group();
+      group.name = "recovery-pluses-" + type;
+      for (let i = 0; i < 6; i++) {
+        const material = new THREE.SpriteMaterial({
+          map: plusTexture(), color: RECOVERY_PLUS_COLORS[type],
+          transparent: true, depthWrite: false, toneMapped: false,
+        });
+        group.add(new THREE.Sprite(material));
+      }
+      scene.add(group);
+      if (!groups) recoveryPlusGroups.set(actor, groups = new Map());
+      groups.set(type, group);
+    }
+    group.position.copy(actor.mesh.position);
+    const radius = Math.max(1.35, Math.abs(actor.mesh.scale.x) * 1.22);
+    for (const [i, sprite] of group.children.entries()) {
+      const delay = (i % 3) * 48;
+      const progress = (elapsed - delay) / (RECOVERY_PLUS_MS - delay);
+      sprite.visible = progress >= 0 && progress < 1;
+      if (!sprite.visible) continue;
+      const fade = Math.min(1, progress / .10, (1 - progress) / .32);
+      const angle = i * Math.PI / 3 + index * .34 + progress * .55;
+      const orbit = radius * (1 + i % 2 * .16 + progress * .22);
+      sprite.position.set(Math.cos(angle) * orbit, -.82 + (i % 3)*.36 + progress*2.75, Math.sin(angle) * orbit);
+      sprite.scale.setScalar((i % 2 ? .92 : 1.19) * (.94 + .14 * fade));
+      sprite.material.opacity = fade * .94;
+    }
+  }
+  if (groups && !groups.size) recoveryPlusGroups.delete(actor);
+}
+
+function tintedCombatMaterial(source, cache, amount) {
+  if (!source || source.isShaderMaterial || !source.color) return source;
+  let entry = cache.get(source);
+  if (!entry) {
+    const material = source.clone();
+    const uniform = { value: amount };
+    const programKey = source.customProgramCacheKey();
+    const red = { value: new THREE.Color(0xff242f) };
+    material.onBeforeCompile = function (shader, activeRenderer) {
+      source.onBeforeCompile.call(this, shader, activeRenderer);
+      const output = shader.fragmentShader.includes("#include <opaque_fragment>")
+        ? "#include <opaque_fragment>" : "#include <output_fragment>";
+      shader.uniforms.combatRedMix = uniform;
+      shader.uniforms.combatRedColor = red;
+      shader.fragmentShader = "uniform float combatRedMix;\nuniform vec3 combatRedColor;\n" +
+        shader.fragmentShader.replace(output, "outgoingLight = mix(outgoingLight, combatRedColor, combatRedMix);\n" + output);
+    };
+    material.customProgramCacheKey = () => programKey + ":combat-hit-red";
+    entry = { material, uniform };
+    cache.set(source, entry);
+  }
+  entry.uniform.value = amount;
+  // Keep time-dependent color and opacity on the original model's material.
+  entry.material.color.copy(source.color);
+  entry.material.opacity = source.opacity;
+  return entry.material;
+}
+
+function clearCombatTint(actor) {
+  const cache = combatTintMaterials.get(actor);
+  if (!cache) return;
+  for (const {material} of cache.values()) material.dispose();
+  combatTintMaterials.delete(actor);
+}
+
+function clearCombatFeedback() {
+  if (headless) return;
+  for (const groups of recoveryPlusGroups.values()) {
+    for (const group of groups.values()) {
+      group.removeFromParent();
+      group.children.forEach(sprite => sprite.material.dispose());
+    }
+  }
+  recoveryPlusGroups.clear();
+  for (const actor of combatTintMaterials.keys()) clearCombatTint(actor);
+  for (const actor of actors) delete actor.combatFeedback;
+}
+
+function combatHitOpacity(actor, now) {
+  const elapsed = now - (actor.combatFeedback?.hit?.start ?? -Infinity);
+  return .9 * Math.max(0, Math.min(1, 1 - elapsed / COMBAT_HIT_MS));
+}
+
+function renderCombatFeedback(now = performance.now()) {
+  const swapped = [];
+  try {
+    for (const actor of actors) {
+      if (actor.combatFeedback || recoveryPlusGroups.has(actor)) updateRecoveryPluses(actor, now);
+      const amount = combatHitOpacity(actor, now);
+      if (amount === 0 || !actor.mesh?.visible) continue;
+      let cache = combatTintMaterials.get(actor);
+      if (!cache) combatTintMaterials.set(actor, cache = new Map());
+      for (const [source, entry] of cache) {
+        if (!disposedResources.has(source)) continue;
+        entry.material.dispose();
+        cache.delete(source);
+      }
+      actor.mesh.traverseVisible(part => {
+        if (!part.isMesh || !part.material || part === actor.aura) return;
+        const source = part.material;
+        const tinted = Array.isArray(source)
+          ? source.map(material => tintedCombatMaterial(material, cache, amount))
+          : tintedCombatMaterial(source, cache, amount);
+        if (tinted === source) return;
+        swapped.push([part, source]);
+        part.material = tinted;
+      });
+    }
+    renderer.render(scene, camera);
+  } finally {
+    for (const [part, source] of swapped) part.material = source;
+  }
 }
 
 // bootstrap.js
