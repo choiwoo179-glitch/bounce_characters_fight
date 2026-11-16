@@ -11450,14 +11450,12 @@ function addAvatarAppearance(
       accent: 15127984,
     },
     i = new THREE.Group();
-  ((i.name = "faceless-avatar"),
+  ((i.name = "sculpted-avatar"),
     (i.userData = {
       character: n,
-      faceless: !0,
       reference: n,
       hairCut: s.cut,
       scars: [],
-      hairLocks: 0,
     }));
   const r = new Map(),
     part = (e, a, o = 0, n = 0, s = 0, l = "accessory") => {
@@ -11468,25 +11466,9 @@ function addAvatarAppearance(
       const h = new THREE.Mesh(e, c);
       return (h.position.set(o, n, s), (h.name = l), i.add(h), h);
     },
-    ell = (e, a, o, n, s, i, r, l = "hair-lock") => {
+    ell = (e, a, o, n, s, i, r, l = "accessory") => {
       const c = part(new THREE.SphereGeometry(1, 12, 8), e, a, o, n, l);
       return (c.scale.set(s, i, r), c);
-    },
-    lock = (e, a, o, n, r, l, c, h = s.hair) => {
-      const d = new THREE.Vector3(e, a, o),
-        u = new THREE.Vector3(n, r, l),
-        m = u.clone().sub(d),
-        f = part(
-          new THREE.ConeGeometry(c, m.length(), 5),
-          h,
-          ...d.add(u).multiplyScalar(0.5).toArray(),
-          "hair-lock",
-        );
-      return (
-        f.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), m.normalize()),
-        i.userData.hairLocks++,
-        f
-      );
     },
     stroke = (e, a, o = 0.025, n = "mark") => {
       const s = [];
@@ -11558,170 +11540,10 @@ function addAvatarAppearance(
     (e.avatarBody = o));
   const l = Math.acos(-0.42 / R),
     c = new THREE.Mesh(
-      new THREE.SphereGeometry(R + 0.012, 28, 10, 0, 2 * Math.PI, l, Math.PI - l),
+      new THREE.SphereGeometry(R + 0.027, 52, 24, 0, 2 * Math.PI, l, Math.PI - l),
       new THREE.MeshStandardMaterial({ map: avatarCloth(s), roughness: 0.84 }),
     );
   ((c.name = "upper-clothing"), i.add(c));
-  const h = part(
-      new THREE.SphereGeometry(R + 0.025, 20, 10, 0, 2 * Math.PI, 0, 0.92),
-      s.hair,
-      0,
-      0,
-      0,
-      "hair-volume",
-    ),
-    d = s.cut;
-  if (["spiky", "wild", "explosive", "swept", "crop", "rough"].includes(d)) {
-    const e = "crop" === d ? 17 : "wild" === d ? 14 : "explosive" === d ? 16 : 12;
-    for (let a = 0; a < e; a++) {
-      const e = 2.39996 * a,
-        o = 0.61 + (a % 3) * 0.17,
-        n = Math.sqrt(Math.max(0.1, 1.06 * 1.06 - o * o)),
-        i = Math.cos(e) * n,
-        r = Math.sin(e) * n,
-        l =
-          "wild" === d
-            ? 0.65 + (a % 4) * 0.1
-            : "explosive" === d
-              ? 0.73 + (a % 3) * 0.09
-              : "crop" === d
-                ? 0.28 + (a % 3) * 0.07
-                : 0.46 + (a % 4) * 0.06,
-        c = new THREE.Vector3(0.8 * i, 0.7, 0.8 * r).normalize();
-      lock(
-        i,
-        o,
-        r,
-        i + c.x * l + ("swept" === d ? 0.26 : 0),
-        o + c.y * l,
-        r + c.z * l,
-        0.22,
-        a % 4 == 0 ? s.tip : s.hair,
-      );
-    }
-    if ("crop" !== d && "swept" !== d)
-      for (let e = 0; e < 5; e++) {
-        const a = 0.34 * e - 0.7;
-        lock(
-          a,
-          0.89,
-          0.62,
-          a + ("swept" === d ? 0.24 : 0.04),
-          0.42 + (e % 2) * 0.15,
-          avatarSurface(a, 0.48) + 0.03,
-          0.18,
-          e % 3 == 0 ? s.tip : s.hair,
-        );
-      }
-  }
-  if ("swept" === d)
-    for (let e = 0; e < 6; e++) {
-      const a = (e * Math.PI) / 3,
-        o = 0.72 * Math.cos(a),
-        n = 0.64 * Math.sin(a) - 0.14,
-        r = ell(e % 2 ? s.hair : s.tip, o, 1.05, n, 0.25, 0.24, 0.48);
-      ((r.rotation.x = -0.45), (r.rotation.z = 0.3 * -o), i.userData.hairLocks++);
-    }
-  if (["bob", "sasuke", "parted", "slick", "long"].includes(d)) {
-    const e = "slick" === d ? 9 : 7;
-    for (let a = 0; a < e; a++) {
-      const o = (1.6 * a) / (e - 1) - 0.8,
-        n = Math.sqrt(Math.max(0.1, 1.18 * 1.18 - o * o)),
-        r = void 0;
-      ((ell(a % 3 == 0 ? s.tip : s.hair, o, n - 0.08, -0.04, 0.19, 0.18, 0.88).rotation.z =
-        "parted" === d ? -0.16 : 0),
-        i.userData.hairLocks++);
-    }
-    if ("slick" !== d)
-      for (let e = 0; e < 7; e++) {
-        const a = 0.27 * e - 0.83,
-          o =
-            "giyu" === n
-              ? 0.5 + ((e + 1) % 3) * 0.1
-              : "bob" === d
-                ? 0.12 + (e % 2) * 0.14
-                : "sasuke" === d
-                  ? e < 3
-                    ? -0.1
-                    : 0.2
-                  : 0.31 + (e % 3) * 0.1;
-        lock(
-          a,
-          0.93,
-          0.65,
-          a + ("parted" === d ? -0.3 : 0.02),
-          o,
-          avatarSurface(a, o) + 0.06,
-          0.21,
-          e % 3 == 0 ? s.tip : s.hair,
-        );
-      }
-    if ("bob" === d)
-      for (const e of [-1, 1])
-        for (let a = 0; a < 4; a++) {
-          const o = void 0,
-            n = 0.5 - 0.17 * a;
-          lock(e * (0.9 + 0.035 * a), n, 0.3, 1.08 * e, n - 0.28, 0.47, 0.18, s.tip);
-        }
-    if ("sasuke" === d || "long" === d)
-      for (const e of [-1, 1])
-        for (let a = 0; a < ("long" === d ? 6 : 3); a++)
-          lock(
-            0.83 * e,
-            0.7 - 0.16 * a,
-            -0.42,
-            e * (1.29 + (a % 2) * 0.14),
-            "long" === d ? -0.9 - 0.06 * a : 0.44 - 0.32 * a,
-            -0.53,
-            0.24,
-            a % 2 ? s.tip : s.hair,
-          );
-    if ("long" === d)
-      for (let e = 0; e < 8; e++) {
-        const a = (e * Math.PI) / 4,
-          o = void 0;
-        ((ell(
-          e % 3 == 0 ? s.tip : s.hair,
-          0.85 * Math.cos(a),
-          0.08,
-          -0.57 - 0.35 * Math.abs(Math.sin(a)),
-          0.29,
-          1.05,
-          0.32,
-        ).rotation.z = 0.26 * Math.cos(a)),
-          i.userData.hairLocks++);
-      }
-  }
-  if ("curls" === d || "cloud" === d || "fur" === d) {
-    for (let e = 0; e < 22; e++) {
-      const a = 2.39996 * e,
-        o = 0.35 + (e % 4) * 0.24,
-        n = Math.sqrt(Math.max(0.08, 1.18 * 1.18 - o * o)),
-        r = Math.cos(a) * n,
-        l = Math.sin(a) * n;
-      (ell(e % 3 == 0 ? s.tip : s.hair, r, o, l, "fur" === d ? 0.24 : 0.29, 0.24, 0.27),
-        i.userData.hairLocks++);
-    }
-    if ("cloud" === d)
-      for (let e = 0; e < 6; e++) {
-        const a = void 0;
-        part(
-          new THREE.TorusGeometry(0.23, 0.09, 6, 14, 1.6 * Math.PI),
-          16777215,
-          0.32 * e - 0.85,
-          1.1 + (e % 2) * 0.12,
-          0.7,
-          "cloud-curl",
-        ).rotation.z = 0.8 * e;
-      }
-  }
-  if ("bun" === d) {
-    (h.scale.set(1, 0.92, 1),
-      ell(s.hair, 0, 1.35, -0.39, 0.34, 0.39, 0.34, "topknot"),
-      i.userData.hairLocks++);
-    for (let e = 0; e < 6; e++) ell(s.tip, 0.28 * e - 0.7, 0.91, 0.08, 0.1, 0.16, 0.83);
-  }
-  const u = void 0;
   ((e = s.collar, a = 0.11) => {
     if (void 0 !== e) {
       const o = void 0;
@@ -12014,21 +11836,7 @@ function addAvatarAppearance(
         0.23,
         "ear-lining",
       ).rotation.z = 0.27 * -e;
-      for (let a = 0; a < 3; a++)
-        lock(0.85 * e, 0.13 - 0.18 * a, 0.5, 1.22 * e, 0.04 - 0.19 * a, 0.55, 0.15, s.tip);
     }
-  if ("gojo" === n) {
-    const e = void 0;
-    ((part(
-      new THREE.TorusGeometry(1.13, 0.16, 7, 28),
-      1316125,
-      0,
-      0.24,
-      0,
-      "blindfold",
-    ).rotation.x = Math.PI / 2),
-      part(new THREE.BoxGeometry(1.55, 0.34, 0.075), 1513506, 0, 0.25, 1.18, "blindfold-front"));
-  }
   if ("law" === n) {
     (part(
       new THREE.SphereGeometry(1.07, 20, 10, 0, 2 * Math.PI, 0, Math.PI / 2),
@@ -12071,8 +11879,7 @@ function addAvatarAppearance(
       ).rotation.y = e % 2 ? Math.PI / 2 : 0.2;
     }
   }
-  if ("kuzan" === n || "borsalino" === n) {
-    if ("kuzan" === n) {
+  if ("kuzan" === n) {
       const e = void 0;
       part(
         new THREE.SphereGeometry(1.13, 18, 10, 0, 2 * Math.PI, 0, Math.PI / 2),
@@ -12082,65 +11889,12 @@ function addAvatarAppearance(
         0,
         "head-wrap",
       ).scale.y = 0.65;
-    }
-    for (const e of [-1, 1]) {
-      if (
-        (part(
-          new THREE.TorusGeometry(0.24, 0.035, 6, 18),
-          "kuzan" === n ? 2106921 : 6706486,
-          0.33 * e,
-          0.18,
-          1.18,
-          "glasses-frame",
-        ),
-        "borsalino" === n)
-      ) {
-        const a = part(
-          new THREE.CircleGeometry(0.21, 18),
-          10976050,
-          0.33 * e,
-          0.18,
-          1.185,
-          "tinted-lens",
-        );
-        ((a.material = a.material.clone()),
-          (a.material.transparent = !0),
-          (a.material.opacity = 0.82));
-      }
-      part(
-        new THREE.BoxGeometry(0.045, 0.05, 0.67),
-        "kuzan" === n ? 2106921 : 6706486,
-        0.59 * e,
-        0.18,
-        0.79,
-        "glasses-temple",
-      );
-    }
-    part(
-      new THREE.BoxGeometry(0.18, 0.035, 0.06),
-      "kuzan" === n ? 2106921 : 6706486,
-      0,
-      0.18,
-      1.22,
-      "glasses-bridge",
-    );
   }
   if (n === "edward") {
     for (const side of [-1, 1]) {
-      for (let j=0;j<5;j++) {
-        const x=.12+j*.145;
-        lock(side*x,1.09-j*.06,.54,side*(x+.23),.63-j*.17,.93-j*.10,
-          .19,j%2?s.hair:s.tip);
-      }
       const lapel=part(new THREE.BoxGeometry(.24,.78,.13),0xb42c38,side*.55,-.58,.82,"red-coat-lapel");
       lapel.rotation.z=side*.48;
       ell(0x962331,side*.91,-.58,-.08,.34,.46,.58,"red-coat-shoulder");
-    }
-    lock(-.04,1.13,-.02,-.42,1.69,.13,.12,0xffe399);
-    for (let j=0;j<8;j++) {
-      const side=j%2?1:-1;
-      ell(j%2?0xcf913a:0xf2be57,.34+side*.11+j*.046,.57-j*.207,-1.06-j*.026,
-        .205,.24,.20,"braided-ponytail").rotation.z=side*.53;
     }
     part(new THREE.BoxGeometry(.53,.64,.11),0x231f23,0,-.71,.96,"black-shirt");
     part(new THREE.TorusGeometry(.19,.047,7,15),0xc6d0d5,0,-.56,1.06,"coat-clasp");
@@ -12149,7 +11903,6 @@ function addAvatarAppearance(
     for(let j=0;j<3;j++) part(new THREE.BoxGeometry(.32,.09,.10),0xc9d6dc,-1.04,-.47-j*.14,.83,"automail-plate");
   }
   if (n === "alphonse") {
-    i.remove(h);h.geometry.dispose();h.material.dispose();
     o.material.metalness=.45;
     o.material.roughness=.39;
     ell(0x3f4b58,0,.23,.88,.83,.65,.35,"helmet-shadow");
@@ -12161,8 +11914,10 @@ function addAvatarAppearance(
       const spike=part(new THREE.ConeGeometry(.26,.74,5),0xc3d5da,side*1.21,-.04,-.04,"pauldron-spike");
       spike.rotation.z=-side*.44;
       patch([[side*.05,.42],[side*.65,.61],[side*.83,.29],[side*.31,.16]],0x8fa2ad,"steel-brow");
-      const eye=part(new THREE.BoxGeometry(.38,.086,.10),0xff94a5,side*.32,.22,1.22,"glowing-eye-slit");
-      eye.rotation.z=side*.24;
+      const points = [[side*.11,.205],[side*.53,.365],[side*.63,.330],
+        [side*.49,.268],[side*.13,.172]];
+      const eye = patch(side < 0 ? points.reverse() : points,0xff94a5,"glowing-eye-slit");
+      eye.position.z = .105;
       eye.material=new THREE.MeshStandardMaterial({color:0xff9cab,emissive:0xff3c69,emissiveIntensity:.85});
       for(let j=0;j<3;j++) stroke([[side*.37,-.055-j*.12],[side*.64,.005-j*.12]],0x283645,.029,"helmet-vent");
     }
@@ -12173,16 +11928,11 @@ function addAvatarAppearance(
     stroke([[-.57,-.68],[0,-.88],[.57,-.68]],0xb3c6cf,.047,"chest-plate-rim");
   }
   if (n === "roy") {
-    for(let j=0;j<8;j++){
-      const x=(j-3.6)*.225;
-      lock(x,1.03-.33*Math.abs(x),.62,x-.2,.30+(j%3)*.125,.99,.18,j%3?s.hair:s.tip);
-    }
     for(const side of [-1,1]){
       ell(0x142b4b,side*.89,-.60,.03,.39,.44,.60,"uniform-shoulder");
       const collar=part(new THREE.BoxGeometry(.27,.34,.11),0x8f9eb3,side*.25,-.46,1.02,"standing-collar");
       collar.rotation.z=side*.28;
       part(new THREE.BoxGeometry(.42,.09,.28),0xd2ad62,side*.84,-.24,.43,"gold-epaulette");
-      stroke([[side*.24,.23],[side*.55,.28]],0x1f2028,.024,"stern-brow");
       const cape=part(new THREE.SphereGeometry(R+.052,16,7,Math.PI*(side<0?.53:1.25),Math.PI*.28,1.83,1.12),
         0x18212c,0,0,0,"dark-military-overcoat");
       cape.scale.x=1.075;
@@ -12195,16 +11945,10 @@ function addAvatarAppearance(
     seal.scale.y=.81;
   }
   if (n === "scar") {
-    for(let j=0;j<17;j++) {
-      const q=j*2.39996,x=Math.cos(q)*.76,z=Math.sin(q)*.65;
-      lock(x,.86,z,x*1.26-.19,1.37+(j%4)*.105,z*1.24-.14,.20,j%3?s.hair:s.tip);
-    }
     for(const side of [-1,1]) {
-      ell(0x3b3936,side*.96,.28,-.24,.22,.57,.64,"dark-undercut");
       const lapel=part(new THREE.BoxGeometry(.26,.72,.16),0xd0c3a0,side*.5,-.63,.87,"tan-jacket-lapel");
       lapel.rotation.z=side*.61;
       ell(0x989479,side*.90,-.68,.04,.42,.43,.61,"field-jacket-shoulder");
-      stroke([[side*.13,.08],[side*.52,.25]],0x3a2826,.041,"angular-brow");
     }
     for(const points of [[[-.34,.87],[-.15,.59],[.29,.17]],[[.31,.84],[.11,.56],[-.32,.21]]])
       scar(points,0xb36855,.038);
@@ -12221,28 +11965,19 @@ function addAvatarAppearance(
       part(new THREE.TorusGeometry(.12,.035,6,16),0xe6bd48,side*.58,-.93,.88,"zip-pull");
       part(new THREE.BoxGeometry(.25,.1,.12),0xd6ad39,side*.52,.73,.91,"hair-clip");
     }
-    for(let j=0;j<9;j++)lock((j-4)*.19,.9,.68,(j-4)*.2,.4,.99,.15,0x111522);
   }
   if(n==='child_emperor'){
-    ell(0xbd8c43,0,.75,-.05,.85,.55,.83,'brown-hair-volume');
-    for(let j=0;j<22;j++){const q=j*2.4,x=Math.cos(q)*.75,z=Math.sin(q)*.75;lock(x,.65,z,x*1.3,1.15+(j%4)*.12,z*1.22,.22,j%4?0xb68034:0xe3bb66);}
-    for(let j=0;j<7;j++){const x=(j-3)*.24;lock(x,.95,.65,x+.14,.3+(j%3)*.12,1.02,.15,0xc69343);}
-    lock(0,1,0,.35,1.85,-.12,.18,0xc69a44);
     part(new THREE.BoxGeometry(.85,.8,.4),0x5b6b7a,0,-.4,-.95,'robot-tool-backpack');
     for(const side of[-1,1]){part(new THREE.BoxGeometry(.15,.8,.09),0x677d93,side*.65,-.55,.75,'backpack-strap');for(let j=0;j<4;j++){part(new THREE.BoxGeometry(.1,.5,.055),0x5678a1,side*(.38+j*.15),-.75,.8,'blue-plaid-shirt');part(new THREE.BoxGeometry(.45,.07,.065),0x6885ac,side*.6,-.45-j*.14,.85,'blue-plaid-shirt');}}
     part(new THREE.BoxGeometry(.45,.6,.05),0xf1f1e8,0,-.65,.95,'white-undershirt');
   }
   if(n==='metal_bat'){
-    for(let j=0;j<5;j++)ell(j%2?0x141923:0x202632,(j-2)*.22,1.05,.12,.3,.62,.7,'swept-pompadour-volume');
-    for(let j=0;j<32;j++){const q=j*2.4,x=Math.cos(q)*.72,z=Math.sin(q)*.65;lock(x,.65,z,x*.9,1.45+(j%5)*.12,z*.7+.25,.22,j%5?0x11151c:0x303845);}
-    for(let j=0;j<8;j++){const x=(j-3.5)*.18;lock(x,.6,.65,x*.9,1.5,1,.17,0x141821);}
     for(const side of[-1,1]){part(new THREE.BoxGeometry(.3,.65,.15),0xc82d3e,side*.65,-.65,.75,'red-jacket-lapel');part(new THREE.BoxGeometry(.13,.4,.1),0x20222c,side*.4,-.55,.95,'black-jacket-trim');}
     stroke([[-.55,.45],[-.42,.2],[-.5,.05]],0xb36d68,.05,'forehead-bruising');
     stroke([[.6,-.1],[.72,-.3]],0x9e6665,.025,'battle-scar');
   }
 
   if (n === "saitama") {
-    for (const child of [...i.children]) if (child.name === "hair-volume") { i.remove(child); child.geometry.dispose(); }
     const cape = new THREE.Shape();
     cape.moveTo(-.8,.15);cape.lineTo(-1.25,-1.3);cape.quadraticCurveTo(0,-1.65,1.25,-1.3);cape.lineTo(.8,.15);cape.closePath();
     const cloth=part(new THREE.ShapeGeometry(cape),0xf3f0e8,0,0,-.75,"saitama-white-cape");cloth.rotation.x=.12;cloth.material.side=THREE.DoubleSide;
@@ -12250,11 +11985,6 @@ function addAvatarAppearance(
     part(new THREE.BoxGeometry(.055,.65,.08),0xd8d9d2,0,-.65,.98,"suit-zipper");
   }
   if (n === "genos") {
-    for(let j=0;j<24;j++) {
-      const q=j*2.4,x=Math.cos(q)*.8,z=Math.sin(q)*.8;
-      lock(x,.75,z,x*1.2,.95+(j%4)*.15,z*1.35+.18,.22,j%3?0xd7bd68:0xf6df93);
-    }
-    for(let j=0;j<7;j++){const x=(j-3)*.23;lock(x,1,.65,x-.1,.25+(j%2)*.12,1.06,.18,0xe2c976);}
     for(const side of[-1,1]){
       const shoulder=part(new THREE.SphereGeometry(.36,12,8),0xaeb7c0,side*.95,-.55,.1,"cyborg-shoulder");shoulder.scale.set(1,.9,.85);
       for(let j=0;j<3;j++)part(new THREE.BoxGeometry(.15,.06,.38),0xe3bc4c,side*1.14,-.42-j*.15,.3,"cyborg-gold-segment");
@@ -12263,33 +11993,13 @@ function addAvatarAppearance(
     for(let j=0;j<3;j++)part(new THREE.BoxGeometry(.55,.055,.08),0xb7c1cc,0,-.22-j*.1,.99,"cyborg-neck-plate");
   }
   if (n === "tatsumaki") {
-    for(let j=0;j<11;j++) {
-      const q=j*Math.PI*2/11,points=[];
-      for(let k=0;k<=16;k++) {
-        const u=k/16,angle=q+u*Math.PI*1.8,r=.35+u*.55;
-        points.push(new THREE.Vector3(Math.cos(q)*.7+Math.cos(angle)*r,.65+Math.sin(u*Math.PI)*.55-u*.35,Math.sin(q)*.7+Math.sin(angle)*r));
-      }
-      part(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),24,.15,7,false),j%3?0x27784e:0x45aa72,0,0,0,"tatsumaki-sculpted-curl");
-    }
     for(let j=0;j<4;j++)part(new THREE.ConeGeometry(.28,.9,5),0x102b25,(j-1.5)*.4,-1.05,.1,"dress-fold");
   }
   if (n === "silver_fang") {
-    for(let j=0;j<28;j++) {
-      const q=j*2.4,x=Math.cos(q)*.72,z=Math.sin(q)*.72;
-      lock(x,.65,z,x*1.25,1.4+(j%4)*.1,z*.85-.2,.2,j%3?0xd6e3e7:0xffffff);
-    }
-    for(const side of[-1,1]) {
-      lock(side*.65,.35,.72,side*.95,-.4,.62,.15,0xe6edf0);
-      lock(side*.08,-.17,1.14,side*.65,-.42,1.07,.11,0xe9f1f3);
-    }
     for(let j=0;j<3;j++)stroke([[-.4,.35+j*.12],[0,.3+j*.12],[.4,.35+j*.12]],0xb59a84,.015,"forehead-wrinkle");
   }
 
   if (n === "dio") {
-    for (let j = 0; j < 18; j++) {
-      const angle = j * 2.4, x = Math.cos(angle) * 0.8, z = Math.sin(angle) * 0.8;
-      lock(x, 0.7, z, x * 1.3, 1.2 + (j % 3) * 0.15, z * 1.2 - 0.2, 0.23, j % 3 ? 0xe6be55 : 0xffdf7d);
-    }
     const band = part(new THREE.TorusGeometry(1.1, 0.085, 8, 36), 0x329453, 0, 0.48, 0, "dio-green-headband");
     band.rotation.x = Math.PI / 2;
     const heart = new THREE.Shape();
@@ -12320,32 +12030,8 @@ function addAvatarAppearance(
     }
   }
   if (n === "hawks") {
-    for (let j = 0; j < 26; j++) {
-      const q = j * 2.4,
-        x = Math.cos(q) * 0.75,
-        z = Math.sin(q) * 0.75;
-      lock(
-        x,
-        0.72,
-        z,
-        x * 1.4 + 0.16,
-        1 + (j % 4) * 0.14,
-        z * 1.3 - 0.15,
-        0.24,
-        j % 3 ? 0xd5aa62 : 0xf4cf83,
-      );
-    }
     for (const s of [-1, 1]) {
       part(new THREE.BoxGeometry(0.22, 0.55, 0.42), 0x30313a, s * 1.04, 0.12, 0.18, "headset");
-      const lens = part(
-        new THREE.SphereGeometry(0.35, 12, 8),
-        0xe6bf38,
-        s * 0.39,
-        0.2,
-        0.97,
-        "yellow-goggles",
-      );
-      lens.scale.set(1.05, 0.52, 0.2);
       for (let j = 0; j < 8; j++) {
         const f = hawksFeatherMesh();
         f.scale.set(0.9, 0.9, 1.45 - j * 0.045);
@@ -12367,25 +12053,6 @@ function addAvatarAppearance(
     }
   }
   if (n === "shoto") {
-    for (let j = 0; j < 22; j++) {
-      const q = j * 2.4,
-        x = Math.cos(q) * 0.8,
-        z = Math.sin(q) * 0.8;
-      lock(x, 0.75, z, x * 1.35, 0.9 + (j % 4) * 0.18, z * 1.3, 0.26, x < 0 ? 0x922d38 : 0xe8e9e3);
-    }
-    for (let j = 0; j < 7; j++) {
-      const x = (j - 3) * 0.23;
-      lock(x, 1, 0.72, x - 0.13, 0.4 + (j % 2) * 0.15, 1.02, 0.2, x < 0 ? 0x922d38 : 0xe8e9e3);
-    }
-    const scar = part(
-      new THREE.SphereGeometry(0.28, 12, 10),
-      0xa44d4d,
-      -0.43,
-      0.13,
-      1.06,
-      "left-burn-scar",
-    );
-    scar.scale.set(0.85, 1.2, 0.16);
     for (const side of [-1, 1]) {
       part(
         new THREE.BoxGeometry(0.17, 0.9, 0.1),
@@ -12407,14 +12074,6 @@ function addAvatarAppearance(
     }
   }
   if (n === "dark_deku") {
-    for (let j = 0; j < 18; j++) {
-      const q = j * 2.4,
-        x = Math.cos(q) * 0.8,
-        z = Math.sin(q) * 0.8;
-      lock(x, 0.65, z, x * 1.45, 1.15 + (j % 3) * 0.18, z * 1.4, 0.24, j % 3 ? s.hair : s.tip);
-    }
-    for (const side of [-1, 1])
-      lock(side * 0.65, 0.8, -0.1, side * 0.85, 2.15, -0.35, 0.3, 0x203f36);
     part(
       new THREE.TorusGeometry(0.86, 0.22, 8, 24),
       0xb39a57,
@@ -12457,12 +12116,6 @@ function addAvatarAppearance(
     );
     beak.rotation.x = Math.PI / 2;
     beak.scale.x = 0.75;
-    for (let j = 0; j < 16; j++) {
-      const angle = j * 2.4,
-        x = Math.cos(angle) * 0.75,
-        z = Math.sin(angle) * 0.75;
-      lock(x, 0.65, z, x * 1.7, 1.25 + (j % 3) * 0.22, z * 1.7, 0.3, j % 3 ? s.hair : s.tip);
-    }
     part(
       new THREE.SphereGeometry(R + 0.12, 20, 10, 0, Math.PI * 2, 1.65, 1.35),
       0x242033,
@@ -12481,37 +12134,6 @@ function addAvatarAppearance(
     ).rotation.x = Math.PI / 2;
   }
   if (n === "douma") {
-    for (let j = 0; j < 12; j++) {
-      const q = (j * Math.PI) / 6,
-        x = Math.cos(q) * 0.84,
-        z = Math.sin(q) * 0.84;
-      lock(x, 0.85, z, x * 1.65, 0.35 + (j % 3) * 0.12, z * 1.45, 0.24, j % 3 ? s.hair : s.tip);
-    }
-    for (const side of [-1, 1])
-      for (let j = 0; j < 4; j++)
-        lock(
-          side * (0.8 + j * 0.04),
-          0.55 - j * 0.17,
-          -0.24,
-          side * (1.35 + (j % 2) * 0.15),
-          -0.25 - j * 0.2,
-          -0.35,
-          0.24,
-          j % 2 ? s.hair : s.tip,
-        );
-    for (let j = 0; j < 6; j++) {
-      const x = j * 0.29 - 0.78;
-      lock(
-        x,
-        0.99,
-        0.67,
-        x - 0.46,
-        0.4 + (j % 3) * 0.13,
-        avatarSurface(x - 0.3, 0.5) + 0.08,
-        0.23,
-        j % 2 ? s.hair : s.tip,
-      );
-    }
     const crown = new THREE.Shape();
     crown.moveTo(-1.05, 1.02);
     crown.lineTo(-1.25, 1.65);
@@ -12604,30 +12226,7 @@ function addAvatarAppearance(
     }
   }
   if (n === "guy" || n === "guy_gates") {
-    if (n === "guy") {
-      h.scale.set(1.04, 1.03, 1.04);
-      part(
-        new THREE.SphereGeometry(R + 0.09, 28, 16, 0, Math.PI * 2, 0, 1.17),
-        s.hair,
-        0,
-        0,
-        0,
-        "solid-bowl-hair",
-      );
-      part(
-        new THREE.TorusGeometry(1.16, 0.065, 8, 32),
-        s.hair,
-        0,
-        0.5,
-        0,
-        "blunt-bowl-rim",
-      ).rotation.x = Math.PI / 2;
-      for (let j = 0; j < 13; j++) {
-        const q = (j * Math.PI * 2) / 13;
-        ell(s.hair, Math.cos(q) * 0.99, 0.68, Math.sin(q) * 0.99, 0.2, 0.22, 0.2, "bowl-hair-lock");
-        i.userData.hairLocks++;
-      }
-    } else {
+    if (n === "guy_gates") {
       scar(
         [
           [-0.73, 0.6],
@@ -12668,18 +12267,6 @@ function addAvatarAppearance(
     part(new THREE.BoxGeometry(0.32, 0.14, 0.07), 0xc5c9ba, 0, -1.05, 0.67, "waist-plate");
   }
   if ("tengen" === n) {
-    ell(s.hair, 0, 1.23, -0.61, 0.42, 0.4, 0.42, "silver-hair-tie");
-    for (let e = 0; e < 5; e++)
-      lock(
-        0.2 * e - 0.4,
-        1.11,
-        -0.67,
-        0.28 * e - 0.55,
-        1.62 + (e % 2) * 0.12,
-        -1.14,
-        0.2,
-        e % 2 ? s.hair : s.tip,
-      );
     const e = void 0;
     ((part(
       new THREE.TorusGeometry(1.11, 0.15, 6, 32),
@@ -12747,11 +12334,6 @@ function addAvatarAppearance(
       );
   }
   if ("giyu" === n) {
-    ell(s.hair, 0, 0.35, -1.08, 0.43, 0.56, 0.35, "tied-back-hair");
-    for (let e = 0; e < 6; e++) {
-      const a = 0.25 * e - 0.63;
-      lock(a, 0.25, -0.82, 1.3 * a, -0.75 - (e % 2) * 0.15, -1.24, 0.23, e % 2 ? s.hair : s.tip);
-    }
     const capeGeo = () =>
         new THREE.SphereGeometry(R + 0.11, 22, 9, 0.32 * -Math.PI, 0.64 * Math.PI, 1.69, 1.06),
       e = void 0;
@@ -12793,45 +12375,6 @@ function addAvatarAppearance(
       Math.PI / 2;
   }
   if ("rengoku" === n) {
-    const flameLock = (e, a, o, n, i, r, l) => {
-      const c = e + 0.77 * (n - e),
-        h = a + 0.77 * (i - a),
-        d = o + 0.77 * (r - o);
-      (lock(e, a, o, n, i, r, l, s.hair), lock(c, h, d, n, i, r, 0.28 * l, s.tip));
-    };
-    for (let e = 0; e < 16; e++) {
-      const a = (e * Math.PI) / 8,
-        o = 0.82 * Math.cos(a),
-        n = 0.82 * Math.sin(a);
-      flameLock(o, 0.82, n, 1.6 * o, 1.26 + (e % 3) * 0.14, 1.65 * n, 0.28);
-    }
-    for (const e of [-1, 1])
-      for (let a = 0; a < 5; a++)
-        flameLock(
-          e * (0.91 + 0.025 * a),
-          0.67 - 0.18 * a,
-          0.03,
-          e * (1.48 + (a % 2) * 0.1),
-          0.4 - 0.23 * a,
-          0.15,
-          0.24,
-        );
-    for (let e = 0; e < 7; e++) {
-      const a = 0.286 * e - 0.86;
-      flameLock(a, 0.43, -0.66, 1.3 * a, -0.62 - (e % 2) * 0.12, -1.11, 0.28);
-    }
-    for (let e = 0; e < 7; e++) {
-      const a = 0.267 * e - 0.8;
-      flameLock(
-        a,
-        0.97,
-        0.68,
-        a + (e < 3 ? -0.12 : 0.12),
-        0.56 + (e % 2) * 0.15,
-        avatarSurface(a, 0.59) + 0.06,
-        0.19,
-      );
-    }
     const e = void 0;
     part(
       new THREE.SphereGeometry(R + 0.12, 24, 10, Math.PI, Math.PI, 1.36, 1.32),
@@ -13062,7 +12605,21 @@ function addAvatarAppearance(
         0.98,
         "tie-motif",
       );
-  return (batchAvatarParts(i), a.add(i), (e.avatarGroup = i), i);
+  batchAvatarParts(i);
+  if (FIGHTER_FACE[n]) {
+    if (!o.geometry.userData.akiCached) o.geometry.dispose();
+    o.geometry = sculptedSkin();
+    o.rotation.y = 0;
+    addSculptedFace(i, n);
+  }
+  addSculptedHair(i, n, s);
+  if (n === "denji") {
+    o.material.color.setHex(0x583936);
+    addDenjiHelmet(i);
+  }
+  a.add(i);
+  e.avatarGroup = i;
+  return i;
 }
 
 function addNewCharacterDetails(e, a) {
@@ -15748,8 +15305,14 @@ function rezeHeadModel() {
         g.add(m);
         return m;
       };
-      ell(0, 0.25, 0, 1.02, 0.87, 1.65, metal);
-      ell(0, 0.15, 1.35, 0.67, 0.65, 0.55, metal);
+      const shell = fighterHelmetShell([
+        [-1.72,.39,.01,.012],[-1.49,.35,.63,.58],[-.78,.25,1.00,.85],
+        [.06,.25,1.04,.91],[.84,.17,.84,.76],[1.45,.14,.57,.58],
+        [1.80,.16,.24,.34],[1.90,.17,.01,.011],
+      ]);
+      const casing = new THREE.Mesh(shell,metal);
+      casing.name = "bomb-devil-helmet";
+      g.add(casing);
       ell(0, -0.5, 0.55, 0.72, 0.28, 0.97, seam);
       ell(0, -0.72, 0.6, 0.66, 0.13, 0.86, metal);
       for (const side of [-1, 1]) {
@@ -17434,15 +16997,6 @@ function model(e, a = !1) {
       horn.rotation.z = -side * 0.12;
       n.add(horn);
     }
-  }
-  if (o.id === "aki") {
-    const knot = new THREE.Mesh(
-      new THREE.ConeGeometry(0.28, 1.5, 7),
-      new THREE.MeshStandardMaterial({ color: 0x182b36 }),
-    );
-    knot.position.set(0, 1.7, -0.3);
-    knot.rotation.x = -0.2;
-    n.add(knot);
   }
   const i = new THREE.MeshStandardMaterial({ color: 2633787, metalness: 0.5, roughness: 0.4 }),
     r = new THREE.MeshStandardMaterial({ color: 13031391, metalness: 0.6, roughness: 0.3 });
@@ -24172,6 +23726,11 @@ function kenpachiSword(form) {
 function addKenpachiDetails(actor, mesh) {
   if (actor.d.id !== "kenpachi") return;
   const coat = new THREE.Group(), face = new THREE.Group(), demon = new THREE.Group(), weapon = new THREE.Group();
+  const transformedHead = new THREE.Group();
+  addSculptedFace(transformedHead, "kenpachi_bankai");
+  addSculptedHair(transformedHead, "kenpachi_bankai", AVATAR_STYLES.kenpachi);
+  transformedHead.position.z = .007;
+  mesh.add(transformedHead);
   coat.name = "kenpachi-white-haori";
   face.name = "kenpachi-eye-patch";
   demon.name = "kenpachi-bankai-horns-and-marks";
@@ -24190,7 +23749,7 @@ function addKenpachiDetails(actor, mesh) {
   weapon.add(...Object.values(swords));
   const frontHand = bleachPart(weapon, new THREE.SphereGeometry(.21,10,8), 0xdab39c, .018,-.31,.03);
   const rearHand = bleachPart(weapon, new THREE.SphereGeometry(.19,10,8), 0xdab39c, -.018,-.64,.03);
-  actor.kenpachiRig = { coat, face, demon, weapon, swords, frontHand, rearHand };
+  actor.kenpachiRig = { coat, face, demon, transformedHead, weapon, swords, frontHand, rearHand };
   updateKenpachiVisual(actor, mesh);
 }
 
@@ -24209,6 +23768,9 @@ function updateKenpachiVisual(actor, mesh = actor.mesh) {
   rig.rearHand.material.color.setHex(color);
   rig.rearHand.visible = pose?.kind === "raise" || pose?.kind === "cut" || nozarashi;
   rig.face.visible = !form;
+  rig.transformedHead.visible = form;
+  for (const child of actor.avatarGroup.children)
+    if (["sculpted-face", "sculpted-hair", "swept-hair"].includes(child.name)) child.visible = !form;
   rig.demon.visible = form;
   rig.coat.visible = !form;
   for (const [name, blade] of Object.entries(rig.swords)) blade.visible = name === sword;
@@ -24349,7 +23911,6 @@ function addBleachDetails(a,g){if(!BLEACH_IDS.includes(a.d.id))return;const id=a
  // Shihakusho: white crossed collar, black robe, sash. Captain haori leaves the black center exposed.
  for(const side of[-1,1]){const collar=box(.16,.85,.13,0xfaf6ee,side*.22,-.62,.94);collar.rotation.z=side*.43;if(id!=='ichigo'){const coat=box(.48,1.05,.8,0xf4f0e9,side*.91,-.73,.2);coat.rotation.z=side*.12;}}box(1.6,.17,.3,0xe5e1d7,0,-1.05,.65);
  if(id==='byakuya'){for(let i=-1;i<=1;i++)box(.22,.6,.3,0xe7e8ed,i*.27,1.22,.25);const scarf=bleachPart(parts,new THREE.TorusGeometry(.98,.18,6,32),0xf2f1e9,0,-.22,0);scarf.rotation.x=Math.PI/2;for(const side of[-1,1]){const tail=box(.26,1.4,.1,0xe8ece9,side*1.17,-.62,-.35);tail.rotation.z=-side*.3;}}
- if(id==='aizen'){for(const side of[-1,1]){const rim=bleachPart(parts,new THREE.TorusGeometry(.24,.026,5,20),0x242229,side*.34,.2,1.16);rim.scale.y=.7;}box(.25,.035,.06,0x242229,0,.2,1.18);}
  const sword=new THREE.Group();sword.position.set(1.35,-.15,.15);sword.rotation.z=-.45;parts.add(sword);bleachPart(sword,new THREE.BoxGeometry(.2,.6,.22),0x25202b,0,-.55,0);bleachPart(sword,new THREE.BoxGeometry(id==='ichigo'?.18:.09,id==='ichigo'?2.9:2.6,id==='ichigo'?.55:.2),id==='ichigo'?0x14131b:0xe5f2f5,0,1,0);if(id==='ichigo')bleachLine(sword,[[.1,-.8,0],[.45,-1,.1],[.6,-.6,.05]],0xe8e4d5,.08);else{const guard=bleachPart(sword,new THREE.TorusGeometry(.3,.065,5,id==='toshiro'?4:16),0xc4a765,0,-.21,0);guard.rotation.x=Math.PI/2;}
  if(id==='toshiro'){box(.3,.6,.12,0x29523d,-.8,-.4,-.7);const strap=box(.16,2.1,.14,0x49694e,0,-.2,1.05);strap.rotation.z=-.7;}
  if(id==='ichigo'){const bankai=new THREE.Group();bankai.name='tensa-zangetsu';bankai.visible=false;parts.add(bankai);const blade=bleachPart(bankai,new THREE.BoxGeometry(.12,3.3,.12),0x090912,1.7,1,.2);blade.rotation.z=-.4;for(const side of[-1,1]){const tail=bleachPart(bankai,new THREE.ConeGeometry(.65,1.4,4),0x111018,side*.65,-1.2,-.2);tail.rotation.z=side*.3;}bleachLine(bankai,[[1.5,-.6,.2],[1.9,-.9,.2],[2,-.5,.25],[1.7,-.4,.2]],0x92929d,.035);a.bleachBankaiParts=bankai;a.bleachNormalSword=sword;}}
@@ -30219,7 +29780,7 @@ function publishOnlineResult(title, summary) {
 // Send world-space draw state. The guest only interpolates presentation between host samples.
 const ONLINE_SCENE_INTERVAL = 80;
 const ONLINE_SCENE_LIMIT = 16400;
-const ONLINE_SCENE_VERSION = 1;
+const ONLINE_SCENE_VERSION = 2;
 const ONLINE_EFFECT_LIMIT = 120;
 const onlineTransform = new THREE.Object3D();
 const onlineWorldPose = new THREE.Matrix4();
@@ -30702,6 +30263,713 @@ function renderOnlineArena(session, timestamp, dt) {
   updateStormMesh();
   updateBanners();
   renderer.render(scene, camera);
+}
+
+// Front hairline angles run from left temple to right temple. Volume, flow and taper
+// describe how the crown follows the crest down into the same continuous surface.
+const FIGHTER_HAIR = {
+  tanjiro:        { crown:"sweep", volume:.32, flow:-.56, edge:[1.22,.98,.77,.83,1.07,1.16,1.35], nape:1.99, points:9 },
+  zenitsu:        { crown:"bob", volume:.23, flow:.06, edge:[1.42,1.21,1.28,1.36,1.27,1.21,1.42], nape:1.93, points:11, dip:.119, dye:"tips" },
+  inosuke:        { crown:"fur", volume:.35, flow:.17, edge:[1.17,1.01,1.16,.98,1.16,1.01,1.17], nape:2.35, points:16 },
+  akaza:          { crown:"crop", volume:.29, flow:.16, edge:[.99,.91,.88,.91,.87,.90,1.00], nape:1.50, points:19 },
+  naruto:         { crown:"spikes", volume:.41, flow:-.19, edge:[1.04,.94,.93,.92,.95,.93,1.05], nape:1.54, points:12 },
+  sasuke:         { crown:"spikes", volume:.45, flow:.54, edge:[1.52,1.36,1.00,.91,1.34,1.49,1.52], nape:2.01, points:8, bias:.18 },
+  izuku:          { crown:"waves", volume:.52, flow:-.43, edge:[1.32,1.24,.96,1.25,1.17,1.24,1.34], nape:1.99, points:10 },
+  luffy:          { crown:"crop", volume:.14, flow:.18, edge:[1.38,1.24,1.19,1.28,1.19,1.23,1.38], nape:1.88, points:12 },
+  yuji:           { crown:"crop", volume:.26, flow:-.24, edge:[.96,.91,.87,.94,.93,.91,1.01], nape:1.67, points:17, dye:"fade" },
+  todo:           { crown:"tied", volume:.14, flow:.89, edge:[1.07,.96,.87,.84,.88,.96,1.07], nape:1.75, points:9, tail:"knot" },
+  megumi:         { crown:"spikes", volume:.70, flow:-.52, edge:[1.35,1.19,.97,1.08,.95,1.17,1.35], nape:1.88, points:7, bias:.22 },
+  yuta:           { crown:"bob", volume:.19, flow:-.34, edge:[1.35,1.12,1.23,1.16,1.33,1.2,1.36], nape:1.93, points:9 },
+  hakari:         { crown:"sweep", volume:.37, flow:.13, edge:[.92,.79,.75,.74,.78,.8,.94], nape:1.70, points:10, dye:"fade" },
+  zoro:           { crown:"crop", volume:.17, flow:.25, edge:[1.08,.99,.95,.95,.99,1.04,1.1], nape:1.55, points:21 },
+  bakugo:         { crown:"spikes", volume:.65, flow:.31, edge:[1.21,1.03,1.09,.96,1.10,1.01,1.21], nape:1.79, points:10, bias:-.10 },
+  jotaro:         { crown:"crop", volume:.18, flow:.31, edge:[1.00,.84,.85,.83,.85,.84,1.00], nape:1.95, points:12, bias:.09 },
+  kokushibo:      { crown:"spikes", volume:.53, flow:-.67, edge:[1.61,1.33,.97,.73,.99,1.47,1.59], nape:2.13, points:9, tail:"demon", dye:"tips" },
+  gyomei:         { crown:"crop", volume:.25, flow:.18, edge:[1.06,.91,.90,.87,.90,.91,1.06], nape:1.56, points:18 },
+  naoya:          { crown:"bob", volume:.22, flow:.44, edge:[1.38,1.26,1.31,1.03,1.28,1.19,1.43], nape:1.76, points:11 },
+  gojo:           { crown:"spikes", volume:.54, flow:.22, edge:[1.05,1.09,1.00,1.07,1.02,1.09,1.05], nape:1.55, points:13, bias:-.10 },
+  law:            { crown:"crop", volume:.11, flow:.06, edge:[1.28,1.12,1.02,1.07,1.02,1.12,1.28], nape:1.71, points:9 },
+  emperor_luffy:  { crown:"crop", volume:.15, flow:.15, edge:[1.39,1.19,1.23,1.28,1.18,1.24,1.38], nape:1.97, points:11 },
+  emperor_nika:   { crown:"waves", volume:.58, flow:1.36, edge:[1.32,1.21,1.19,1.00,1.17,1.20,1.32], nape:1.84, points:8, tail:"cloud" },
+  kira:           { crown:"sweep", volume:.28, flow:-.92, edge:[1.15,1.05,.91,.75,.85,.96,1.12], nape:1.84, points:8, bias:.14 },
+  kuzan:          { crown:"waves", volume:.38, flow:.51, edge:[1.39,1.10,.99,.91,.99,1.20,1.43], nape:1.94, points:15 },
+  borsalino:      { crown:"crop", volume:.13, flow:.48, edge:[1.10,1.03,.95,1.03,.94,1.04,1.12], nape:1.63, points:18 },
+  sakazuki:       { crown:"crop", volume:.08, flow:.14, edge:[1.05,.94,.92,.92,.93,.94,1.07], nape:1.63, points:16 },
+  teach:          { crown:"waves", volume:.30, flow:.45, edge:[1.64,1.49,.91,.81,.96,1.40,1.58], nape:2.54, points:14 },
+  rengoku:        { crown:"spikes", volume:.40, flow:.30, edge:[1.46,1.13,.96,.75,.96,1.13,1.46], nape:2.44, points:9, dye:"flame", tail:"flame" },
+  giyu:           { crown:"spikes", volume:.41, flow:-.62, edge:[1.43,1.18,1.08,.84,.99,1.17,1.47], nape:2.06, points:8, tail:"lowTie" },
+  tengen:         { crown:"tied", volume:.23, flow:-.60, edge:[1.19,.97,.99,.97,1.02,1.06,1.22], nape:1.88, points:8, tail:"silver" },
+  guy:            { crown:"bob", volume:.15, flow:.05, edge:[1.26,1.17,1.15,1.15,1.15,1.17,1.26], nape:1.80, points:9, dip:.015 },
+  guy_gates:      { crown:"spikes", volume:.60, flow:.10, edge:[1.10,.91,.83,.85,.85,.94,1.10], nape:1.58, points:11 },
+  douma:          { crown:"waves", volume:.37, flow:-.65, edge:[1.64,1.45,1.09,.82,1.01,1.36,1.65], nape:2.45, points:8, bias:.12 },
+  tokoyami:       { crown:"fur", volume:.50, flow:-.71, edge:[1.37,1.24,1.22,1.12,1.23,1.24,1.37], nape:2.45, points:13 },
+  dark_deku:      { crown:"spikes", volume:.57, flow:-.38, edge:[1.29,1.18,1.07,1.21,1.08,1.22,1.35], nape:2.00, points:10 },
+  shoto:          { crown:"bob", volume:.27, flow:-.42, edge:[1.36,1.29,1.40,1.16,1.32,1.17,1.40], nape:1.86, points:10, dye:"split" },
+  hawks:          { crown:"sweep", volume:.41, flow:.88, edge:[1.27,1.23,1.13,1.06,.91,1.01,1.35], nape:1.85, points:11, bias:.18 },
+  aki:            { crown:"tied", volume:.18, flow:-.21, edge:[1.38,1.17,1.39,1.36,1.41,1.23,1.38], nape:1.79, points:9, tail:"akiTie" },
+  power:          { crown:"bob", volume:.22, flow:.51, edge:[1.59,1.47,1.39,1.26,1.42,1.36,1.56], nape:2.78, points:9, bias:.13, tail:"long" },
+  pain:           { crown:"spikes", volume:.48, flow:.47, edge:[1.06,.98,.97,.90,.95,1.01,1.09], nape:1.68, points:13 },
+  kakashi:        { crown:"spikes", volume:.59, flow:-.75, edge:[1.12,1.08,.96,.90,.97,1.06,1.08], nape:1.58, points:10, bias:-.47 },
+  dio:            { crown:"sweep", volume:.49, flow:.67, edge:[1.26,1.13,.96,.93,1.08,1.18,1.27], nape:1.87, points:9, bias:.23 },
+  bucciarati:     { crown:"bob", volume:.20, flow:.05, edge:[1.39,1.24,1.22,1.23,1.22,1.24,1.39], nape:2.20, points:7, dip:.036 },
+  ichigo:         { crown:"spikes", volume:.38, flow:.52, edge:[1.30,1.19,1.17,1.02,1.15,1.12,1.36], nape:1.70, points:14, bias:.18 },
+  byakuya:        { crown:"tied", volume:.21, flow:-.48, edge:[1.59,1.37,1.12,.87,1.10,1.32,1.57], nape:2.61, points:9, tail:"long" },
+  aizen:          { crown:"bob", volume:.30, flow:-.65, edge:[1.49,1.34,1.13,.98,1.23,1.31,1.49], nape:1.92, points:9, bias:-.12 },
+  toshiro:        { crown:"spikes", volume:.52, flow:.44, edge:[1.24,1.15,1.17,1.02,1.12,1.1,1.23], nape:1.74, points:10, bias:.16 },
+  genos:          { crown:"bob", volume:.37, flow:-.36, edge:[1.37,1.27,1.38,1.18,1.31,1.30,1.41], nape:1.78, points:13 },
+  tatsumaki:      { crown:"waves", volume:.39, flow:1.1, edge:[1.47,1.23,1.06,.88,1.09,1.25,1.47], nape:1.97, points:8, tail:"curl" },
+  silver_fang:    { crown:"sweep", volume:.36, flow:-.36, edge:[1.09,.91,.87,.76,.83,.95,1.11], nape:1.68, points:13 },
+  child_emperor:  { crown:"bob", volume:.28, flow:.43, edge:[1.42,1.27,1.40,1.33,1.25,1.26,1.42], nape:1.85, points:11, tail:"cowlick" },
+  metal_bat:      { crown:"sweep", volume:.68, flow:-.40, edge:[1.01,.83,.70,.68,.73,.86,1.00], nape:1.73, points:7, bias:.28 },
+  edward:         { crown:"tied", volume:.29, flow:.31, edge:[1.52,1.36,1.43,.85,1.22,1.40,1.49], nape:1.90, points:8, tail:"braid" },
+  roy:            { crown:"bob", volume:.25, flow:-.56, edge:[1.28,1.27,1.37,1.16,1.25,1.10,1.34], nape:1.85, points:10 },
+  scar:           { crown:"crop", volume:.27, flow:.33, edge:[.96,.80,.76,.82,.79,.83,1.00], nape:1.51, points:13, dye:"fade" },
+  aki_gun_fiend:  { crown:"bob", volume:.20, flow:-.59, edge:[1.58,1.54,1.47,1.34,1.48,1.57,1.62], nape:2.06, points:10, bias:-.15 },
+  kenpachi:       { crown:"spikes", volume:.48, flow:-.36, edge:[1.41,1.25,1.04,.84,1.03,1.25,1.46], nape:2.18, points:9, tail:"zaraki" },
+  kenpachi_bankai:{ crown:"spikes", volume:.52, flow:.57, edge:[1.39,1.22,1.03,.91,1.01,1.25,1.38], nape:2.34, points:11, tail:"demon" },
+  higuruma:       { crown:"sweep", volume:.28, flow:-.69, edge:[1.08,1.04,.96,.81,.84,.89,1.10], nape:1.67, points:11, bias:.18 },
+};
+
+// Eye color, width, opening and outer-lid angle. A few characters use custom
+// shapes or masks instead of the standard pair of eyes.
+const FIGHTER_FACE = {
+  tanjiro: ["#86374c",.25,.105,.020,"warm"],
+  zenitsu: ["#ad791e",.24,.075,-.027,"worried"],
+  inosuke: ["#1d85cb",.22,.20,0,"boar"],
+  akaza: ["#e6bd46",.24,.106,.035,"akaza"],
+  naruto: ["#488bc4",.235,.093,.026,"whiskers"],
+  sasuke: ["#292d37",.242,.071,.045,"stern"],
+  izuku: ["#247859",.262,.125,-.006,"freckles"],
+  luffy: ["#392323",.213,.138,.003,"grin"],
+  yuji: ["#87443d",.237,.104,.014,"underEye"],
+  todo: ["#1b252e",.246,.072,.040,"fierce"],
+  megumi: ["#253e40",.235,.080,.031,"stern"],
+  yuta: ["#3c4354",.244,.116,-.035,"tired"],
+  hakari: ["#594752",.250,.069,.022,"smirk"],
+  zoro: ["#424345",.259,.067,.058,"oneEye"],
+  bakugo: ["#9a2037",.264,.092,.104,"eyeMask"],
+  jotaro: ["#3e737a",.269,.066,.057,"stern"],
+  kokushibo: ["#f9c875",.212,.069,.016,"sixEyes"],
+  gyomei: ["#ebe3dc",.261,.085,.039,"whiteEyes"],
+  naoya: ["#665e4d",.250,.072,.043,"smirk"],
+  gojo: ["#60aee3",.242,.100,.023,"blindfold"],
+  law: ["#726067",.245,.067,.026,"law"],
+  emperor_luffy: ["#442826",.223,.126,.012,"grin"],
+  emperor_nika: ["#ca554e",.248,.141,.016,"joy"],
+  kira: ["#637396",.238,.079,.024,"calm"],
+  kuzan: ["#534d53",.241,.070,-.010,"tired"],
+  borsalino: ["#84604d",.235,.064,.013,"amberGlasses"],
+  sakazuki: ["#422b27",.265,.056,.072,"fierce"],
+  teach: ["#433731",.258,.120,.046,"gapGrin"],
+  rengoku: ["#c24624",.253,.133,.033,"flameEyes"],
+  giyu: ["#314e7e",.247,.083,.003,"calm"],
+  tengen: ["#a23057",.253,.071,.034,"tengen"],
+  guy: ["#2e2325",.221,.109,.037,"bushy"],
+  guy_gates: ["#ffebe1",.241,.077,.038,"whiteEyes"],
+  douma: ["#a06bc7",.252,.098,-.022,"rainbow"],
+  tokoyami: ["#d93a45",.246,.103,.065,"bird"],
+  dark_deku: ["#54e5a0",.251,.083,.044,"eyeMask"],
+  shoto: [["#87929a","#2a9d9e"],.247,.080,.023,"shoto"],
+  hawks: ["#9a7025",.258,.065,.033,"visor"],
+  aki: ["#284253",.243,.074,.029,"calm"],
+  power: ["#edbf45",.254,.102,.034,"crossEyes"],
+  pain: ["#b0a0ce",.249,.113,.028,"rinnegan"],
+  kakashi: [["#392a30","#343338"],.242,.084,.025,"maskedNinja"],
+  dio: ["#c19739",.255,.088,.050,"fierce"],
+  bucciarati: ["#446c9c",.231,.085,.030,"blueTear"],
+  ichigo: ["#93543b",.252,.076,.041,"stern"],
+  byakuya: ["#555b68",.246,.071,.027,"calm"],
+  aizen: ["#65443b",.245,.075,-.017,"squareGlasses"],
+  toshiro: ["#3c938d",.249,.072,.038,"stern"],
+  saitama: ["#433735",.187,.071,-.013,"deadpan"],
+  genos: ["#e8ad3e",.258,.082,.055,"cyborg"],
+  tatsumaki: ["#309257",.259,.115,.030,"fierce"],
+  silver_fang: ["#606165",.230,.056,.055,"silverStache"],
+  child_emperor: ["#75532d",.251,.120,.007,"wink"],
+  metal_bat: ["#442c39",.252,.067,.056,"fierce"],
+  edward: ["#bc902f",.248,.095,.037,"stern"],
+  roy: ["#444448",.244,.066,.049,"stern"],
+  scar: ["#a0343a",.246,.070,.054,"fierce"],
+  aki_gun_fiend: ["#344651",.246,.070,-.018,"shadowed"],
+  kenpachi: ["#626a7c",.250,.071,.047,"kenpachi"],
+  kenpachi_bankai: ["#f9c48c",.247,.061,.084,"fierce"],
+  higuruma: ["#564027",.241,.065,-.031,"tired"],
+};
+
+const fighterHeadGeometry = new Map();
+const fighterFaceTextures = new Map();
+
+function headMesh(positions, indices, colors) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  if (colors) geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  geometry.userData.akiCached = true;
+  return geometry;
+}
+
+function sculptedFaceRelief(x, y) {
+  const form = (cx, cy, width, height) => Math.exp(-(((x-cx)/width)**2 + ((y-cy)/height)**2));
+  return .082*form(0, -.04, .15, .28) + .032*form(0,-.13,.26,.12) +
+     .041*(form(-.54,-.18,.28,.20) + form(.54,-.18,.28,.20)) +
+     .023*form(0,-.46,.40,.20) - .023*(form(-.38,.24,.25,.15)+form(.38,.24,.25,.15));
+}
+
+function sculptedSkin() {
+  if (!fighterHeadGeometry.has("skin")) {
+    const geometry = new THREE.SphereGeometry(R, 48, 32);
+    const position = geometry.attributes.position;
+    for (let index = 0; index < position.count; index++) {
+      const x = position.getX(index), y = position.getY(index), z = position.getZ(index);
+      if (z > 0) position.setZ(index, z + sculptedFaceRelief(x, y) * THREE.MathUtils.smoothstep(z, .16, .7));
+    }
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    geometry.userData.akiCached = true;
+    fighterHeadGeometry.set("skin", geometry);
+  }
+  return fighterHeadGeometry.get("skin");
+}
+
+function fighterHairline(profile, phi) {
+  const arc = 1.1;
+  const angle = Math.atan2(Math.sin(phi), Math.cos(phi));
+  const front = THREE.MathUtils.clamp((angle + arc) / (2 * arc), 0, 1) * 6;
+  const index = Math.min(5, Math.floor(front));
+  const fade = THREE.MathUtils.smoothstep(front - index, 0, 1);
+  const line = THREE.MathUtils.lerp(profile.edge[index], profile.edge[index+1], fade);
+  const wrap = THREE.MathUtils.smoothstep(Math.abs(angle), arc, 2.91);
+  const tipWave = .5+.5*Math.cos(phi*profile.points + 1.1*Math.sin(2*phi)+profile.flow);
+  const dip = profile.dip ?? ({bob:.13,spikes:.125,sweep:.086,tied:.084,waves:.104,fur:.184,crop:.044})[profile.crown];
+  return THREE.MathUtils.lerp(line, profile.nape, wrap) + dip*Math.pow(tipWave, 3);
+}
+
+function hairVertexColor(style, profile, u, phi, ridge, narrow, color) {
+  color.setHex(style.hair);
+  const tip = new THREE.Color(style.tip);
+  if (profile.dye === "split") {
+    color.setHex(phi < 0 ? 0x8a2730 : 0xe8e7df);
+    tip.setHex(phi < 0 ? 0xbe4454 : 0xfffaf4);
+  } else if (profile.dye === "fade") {
+    color.lerp(new THREE.Color(style.cut === "scarCrop" ? 0x8a7772 : 0x27212b), THREE.MathUtils.smoothstep(u,.73,1)*.68);
+  }
+  const bands = (.12 + .47*ridge + .22*narrow) * Math.exp(-(((u-.48)/.39)**2));
+  color.lerp(tip, bands);
+  if (profile.dye === "flame" || profile.dye === "tips")
+    color.lerp(tip, THREE.MathUtils.smoothstep(u, profile.dye === "flame" ? .70 : .79, 1)*.94);
+  color.multiplyScalar(.79 + .20*Math.sin(Math.PI*(.09+u*.79))+.13*ridge);
+}
+
+function sculptedHairGeometry(profile, style) {
+  const around = 112, rows = 22;
+  const crownHeight = profile.crown === "sweep" ? .61 : .30;
+  const positions = [0, R+.057+profile.volume*(.32+crownHeight), 0];
+  const colors = [], indices = [];
+  const color = new THREE.Color(style.hair);
+  colors.push(color.r, color.g, color.b);
+  for (let row = 1; row <= rows+1; row++) {
+    const u = Math.min(1,row/rows), seam = row > rows;
+    for (let column = 0; column < around; column++) {
+      const phi = -Math.PI + 2*Math.PI*column/around;
+      const strand = phi*profile.points + profile.flow*(u-1)*3 + Math.sin(phi*2+.3) + .2*Math.sin(phi*5);
+      const fold = .5+.5*Math.cos(strand);
+      const sharpen = ["spikes","fur"].includes(profile.crown) ? 5 : profile.crown === "crop" ? 3 : 1.6;
+      const ridge = Math.pow(fold,sharpen);
+      const wave = Math.sin(Math.PI*u);
+      const lower = THREE.MathUtils.smoothstep(u,.78,1);
+      const theta = fighterHairline(profile,phi)*u + (seam ? .02 : 0);
+      const dome = profile.volume*(.28*wave + .32*(1-u));
+      const outline = profile.volume*ridge*wave*(profile.crown === "spikes" ? .52 : .51);
+      const radius = seam ? R-.031 : R+.018 + (.039+dome+outline)*(1-lower*.98);
+      const lift = (seam ? 0 : profile.volume*Math.pow(1-u,1.7))*crownHeight;
+      const slant = (profile.bias || 0)*wave*(1-lower)*(1-.48*Math.abs(Math.sin(phi)));
+      positions.push(radius*Math.sin(theta)*Math.sin(phi)+slant,
+        radius*Math.cos(theta)+lift,
+        radius*Math.sin(theta)*Math.cos(phi)-profile.flow*.12*wave*(1-lower));
+      hairVertexColor(style,profile,u,phi,ridge,Math.pow(.5+.5*Math.cos(strand*3),12),color);
+      colors.push(color.r,color.g,color.b);
+      if (row === 1) indices.push(0, 1+column, 1+(column+1)%around);
+      if (row === rows+1) continue;
+      const a = 1+(row-1)*around+column, b = 1+(row-1)*around+(column+1)%around;
+      indices.push(a,a+around,b,b,a+around,b+around);
+    }
+  }
+  return headMesh(positions, indices, colors);
+}
+
+function fighterTailPaths(name) {
+  const curve = (points, widths, flat, twist = .3) => ({points,widths,flat,twist});
+  const map = {
+    braid: () => [curve([[.18,.55,-1.02],[.26,.19,-1.22],[.37,-.44,-1.19],[.53,-1.04,-1.03],[.57,-1.27,-.90]],[.25,.23,.19,.13,.028],.84,2.8),
+      curve([[.04,1.23,-.11],[-.11,1.43,-.02],[-.29,1.68,.14],[-.51,1.66,.27]],[.14,.13,.082,.009],.53)],
+    lowTie: () => [curve([[0,.31,-1.00],[.09,.12,-1.26],[.21,-.54,-1.31],[.33,-1.24,-1.05]],[.35,.33,.29,.024],.54)],
+    akiTie: () => [curve([[.05,.98,-.69],[.03,1.15,-.78],[.04,1.57,-.74],[.10,1.93,-.79]],[.19,.18,.14,.034],.70)],
+    knot: () => [curve([[0,1.02,-.53],[.03,1.32,-.68],[.06,1.50,-.68],[.11,1.55,-.60]],[.21,.30,.23,.023],.94,1)],
+    silver: () => [curve([[.0,.94,-.79],[.12,1.12,-1.06],[.35,1.31,-1.31],[.61,1.20,-1.53]],[.32,.29,.20,.017],.67)],
+    cowlick: () => [curve([[.09,1.28,-.04],[.15,1.5,-.07],[.30,1.76,-.17],[.49,1.68,-.28]],[.12,.11,.08,.009],.49)],
+    long: () => [-1,1].map(side => curve([[side*.72,.53,-.55],[side*.91,-.03,-.76],
+      [side*1.02,-.83,-.78],[side*1.09,-1.34,-.51]],[.35,.35,.29,.018],.51,.59*side)),
+    flame: () => [-1,1].flatMap(side => [0,1,2].map(layer => curve([
+      [side*(.64+layer*.095),.62-layer*.24,-.67],
+      [side*(1.06+layer*.13),.35-layer*.29,-.91+.17*layer],
+      [side*(1.34+layer*.08),.17-layer*.40,-.97+.16*layer],
+      [side*(1.57+layer*.10),.22-layer*.42,-1.19+.20*layer]],
+      [.30,.25,.16,.012],.60,.75*side))),
+    zaraki: () => [-1,1].flatMap(side => [0,1,2,3].map(layer => curve([
+      [side*.69,.88-layer*.20,-.11-layer*.17],
+      [side*(1.15-.02*layer),.99-layer*.18,-.29-layer*.18],
+      [side*(1.52-.04*layer),1.25-layer*.31,-.56-layer*.17],
+      [side*(1.7-layer*.025),1.28-layer*.34,-.79-layer*.16]],
+      [.27,.25,.15,.014],.47,.63*side))),
+    demon: () => [-1,1].flatMap(side => [0,1,2].map(layer => curve([
+      [side*.65,.72-layer*.17,-.46],[side*1.03,.50-layer*.26,-.86],
+      [side*1.32,.31-layer*.29,-1.14],[side*1.43,.25-layer*.38,-1.39]],
+      [.32,.28,.19,.011],.61,side))),
+    curl: () => [-1,1].flatMap(side => [0,1,2].map(layer => {
+      const points = [[side*.73,.72-layer*.06,.59-layer*.37]];
+      for (let step=0;step<=8;step++) {
+        const q = -.15 + step*.57, rad = .46-.031*step;
+        points.push([side*(1.22 + Math.sin(q)*rad), .19-layer*.15 + Math.cos(q)*rad,
+          .63-layer*.49+.035*step]);
+      }
+      return curve(points,[.28,.31,.27,.19,.018],.64,side*1.2);
+    })),
+    cloud: () => [-1,1].map(side => curve([[side*.61,.79,-.18],[side*1.04,.66,-.19],[side*1.40,.94,-.37],
+      [side*1.37,1.20,-.50],[side*1.16,1.18,-.54]],[.30,.34,.29,.20,.037],.81,side*.7)),
+  };
+  return map[name]?.() || [];
+}
+
+// The longer crest tips start inside the crown and bend in the direction the
+// reference hair is brushed. Short cuts use only the continuous crown.
+const FIGHTER_CRESTS = {
+  tanjiro: {tips:8, span:5.6, lift:.43, reach:.64, back:.51, width:.23, direction:-.29},
+  naruto: {tips:10, span:6.28, lift:.49, reach:.51, back:.16, width:.21, direction:.21},
+  sasuke: {tips:8, span:4.9, lift:.38, reach:.59, back:.57, width:.24, direction:.26},
+  megumi: {tips:10, span:6.28, lift:.66, reach:.67, back:.36, width:.25, direction:-.41},
+  bakugo: {tips:12, span:6.28, lift:.52, reach:.71, back:.17, width:.23, direction:.15},
+  gojo: {tips:11, span:6.28, lift:.68, reach:.44, back:.19, width:.22, direction:.22},
+  rengoku: {tips:11, span:6.28, lift:.48, reach:.63, back:.29, width:.23, direction:.32},
+  giyu: {tips:8, span:5.4, lift:.33, reach:.54, back:.61, width:.23, direction:-.25},
+  guy_gates: {tips:10, span:6.28, lift:.73, reach:.48, back:.19, width:.24, direction:.19},
+  dark_deku: {tips:10, span:6.28, lift:.47, reach:.64, back:.44, width:.24, direction:-.34},
+  hawks: {tips:8, span:5.6, lift:.43, reach:.42, back:.58, width:.22, direction:.38},
+  pain: {tips:12, span:6.28, lift:.45, reach:.51, back:.27, width:.20, direction:.32},
+  kakashi: {tips:10, span:5.8, lift:.50, reach:.57, back:.40, width:.24, direction:-.67},
+  dio: {tips:9, span:5.9, lift:.47, reach:.43, back:.43, width:.25, direction:.34},
+  ichigo: {tips:12, span:6.28, lift:.42, reach:.53, back:.26, width:.19, direction:.22},
+  toshiro: {tips:10, span:6.0, lift:.52, reach:.60, back:.40, width:.22, direction:.39},
+  scar: {tips:9, span:4.6, lift:.33, reach:.34, back:.36, width:.17, direction:.26},
+  kenpachi: {tips:8, span:5.3, lift:.40, reach:.46, back:.36, width:.19, direction:-.23},
+  kenpachi_bankai: {tips:10, span:6.28, lift:.43, reach:.57, back:.53, width:.24, direction:.34},
+  higuruma: {tips:8, span:5.7, lift:.38, reach:.37, back:.49, width:.19, direction:-.41},
+  tokoyami: {tips:9, span:4.5, lift:.48, reach:.49, back:.65, width:.25, direction:-.14},
+};
+
+function combedCrestPaths(id) {
+  const crest=FIGHTER_CRESTS[id];
+  if (!crest) return [];
+  const {tips,span,lift,reach,back,width,direction}=crest;
+  return Array.from({length:tips},(_,i)=>{
+    const a=(i+.37)*span/tips-span/2+direction*.6;
+    const stagger=.8+.24*Math.sin(i*2.47+1)+.08*Math.cos(i*1.26);
+    const crown=.75+.10*Math.cos(i*2.13);
+    const x=Math.sin(a)*crown, z=Math.cos(a)*crown*.89, y=.82+.13*Math.sin(i*3.04);
+    const spread=reach*stagger, length=lift*(.81+.21*stagger);
+    const point=[x+Math.sin(a+.26*direction)*spread+direction*.46,y+.47+length,
+      z+Math.cos(a)*spread*.49-back];
+    return {
+      points:[[x*.8,y-.09,z*.8],[x+direction*.09,y+.28,z-back*.14],
+        [x+Math.sin(a)*spread*.53+direction*.24,y+.43+length*.66,z+Math.cos(a)*spread*.21-back*.54],point],
+      widths:[width*1.18,width*1.16,width*.76,.014],flat:.64,twist:.58*Math.sign(direction),
+    };
+  });
+}
+
+function sweptHairGeometry(profile, style, id) {
+  const positions = [], colors = [], indices = [], color = new THREE.Color();
+  const sides = 14, samples = 26;
+  for (const {points,widths,flat,twist} of [...fighterTailPaths(profile.tail),...combedCrestPaths(id)]) {
+    const curve = new THREE.CatmullRomCurve3(points.map(point=>new THREE.Vector3(...point)));
+    const frames = curve.computeFrenetFrames(samples, false);
+    const start = positions.length/3;
+    for (let row=0;row<=samples;row++) {
+      const u = row/samples, p = curve.getPointAt(u);
+      const widthKey = u*(widths.length-1), i = Math.min(widths.length-2,Math.floor(widthKey));
+      const width = THREE.MathUtils.lerp(widths[i],widths[i+1],THREE.MathUtils.smoothstep(widthKey-i,0,1));
+      for (let column=0;column<sides;column++) {
+        const angle = Math.PI*2*column/sides, spin = angle + twist*u;
+        const ridge = .5+.5*Math.cos(3*angle+u*.8);
+        const radius = width*(1+.13*Math.cos(3*angle));
+        const vertex = p.clone().addScaledVector(frames.normals[row], radius*Math.cos(spin))
+          .addScaledVector(frames.binormals[row], radius*flat*Math.sin(spin));
+        positions.push(vertex.x,vertex.y,vertex.z);
+        hairVertexColor(style,profile,u,angle,ridge,.6,color);
+        colors.push(color.r,color.g,color.b);
+        if (row === samples) continue;
+        const a = start+row*sides+column, b=start+row*sides+(column+1)%sides;
+        indices.push(a,b,a+sides,b,b+sides,a+sides);
+      }
+    }
+  }
+  return headMesh(positions,indices,colors);
+}
+
+function addSculptedHair(parent, id, style) {
+  const profile = FIGHTER_HAIR[id];
+  if (!profile) return;
+  const material = new THREE.MeshStandardMaterial({vertexColors:true,roughness:.68,metalness:.025,side:THREE.DoubleSide});
+  if (!fighterHeadGeometry.has(id)) fighterHeadGeometry.set(id,sculptedHairGeometry(profile,style));
+  const crown = new THREE.Mesh(fighterHeadGeometry.get(id),material);
+  crown.name = "sculpted-hair";
+  crown.userData.profile = id;
+  parent.add(crown);
+  if (profile.tail || FIGHTER_CRESTS[id]) {
+    const key = id + "-swept";
+    if (!fighterHeadGeometry.has(key)) fighterHeadGeometry.set(key,sweptHairGeometry(profile,style,id));
+    const tails = new THREE.Mesh(fighterHeadGeometry.get(key),material);
+    tails.name = profile.tail === "braid" ? "braided-ponytail" : "swept-hair";
+    tails.userData.parts = [tails.name];
+    parent.add(tails);
+  }
+}
+
+const FACE_WIDTH = 1.98, FACE_TOP = .88, FACE_BOTTOM = -.61;
+
+function facePath(ctx, color, width, draw) {
+  ctx.beginPath();
+  draw(ctx);
+  if (width) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+function faceEllipse(ctx,x,y,rx,ry,color) {
+  facePath(ctx,color,0,p=>p.ellipse(x,y,rx,ry,0,0,Math.PI*2));
+}
+
+function drawFighterEye(ctx, x, y, side, width, opening, tilt, iris, look) {
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(-side*tilt*3);
+  const outline = "#36262c";
+  const eyeContour = p=>{
+    p.moveTo(-width, .016);
+    p.bezierCurveTo(-width*.66, -opening*1.38, width*.54, -opening*1.28, width, 0);
+    p.bezierCurveTo(width*.54, opening*.96, -width*.61, opening*1.01, -width, .016);
+  };
+  const lid = p=>{
+    p.moveTo(-width-.027*Number(side<0), .023);
+    p.bezierCurveTo(-width*.66, -opening*1.47, width*.61, -opening*1.20, width+.027*Number(side>0), .002);
+  };
+  if ((look==="oneEye" && side>0) || (look==="wink" && side<0)) {
+    facePath(ctx,outline,.024,p=>{
+      p.moveTo(-width,.017);
+      p.quadraticCurveTo(0,look==="wink"?-.14:-.06,width,-.014);
+    });
+    ctx.restore();
+    return;
+  }
+  const blank = look === "whiteEyes";
+  const bright = ["flameEyes","joy","boar","freckles","warm"].includes(look);
+  const special = ["rinnegan","akaza","rainbow","sixEyes","crossEyes","cyborg","bird"].includes(look);
+  const blackEye = look==="cyborg" || look==="bird";
+  facePath(ctx,blackEye?"#242330":look==="rinnegan"?"#c0add7":"#fff2e4",0,eyeContour);
+  ctx.save();
+  ctx.beginPath();
+  eyeContour(ctx);
+  ctx.clip();
+  if (!blank) {
+    const radius = Math.min(width*.6,opening*(bright?1.11:1.04));
+    const center = look==="deadpan" ? 0 : -.048*side;
+    const glow = ctx.createRadialGradient(center,.008,0,center,.008,radius*1.34);
+    glow.addColorStop(0,iris);
+    glow.addColorStop(.72,iris);
+    glow.addColorStop(1,outline);
+    faceEllipse(ctx,center,.008,radius,radius*1.26,glow);
+    if (look==="rainbow") {
+      for(let ray=0;ray<7;ray++) {
+        const a=ray*2*Math.PI/7;
+        facePath(ctx,["#dc5c73","#e8a44e","#dccf56","#6fa96d","#5497be","#6d69b8","#9f68ad"][ray],.024,
+          p=>{p.moveTo(center+Math.cos(a)*.025,Math.sin(a)*.025);p.lineTo(center+Math.cos(a)*radius,Math.sin(a)*radius);});
+      }
+    }
+    if (look==="rinnegan") {
+      for (const ring of [.31,.59,.87]) facePath(ctx,"#645779",.012,p=>p.arc(0,0,width*ring,0,Math.PI*2));
+    }
+    if (look === "crossEyes") {
+      facePath(ctx,"#b92c41",.017,p=>{
+        p.moveTo(center,-radius);p.lineTo(center,radius);p.moveTo(center-radius,0);p.lineTo(center+radius,0);
+      });
+    }
+    faceEllipse(ctx,center,.009,look==="crossEyes"?.029:radius*.39,radius*(special?.51:.82),blackEye?"#322018":"#261f2b");
+    if (look!=="rinnegan" && look!=="deadpan") {
+      faceEllipse(ctx,center-radius*.34,-radius*.38,radius*.18,radius*.18,"#fff1d7");
+      faceEllipse(ctx,center+radius*.31,radius*.35,radius*.095,radius*.095,"#f4c9a9");
+    }
+  }
+  ctx.restore();
+  facePath(ctx,outline,.012,eyeContour);
+  facePath(ctx,look==="rinnegan"?"#382a45":outline,look==="boar"?.019:.022,lid);
+  ctx.restore();
+}
+
+function drawFighterGlasses(ctx, look) {
+  for (const side of [-1,1]) {
+    const x=.391*side, y=-.205;
+    const amber=look==="amberGlasses", goggles=look==="visor";
+    const shape = p=>{
+      const w=goggles?.290:amber?.267:.251;
+      p.moveTo(x-w,y-.100);
+      p.quadraticCurveTo(x-w-.028,y-.150,x-w+.034,y-.157);
+      p.quadraticCurveTo(x,y-.19,x+w-.026,y-.148);
+      p.quadraticCurveTo(x+w+.041,y-.141,x+w,y-.079);
+      p.lineTo(x+w-.033,y+.096);
+      p.quadraticCurveTo(x+w-.066,y+.143,x+w-.138,y+.147);
+      p.lineTo(x-w+.073,y+.141);
+      p.quadraticCurveTo(x-w+.02,y+.139,x-w+.006,y+.083);
+      p.closePath();
+    };
+    const lens=ctx.createLinearGradient(x,y-.15,x,y+.15);
+    lens.addColorStop(0,amber?"#e7912677":goggles?"#ffe268bb":"#d0edf42e");
+    lens.addColorStop(1,amber?"#edac3066":goggles?"#eebf3677":"#eafafd1a");
+    facePath(ctx,lens,0,shape);
+    facePath(ctx,goggles?"#81632b":amber?"#69482f":"#352b34",.020,shape);
+    facePath(ctx,"#fff1c68a",.016,p=>{p.moveTo(x-.15,y-.09);p.lineTo(x-.062,y-.105);});
+  }
+  facePath(ctx,look==="visor"?"#b49337":"#3e2d34",.019,p=>{
+    p.moveTo(-.144,-.237);p.quadraticCurveTo(0,-.324,.144,-.237);
+  });
+}
+
+function paintFighterFace(ctx, id) {
+  const [iris,width,opening,tilt,look] = FIGHTER_FACE[id];
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  const covered = look==="blindfold" || look==="shadowed";
+  const boar = look==="boar", bird=look==="bird";
+  const eyeY = id === "zenitsu" ? -.168 : -.19;
+  if (look==="shoto") {
+    // Contour follows the burned skin around his left eye, including the lower lid.
+    facePath(ctx,"#ac514a",0,p=>{
+      p.moveTo(-.66,-.40);p.bezierCurveTo(-.54,-.53,-.22,-.48,-.18,-.30);
+      p.bezierCurveTo(-.13,-.18,-.18,-.04,-.30,.005);
+      p.bezierCurveTo(-.53,.071,-.69,-.022,-.70,-.19);p.closePath();
+    });
+    facePath(ctx,"#d9826244",.049,p=>{p.moveTo(-.58,-.38);p.quadraticCurveTo(-.37,-.50,-.24,-.29);});
+  }
+  if (look === "eyeMask") {
+    for (const side of [-1,1]) facePath(ctx,id==="dark_deku"?"#122a2b":"#22232e",0,p=>{
+      p.moveTo(side*.04,-.24);p.quadraticCurveTo(side*.27,-.351,side*.49,-.422);
+      p.lineTo(side*.87,-.54);p.lineTo(side*.72,-.118);p.lineTo(side*.56,.009);
+      p.quadraticCurveTo(side*.20,-.015,side*.04,-.24);p.closePath();
+    });
+  }
+  if (!covered) for (const side of [-1,1]) {
+    const x=(boar?.51:.385)*side;
+    if (look==="maskedNinja" && side<0) continue;
+    const shades = Array.isArray(iris) ? iris[side>0?1:0] : iris;
+    drawFighterEye(ctx,x,eyeY,side,width,opening,tilt,shades,look);
+    if (!boar && !bird && look!=="sixEyes" && look!=="maskedNinja") {
+      const y=eyeY-(opening+.072), browColor = look==="silverStache" ? "#dddede" :
+        look==="flameEyes" ? "#422e2a" : look==="bushy" ? "#1b201b" :
+        look==="cry"||look==="whiteEyes" ? "#292932" : "#443034";
+      const heavy = ["bushy","fierce","flameEyes","silverStache"].includes(look);
+      facePath(ctx,browColor,heavy?.042:.025,p=>{
+        p.moveTo(side*.135,y+.036);
+        p.quadraticCurveTo(side*.36,y-.052-tilt*.86,side*.605,y-.010-tilt*1.16);
+      });
+      if (look==="flameEyes") facePath(ctx,browColor,.028,p=>{
+        p.moveTo(side*.34,y-.022);p.quadraticCurveTo(side*.56,y-.093,side*.65,y-.126);
+      });
+    }
+    if (look==="tired" || look==="underEye" || look==="blueTear" || look==="whiteEyes")
+      facePath(ctx,look==="blueTear"?"#596887":"#955e59",.016,p=>{
+        p.moveTo(x-side*.16,eyeY+.125);
+        p.quadraticCurveTo(x,eyeY+.17,x+side*.13,eyeY+.113);
+      });
+    if (look==="sixEyes") {
+      drawFighterEye(ctx,x*1.02,-.48,side,width*.89,opening*.92,tilt,shades,look);
+      drawFighterEye(ctx,x*1.03,.075,side,width*.86,opening*.91,-tilt,shades,look);
+    }
+  }
+  if (look==="blindfold") {
+    facePath(ctx,"#201f30",0,p=>{
+      p.moveTo(-.986,-.435);p.quadraticCurveTo(0,-.50,.986,-.437);
+      p.lineTo(.986,-.109);p.quadraticCurveTo(0,-.025,-.986,-.103);p.closePath();
+    });
+    for (let i=0;i<3;i++) facePath(ctx,"#46455b",.011,p=>{
+      p.moveTo(-.96,-.398+i*.09);p.bezierCurveTo(-.41,-.445+i*.09,.51,-.302+i*.075,.96,-.415+i*.09);
+    });
+  }
+  if (look==="squareGlasses" || look==="amberGlasses" || look==="visor") drawFighterGlasses(ctx,look);
+  if (look==="whiskers") for (const side of [-1,1]) for (let mark=0;mark<3;mark++)
+    facePath(ctx,"#61413e",.021,p=>{
+      p.moveTo(side*(.56+mark*.030),-.005+mark*.087);p.quadraticCurveTo(side*.67,.013+mark*.098,side*.84,.012+mark*.13);
+    });
+  if (look==="freckles") for (const side of [-1,1]) {
+    for (const [x,y,r] of [[.43,-.006,.022],[.53,-.025,.019],[.63,.004,.020],[.50,.057,.018]])
+      faceEllipse(ctx,x*side,y,r,r*.84,"#945756");
+  }
+  if (look==="whiteEyes" && id==="gyomei")
+    for (const side of [-1,1]) facePath(ctx,"#71949e88",.025,p=>{
+      p.moveTo(side*.43,-.077);p.quadraticCurveTo(side*.39,.041,side*.441,.151);
+    });
+  if (look==="maskedNinja" || bird) return;
+  if (boar) {
+    facePath(ctx,"#bf707e",0,p=>{
+      p.moveTo(-.27,.15);p.bezierCurveTo(-.32,-.09,.34,-.11,.29,.145);
+      p.bezierCurveTo(.26,.32,-.26,.31,-.27,.15);p.closePath();
+    });
+    facePath(ctx,"#ef9ca0",.060,p=>{p.moveTo(-.17,.086);p.quadraticCurveTo(0,.012,.161,.087);});
+    for (const side of [-1,1]) faceEllipse(ctx,side*.104,.168,.045,.051,"#733f57");
+    return;
+  }
+  const metal = look==="cyborg", smiling = ["warm","grin","joy","gapGrin","wink","smirk","kenpachi"].includes(look);
+  const nose = metal?"#7a6066":"#915854";
+  facePath(ctx,nose,.014,p=>{
+    p.moveTo(.018,-.135);p.quadraticCurveTo(.015,-.019,-.064,.068);p.quadraticCurveTo(-.059,.099,.068,.089);
+  });
+  const smileWidth = look==="gapGrin"?.38:look==="joy"?.32:look==="kenpachi"?.29:smiling?.215:.135;
+  if (smiling && look!=="warm" && look!=="smirk") {
+    facePath(ctx,"#543037",0,p=>{
+      p.moveTo(-smileWidth,.226);
+      p.quadraticCurveTo(0,.308,smileWidth,.206);
+      p.quadraticCurveTo(smileWidth*.74,.421,0,.413);
+      p.quadraticCurveTo(-smileWidth*.81,.419,-smileWidth,.226);p.closePath();
+    });
+    facePath(ctx,"#fff0d9",0,p=>{
+      p.moveTo(-smileWidth*.84,.251);
+      p.quadraticCurveTo(0,.319,smileWidth*.86,.239);
+      p.quadraticCurveTo(smileWidth*.70,.336,.02,.341);
+      p.quadraticCurveTo(-smileWidth*.70,.365,-smileWidth*.84,.251);
+    });
+    if (look==="gapGrin") for (const x of [-.14,.03,.20])
+      facePath(ctx,"#512d31",.031,p=>{p.moveTo(x,.286);p.lineTo(x,.351);});
+  } else {
+    facePath(ctx,"#653d41",.023,p=>{
+      p.moveTo(-smileWidth,.295+(look==="smirk"?.018:0));
+      p.quadraticCurveTo(-.004,.251+(smiling?.096:0),smileWidth,.284-(look==="smirk"?.04:0));
+    });
+  }
+  if (look==="silverStache") {
+    for(const side of [-1,1]) {
+      facePath(ctx,"#dee1e0",0,p=>{
+        p.moveTo(0,.146);p.bezierCurveTo(side*.125,.114,side*.213,.192,side*.355,.227);
+        p.bezierCurveTo(side*.29,.329,side*.099,.302,0,.208);p.closePath();
+      });
+      for (let i=0;i<3;i++) facePath(ctx,"#9dabae",.009,p=>{
+        p.moveTo(side*.07,.155+i*.022);p.quadraticCurveTo(side*.17,.201+i*.024,side*.313,.235+i*.011);
+      });
+    }
+  }
+}
+
+function fighterFaceTexture(id) {
+  let texture=fighterFaceTextures.get(id);
+  if (!texture) {
+    const canvas=document.createElement("canvas");
+    canvas.width=384;canvas.height=288;
+    const ctx=canvas.getContext("2d");
+    ctx.scale(canvas.width/FACE_WIDTH,canvas.height/(FACE_TOP-FACE_BOTTOM));
+    ctx.translate(FACE_WIDTH/2,FACE_TOP);
+    paintFighterFace(ctx,id);
+    texture=new THREE.CanvasTexture(canvas);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    texture.anisotropy=4;
+    sharedTextures.add(texture);
+    fighterFaceTextures.set(id,texture);
+  }
+  return texture;
+}
+
+function addSculptedFace(parent,id) {
+  if (!FIGHTER_FACE[id]) return;
+  if (!fighterHeadGeometry.has("face-surface")) {
+    const height=FACE_TOP-FACE_BOTTOM;
+    const geometry=new THREE.PlaneGeometry(FACE_WIDTH,height,30,26);
+    const position=geometry.attributes.position;
+    for (let i=0;i<position.count;i++) {
+      const y=position.getY(i)+(FACE_TOP+FACE_BOTTOM)/2, x=position.getX(i);
+      position.setXYZ(i,x,y,avatarSurface(x,y,R+.012)+sculptedFaceRelief(x,y));
+    }
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    geometry.userData.akiCached=true;
+    fighterHeadGeometry.set("face-surface",geometry);
+  }
+  const material=new THREE.MeshStandardMaterial({map:fighterFaceTexture(id),alphaTest:.18,
+    color:0xffffff,roughness:.87,metalness:0,polygonOffset:true,polygonOffsetFactor:-1});
+  const face=new THREE.Mesh(fighterHeadGeometry.get("face-surface"),material);
+  face.name="sculpted-face";
+  face.userData.profile=id;
+  parent.add(face);
+}
+
+// A single curved shell with varying cross-section along the depth of a helmet.
+function fighterHelmetShell(sections) {
+  const centers = new THREE.CatmullRomCurve3(sections.map(([z,y])=>new THREE.Vector3(0,y,z)));
+  const widths = new THREE.SplineCurve(sections.map(([, , width,height])=>new THREE.Vector2(width,height)));
+  const around=48, rows=38, positions=[], indices=[], uv=[];
+  for (let row=0;row<=rows;row++) {
+    const u=row/rows, center=centers.getPoint(u), size=widths.getPoint(u);
+    for (let col=0;col<around;col++) {
+      const phi=col*2*Math.PI/around;
+      positions.push(Math.cos(phi)*Math.max(.001,size.x),center.y+Math.sin(phi)*Math.max(.001,size.y),center.z);
+      uv.push(col/around,u);
+      if (row===rows) continue;
+      const a=row*around+col, b=row*around+(col+1)%around;
+      indices.push(a,b,a+around,b,b+around,a+around);
+    }
+  }
+  const geometry=headMesh(positions,indices);
+  geometry.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));
+  return geometry;
+}
+
+function addDenjiHelmet(parent) {
+  const casing = fighterHeadGeometry.get("denji-casing") || fighterHelmetShell([
+    [-1.17,.44,.01,.012],[-.94,.56,.65,.48],[-.39,.57,1.02,.72],
+    [.44,.55,1.03,.70],[1.05,.42,.72,.47],[1.26,.51,.37,.24],[1.35,.59,.012,.015],
+  ]);
+  fighterHeadGeometry.set("denji-casing",casing);
+  const hood=new THREE.Mesh(casing,new THREE.MeshStandardMaterial({
+    color:0xb95829,roughness:.50,metalness:.34,
+  }));
+  hood.name="chainsaw-helmet-casing";
+  parent.add(hood);
+  const plate=new THREE.Mesh(new THREE.SphereGeometry(1,30,18), new THREE.MeshStandardMaterial({
+    color:0x271f25,roughness:.66,metalness:.23,
+  }));
+  plate.scale.set(.93,.42,.79);
+  plate.position.set(0,-.18,.64);
+  plate.name="chainsaw-jaw";
+  parent.add(plate);
+  const enamel = new THREE.MeshStandardMaterial({color:0xd0be99,roughness:.69});
+  for (const side of [-1,1]) {
+    const line=new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side*.21,-.16,1.37),new THREE.Vector3(side*.60,-.15,1.20),
+      new THREE.Vector3(side*.80,-.09,.88),new THREE.Vector3(side*.90,-.01,.41),
+    ]);
+    const rim=new THREE.Mesh(new THREE.TubeGeometry(line,16,.022,6,false),
+      new THREE.MeshStandardMaterial({color:0x60322d,roughness:.68}));
+    parent.add(rim);
+    for (let index=0;index<5;index++) {
+      const point=line.getPointAt(index/5+.11);
+      const tooth=new THREE.Mesh(new THREE.SphereGeometry(.071,10,8),enamel);
+      tooth.position.copy(point);
+      tooth.position.y-=.075+(index%2)*.014;
+      tooth.scale.y=1.18;
+      parent.add(tooth);
+    }
+  }
 }
 
 // bootstrap.js
