@@ -2821,13 +2821,13 @@ body.startup-loading { overflow: hidden; }
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-19">2026.11.19</time></span>
+            <span>최종 수정 <time datetime="2026-11-20">2026.11.20</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 나라 시카마루와 가아라</strong>
-                <p>시카마루의 그림자 궤적은 1.3초간 남습니다. 가아라의 사박궤는 유도탄 적중과 모래 합류로 나뉘어 최대 170 피해를 줍니다. 그림자 바느질과 사폭장송의 연출을 강화했습니다.</p>
+                <strong>최신 패치 · 가아라와 시카마루 밸런스 조정</strong>
+                <p>가아라와 시카마루의 HP와 SP를 조정했습니다. 시카마루의 그림자는 1초간 남고 그림자 바느질은 상대의 이동 방향을 고려해 발사합니다. 유타는 시카마루나 가아라가 참가한 전투에서 처음부터 그림자나 모래를 남길 수 있습니다.</p>
                 <strong>이전 패치 · 히구루마 히로미</strong>
                 <p>법봉 강화와 영역전개 · 주복사사를 사용하는 히구루마 히로미가 추가됐습니다. 캐릭터 선택 화면에 최신순 정렬과 신규 표시가 생겼습니다.</p>
                 <strong>이전 패치 · 1:1 대전 밸런스 조정</strong>
@@ -3872,6 +3872,7 @@ function setArenaSize(players) {
 function resetState(nextActors) {
   clearBattleObjects();
   actors = nextActors;
+  initializeCopyPassives(actors);
   t = 0;
   nextStorm = ENVIRONMENT_CONFIG.stormInterval;
   stormUntil = ENVIRONMENT_CONFIG.stormDuration;
@@ -8325,8 +8326,6 @@ function castSkill(e, a) {
     !a && e.d.id==='child_emperor' && spGain(e,30),
     s.endsWith('_CHOICE') && BLEACH_IDS.includes(e.d.id) && (s = e.d.id==='ichigo'&&e.bankaiUntil>t ? 'BLACK_GETSUGA' : ({ichigo:['GETSUGA','ICHIGO_SHUNPO'],byakuya:['SENBONZAKURA','BYAKUYA_SHUNPO'],aizen:['KYOKA_SUIGETSU','SOKATSUI'],toshiro:['RYOJIN_HYOHEKI','TENSO_JURIN']})[e.d.id][Math.random()<.5?0:1]),
     "KENPACHI_CHOICE" === s && (s = chooseKenpachiSkill()),
-    s === "NARA_CHOICE" && (s = Math.random() < .5 ? "NARA_IMITATION" : "NARA_GRASP"),
-    s === "GAARA_CHOICE" && (s = Math.random() < .5 ? "GAARA_COFFIN" : "GAARA_SHOWER"),
     OPM_CHOICES[s] && (s=randomOpmSkill(s)),
     "ZIP_CHOICE" === s && (s=Math.random()<.5?"ZIP_AMBUSH":"ARI_RUSH"),
     "PAIN_CHOICE" === s && (s=e.painPending|| (Math.random()<.6?"SHINRA_TENSEI":"BANSHO_TENIN"),e.painPending=null),
@@ -9460,13 +9459,18 @@ function useCopyTechnique(e, a, o) {
     const o = copyCandidates(e),
       n = o[Math.floor(Math.random() * o.length)];
     if (!n) return;
+    if (e.copiesShadowTrail && n !== "NARA_CHOICE") {
+      e.naraMode = null;
+      for (const actor of actors) if (actor.naraControl?.owner === e) dropNaraControl(actor);
+    }
     const s = CHARACTER_DATABASE.find((e) => e.skillType === n);
     ((e.copiedType = n),
       (e.castName = "술식 모방 · " + (HEALTH_SKILL_NAMES[n] || OPM_NAMES[n] || s?.skill || n)),
       skillEvent(e, n, "copied"));
     const i = "DIVINE_DOG" === n ? randomMegumiSummon()
       : OPM_CHOICES[n] && !Object.hasOwn(SKILL_HANDLERS,n) ? randomOpmSkill(n) : n;
-    if (ALCHEMY_SKILLS.has(i)) e.castName = "술식 모방 · " + OPM_NAMES[i];
+    const copiedVariant = SAND_SHADOW_NAMES[i] || (ALCHEMY_SKILLS.has(i) ? OPM_NAMES[i] : null);
+    if (copiedVariant) e.castName = "술식 모방 · " + copiedVariant;
     return (
       "DIVINE_DOG" === n &&
         ((e.castName = "술식 모방 · " + MEGUMI_SUMMON_NAMES[i]), playVoiceAsset(i, e)),
@@ -23223,7 +23227,7 @@ const jjkIds = ["yuji", "todo", "megumi", "yuta"],
       role: "술식 모방 · 리카 지원형",
       skill: "술식 모방",
       special: "리카 완전현현",
-      desc: "현재 살아 있는 상대의 일반 스킬 중 하나를 무작위로 모방해 사용합니다. 모방한 기술은 추가 MP 소모 없이 발동하며, 술식 모방 자체는 모방 대상에서 제외됩니다.",
+      desc: "현재 살아 있는 상대의 일반 스킬 중 하나를 무작위로 모방해 사용합니다. 모방한 기술은 추가 MP 소모 없이 발동하며, 술식 모방 자체는 모방 대상에서 제외됩니다. 시카마루가 참가하면 이동 중 그림자를 1초간 남기며, 그림자 기술을 모방했을 때 상대를 붙잡을 수 있습니다. 가아라가 참가하면 충돌 시 모래를 쌓고, 사박궤를 모방하면 자신이 쌓은 모래에 따라 추가 피해를 줍니다.",
       spDesc:
         "6초간 리카를 소환합니다. MP 획득량이 2배가 되고, 받는 피해가 20% 감소하며, 자신의 공격 피해가 10% 증가합니다. 리카는 소환 3초 후 가까운 적을 향해 빔을 발사해 135의 피해를 줍니다. 공격력 증가 효과는 소환물과 리카의 빔에는 적용되지 않습니다.",
       baseDamage: 50,
@@ -24640,6 +24644,8 @@ CHARACTER_DATABASE.push(...[
   }
 ]);
 Object.assign(OPM_CHOICES,{
+  NARA_CHOICE: ["NARA_IMITATION", "NARA_GRASP", .5],
+  GAARA_CHOICE: ["GAARA_COFFIN", "GAARA_SHOWER", .5],
   "EDWARD_ALCHEMY_CHOICE": [
     "EDWARD_GROUND",
     "EDWARD_BLADE",
@@ -24897,23 +24903,25 @@ const SAND_SHADOW_NAMES = {
   GAARA_SHOWER: "연탄 모래 소나기",
   GAARA_BURIAL: "사폭장송",
 };
-const NARA_TRAIL_DURATION = 1.3;
+const NARA_TRAIL_DURATION = 1;
+const NARA_NEEDLE_SPEED = 60;
+const NARA_NEEDLE_LEAD = .60;
 const GAARA_COFFIN_MERGE_TIME = .32;
 
 function addSandShadowFighters() {
   const newFighters = [
     {
       id: "shikamaru", name: "나라 시카마루", short: "시카마루", color: 0x566749,
-      maxHp: 1180, maxMp: 86, maxSp: 125, baseDamage: 43, speed: 37, radius: 1.2,
+      maxHp: 1200, maxMp: 86, maxSp: 112, baseDamage: 43, speed: 37, radius: 1.2,
       skillType: "NARA_CHOICE", specialType: "NARA_STITCHING",
       skill: "그림자 흉내 / 그림자 잡기", special: "그림자 바느질의 술",
       role: "그림자 궤적 · 이동 조종 · 벽 충돌",
       desc: `이동 궤적에 ${NARA_TRAIL_DURATION}초간 그림자를 남깁니다. MP 사용 시 두 기술 중 하나를 발동합니다. 흉내: 4초 동안 그림자에 겹친 적이 시카마루의 움직임을 3초간 따라합니다. 벽에 막힌 방향의 이동만 제한하며 새 벽 충돌당 50, 최대 150 피해를 받습니다. 잡기: 4초 동안 그림자에 겹친 적을 0.8초 멈춘 뒤 진행 방향 반대로 거리 20만큼 던집니다. 아레나 벽에 닿으면 120 피해를 줍니다.`,
-      spDesc: "그림자를 0.5초 동안 6개의 바늘로 모은 뒤, 발사 순간의 상대 위치를 향해 0.2초 간격으로 발사합니다. 바늘마다 속력 60·사거리 25·피해 45이며, 날아가는 동안 그림자 실이 시카마루와 연결됩니다.",
+      spDesc: "그림자를 0.5초 동안 6개의 바늘로 모은 뒤, 상대 이동 방향을 고려해 0.2초 간격으로 발사합니다. 바늘마다 속력 60·사거리 25·판정 반경 0.65·피해 50이며, 날아가는 동안 그림자 실이 시카마루와 연결됩니다.",
     },
     {
       id: "gaara", name: "가아라", short: "가아라", color: 0xc39a65,
-      maxHp: 1220, maxMp: 103, maxSp: 136, baseDamage: 43, speed: 35, radius: 1.2,
+      maxHp: 1260, maxMp: 103, maxSp: 124, baseDamage: 43, speed: 35, radius: 1.2,
       skillType: "GAARA_CHOICE", specialType: "GAARA_BURIAL",
       skill: "사박궤 / 연탄 모래 소나기", special: "사폭장송",
       role: "모래 축적 · 포획 · 충돌 연계",
@@ -24936,6 +24944,16 @@ function sandShadowLocked(actor) {
     actor.sandPrison?.owner.alive && actor.sandPrison.until > t);
 }
 
+function initializeCopyPassives(lineup) {
+  const shadow = lineup.some(actor => actor.d.id === "shikamaru");
+  const sand = lineup.some(actor => actor.d.id === "gaara");
+  for (const actor of lineup) {
+    if (actor.d.id !== "yuta") continue;
+    actor.copiesShadowTrail = shadow;
+    actor.copiesSandPiles = sand;
+  }
+}
+
 function clearSandShadow(actor) {
   removeMesh(actor.naraTrailMesh);
   removeMesh(actor.naraNeedles);
@@ -24946,6 +24964,7 @@ function clearSandShadow(actor) {
   actor.naraNeedles = actor.naraStitchingAt = actor.naraStitchingTrail = null;
   actor.naraTrail = [];
   actor.sandPiles = [];
+  actor.copiesShadowTrail = actor.copiesSandPiles = false;
 }
 
 function startNaraMode(owner, kind) {
@@ -24990,7 +25009,7 @@ function naraTrailTouches(trail, target) {
 
 function updateNaraCaptures() {
   for (const owner of actors) {
-    if (owner.d.id !== "shikamaru" && !owner.naraMode && !owner.naraTrail?.length) continue;
+    if (owner.d.id !== "shikamaru" && !owner.copiesShadowTrail && !owner.naraMode && !owner.naraTrail?.length) continue;
     updateNaraTrail(owner);
     const mode = owner.naraMode;
     if (!owner.alive || t >= (mode?.until ?? -Infinity)) {
@@ -25105,7 +25124,7 @@ function updateSandPrisons(spikes = true) {
 }
 
 function sandCollision(owner, target, x, z, freshContact) {
-  if (freshContact && owner.d.id === "gaara") addSandPile(owner, x, z);
+  if (freshContact && (owner.d.id === "gaara" || owner.copiesSandPiles)) addSandPile(owner, x, z);
   if (target.sandPrison?.owner !== owner || !target.sandPrison.burial || target.sandPrison.until <= t) return false;
   dropSandPrison(target);
   withDamageOrigin(owner, true, () => hurt(owner, target, 120, "special"), SAND_SHADOW_NAMES.GAARA_BURIAL);
@@ -25114,7 +25133,7 @@ function sandCollision(owner, target, x, z, freshContact) {
 
 function sandShadowShot(owner, type, direction, target = null, start = owner) {
   const rules = {
-    NARA_STITCHING: { speed: 60, r: .47, distance: 25, damage: 45, homing: 0 },
+    NARA_STITCHING: { speed: NARA_NEEDLE_SPEED, r: .65, distance: 25, damage: 50, homing: 0 },
     GAARA_COFFIN: { speed: 52, r: 3.5, distance: 30, damage: 50, homing: 2.8 },
     GAARA_SHOWER: { speed: 50, r: 2, distance: 20, damage: 65, homing: 0 },
     GAARA_BURIAL: { speed: 50, r: 5, distance: 27, damage: 100, homing: 1.1 },
@@ -25158,7 +25177,10 @@ function startNaraStitching(owner) {
         x: Math.max(-W / 2, Math.min(W / 2, owner.x + 1.6 * Math.cos(angle))),
         z: Math.max(-H / 2, Math.min(H / 2, owner.z + 1.6 * Math.sin(angle))),
       };
-      const direction = unit(target.x - start.x, target.z - start.z);
+      const leadTime = NARA_NEEDLE_LEAD * Math.hypot(target.x - start.x, target.z - start.z) / NARA_NEEDLE_SPEED;
+      const heading = { x: target.dx, z: target.dz };
+      const travel = boundedTravel(target, heading, speedOf(target) * leadTime);
+      const direction = unit(target.x + heading.x * travel - start.x, target.z + heading.z * travel - start.z);
       sandShadowShot(owner, "NARA_STITCHING", direction, target, start);
     });
   }
@@ -27229,9 +27251,9 @@ const PRACTICE_VARIANTS={
 };
 const PRACTICE_LABELS={...AKI_GUN_NAMES,AKI_FOX:'여우의 악마',AKI_FUTURE:'미래의 악마',REZE_SHOT:'원거리 폭발',REZE_DASH:'폭발 돌진',WATER_SLASH:'물의 호흡',RASENGAN_AURA:'나선환',CHIDORI_AURA:'치도리',DIVINE_DOG:'옥견',HOLLOW_PURPLE:'허식 무라사키',SUSANOO:'스사노오',KILLER_QUEEN_RUSH:'킬러퀸 · 러시',FIRST_BOMB:'제1의 폭탄',SHADOW_SMASH:'다크 섀도',BLACK_ANKH:'블랙 앙크',LOTUS_ICE:'연잎 얼음',SCATTERING_LOTUSES:'흩날리는 연꽃',MORNING_PEACOCK:'아침공작',DAYTIME_TIGER:'점심 호랑이',EVENING_ELEPHANT:'저녁 코끼리',NIGHT_GUY:'밤 가이',SHINRA_TENSEI:'신라천정',BANSHO_TENIN:'만상천인',RAIKIRI:'뇌절',LIGHTNING_CLONE:'뇌둔 그림자 분신',ZIP_AMBUSH:'지퍼 기습',ARI_RUSH:'아리아리 러쉬',ARRIVEDERCI:'아리베데르치'};
 const PRACTICE_EXPLANATIONS={
- NARA_IMITATION:"그림자 궤적은 1.3초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적은 3초간 이동을 따라합니다. 벽 충돌 50·최대 150.",
- NARA_GRASP:"그림자 궤적은 1.3초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적을 0.8초 멈추고 거리 20만큼 던집니다. 벽 충돌 120.",
- NARA_STITCHING:"0.5초 뒤 그림자에 연결된 바늘 6개를 0.2초 간격으로 발사합니다. 바늘당 45.",
+ NARA_IMITATION:"그림자 궤적은 1초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적은 3초간 이동을 따라합니다. 벽 충돌 50·최대 150.",
+ NARA_GRASP:"그림자 궤적은 1초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적을 0.8초 멈추고 거리 20만큼 던집니다. 벽 충돌 120.",
+ NARA_STITCHING:"0.5초 뒤 상대의 이동 방향을 고려해 바늘 6개를 0.2초 간격으로 발사합니다. 바늘당 피해 50·판정 반경 0.65·사거리 25.",
  GAARA_COFFIN:"유도탄 적중 50·1.5초 포획. 시전 전에 쌓인 모래가 합쳐지면 모래당 추가 15. 추가 최대 120(8개), 총 최대 170.",
  GAARA_SHOWER:"6방향에 탄환당 65 피해. 빗나간 탄환은 바닥 모래로 남습니다.",
  GAARA_BURIAL:"적중 100·2초 포획·1초 후 모래 가시 70. 가아라가 충돌하면 해제되며 120.",
