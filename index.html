@@ -2817,7 +2817,7 @@ body.startup-loading { overflow: hidden; }
 @media(max-width:900px),(pointer:coarse){button,.quality select,.cast-buttons button{min-height:44px!important;min-width:44px!important}.quality{gap:2px}}
 @media(max-width:480px){.quality{font-size:10px}.fighter .gauge-hp .track{min-height:12px}}
 @media(prefers-reduced-motion:reduce){.hp-loss{animation-duration:.01s}}
-</style></head>
+</style><style>.roster-orb.random-orb{--fighter-tint:#fff;background:radial-gradient(circle at 38% 32%,white 24%,#dae0e8 72%,#8192a5);color:#111}.random-orb>b{font:bold 2.4em/1 system-ui}.random-orb .orb-name{background:#202631;color:white}</style></head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
       <div class="startup-card">
@@ -11292,6 +11292,7 @@ function confirmFighter(e) {
   if (
     ((selectionClick = null), (chosen[e] = selectionChoices[e]), chosen.every((e) => void 0 !== e))
   ) {
+    chosen=chosen.map(resolveSelection);
     if (mode === 1) opponents = randomRoster(5, chosen);
     startBattle();
   } else
@@ -11318,7 +11319,28 @@ function bindProfileSwipe(panel){
  panel.tabIndex=0;panel.setAttribute('aria-label','캐릭터 정보. 좌우 드래그 또는 방향키로 페이지 전환');
 }
 
+const RANDOM_PICK=-1;
+const randomChoice={id:"random",name:"랜덤",short:"랜덤",color:0xffffff,role:"전투 시작 시 공개"};
+function selectionRecord(index){return index===RANDOM_PICK?randomChoice:CHARACTER_DATABASE[index];}
+function resolveSelection(index){
+  return index===RANDOM_PICK?Math.floor(Math.random()*CHARACTER_DATABASE.length):index;
+}
+function randomPreview(){
+  const canvas=document.createElement("canvas");
+  canvas.width=1024;canvas.height=512;
+  const ctx=canvas.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,1024,512);
+  ctx.fillStyle="#101010";ctx.font="900 208px sans-serif";
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  for(const x of [128,384,640,896])ctx.fillText("?",x,256);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  return new THREE.Mesh(new THREE.SphereGeometry(1.65,48,32),new THREE.MeshStandardMaterial({map:texture,roughness:.8}));
+}
 function renderSelectionInfo(){
+ if(selectionChoices[selectionSlot]===RANDOM_PICK){
+   const panel=$("selectionInfo");panel.profileFitObserver?.disconnect();
+   panel.innerHTML='<div class="profile-page-content"><h2>랜덤</h2><p>전투가 시작되면 캐릭터가 공개됩니다.</p></div>';
+   return;
+ }
  const actor=CHARACTER_DATABASE[selectionChoices[selectionSlot]],key=selectionSlot+':'+actor.id;
  if(key!==selectionProfileKey){selectionProfilePage=0;selectionProfileKey=key;}
  const second=selectionProfilePage===1,ready=chosen[selectionSlot]!==undefined,panel=$('selectionInfo');
@@ -11336,7 +11358,7 @@ function renderSelectionInfo(){
 }
 
 function drawSelection() {
-  for (const index of selectionChoices) preloadFighterBanners(CHARACTER_DATABASE[index]);
+  for (const index of selectionChoices) if(index!==RANDOM_PICK) preloadFighterBanners(CHARACTER_DATABASE[index]);
   const e = chosen.length,
     a = CHARACTER_DATABASE[selectionChoices[selectionSlot]];
   (($("selectTitle").textContent =
@@ -11349,7 +11371,7 @@ function drawSelection() {
           '">P' +
           (a + 1) +
           " · " +
-          (void 0 === e ? "선택 중" : CHARACTER_DATABASE[e].short) +
+          (void 0 === e ? "선택 중" : selectionRecord(e).short) +
           "</span>",
       )
       .join("")),
@@ -11357,7 +11379,7 @@ function drawSelection() {
     $("fighterWindows").style.setProperty("--player-count", e),
     ($("fighterWindows").innerHTML = selectionChoices
       .map((e, a) => {
-        const o = CHARACTER_DATABASE[e],
+        const o = selectionRecord(e),
           n = void 0 !== chosen[a], remoteSlot = !!onlineSession && a !== onlineSession.slot;
         return (
           '<div class="fighter-window ' +
@@ -19161,7 +19183,7 @@ function selectionGrid(e, a) {
 
 function drawSelectionRoster() {
   const roster = $("roster"),
-    grid = selectionGrid(CHARACTER_DATABASE.length, roster.clientWidth || 900);
+    grid = selectionGrid(CHARACTER_DATABASE.length+1, roster.clientWidth || 900);
   const grouped = rosterGrouping === "type" || rosterGrouping === "anime";
   const layoutKey = JSON.stringify([rosterGrouping, CHARACTER_DATABASE.length, grouped ? [grid.diameter, grid.gap] : grid]);
   // Keep the same buttons and scroll containers when only selection/READY state changes.
@@ -19188,6 +19210,11 @@ function drawSelectionRoster() {
   roster.style.setProperty("--orb-size", grid.diameter + "px");
   roster.style.setProperty("--orb-gap", grid.gap + "px");
   const renderOrb = (index) => {
+    if(index===RANDOM_PICK){
+      const active=selectionChoices[selectionSlot]===index;
+      const players=chosen.flatMap((v,i)=>v===index?["P"+(i+1)]:[]).join(" · ");
+      return `<button type="button" class="roster-orb random-orb${active?" orb-active":""}" data-index="-1" aria-pressed="${active}" aria-label="랜덤 미리보기"><b aria-hidden="true">?</b><span class="orb-name">랜덤</span>${players?`<span class="orb-players">${players}</span>`:""}</button>`;
+    }
     const character = CHARACTER_DATABASE[index],
       active = selectionChoices[selectionSlot] === index;
     const isNew = NEW_FIGHTER_IDS.has(character.id);
@@ -19205,6 +19232,7 @@ function drawSelectionRoster() {
       const rankOf = index => recent.get(CHARACTER_DATABASE[index].id) ?? recent.size + indices.length - index;
       indices.sort((a, b) => rankOf(a) - rankOf(b));
     }
+    indices.unshift(RANDOM_PICK);
     roster.innerHTML = grid.rows
       .map(
         (row) =>
@@ -19214,7 +19242,7 @@ function drawSelectionRoster() {
   } else {
     const key = rosterGrouping === "type" ? "battleType" : "anime";
     const palette = key === "battleType" ? TYPE_COLORS : ANIME_COLORS;
-    roster.innerHTML = Object.keys(palette)
+    roster.innerHTML = `<div class="orb-row">${renderOrb(RANDOM_PICK)}</div>` + Object.keys(palette)
       .map(
         (label) =>
           `<section class="roster-group"><h4 style="--tag-color:${palette[label]}">${label}</h4><div class="roster-group-scroll" tabindex="0" aria-label="${label} 캐릭터 목록"><div class="orb-row">${CHARACTER_DATABASE.map((character, index) => (character[key] === label ? renderOrb(index) : "")).join("")}</div></div></section>`,
@@ -19233,6 +19261,11 @@ function updateSelectionModels() {
     for (const [e, a] of selectionChoices.entries()) {
       if (selectionModels[e]?.index === a) continue;
       selectionModels[e] && removeMesh(selectionModels[e].mesh);
+      if(a===RANDOM_PICK){
+        const mesh=randomPreview();selectionWorld.add(mesh);
+        selectionModels[e]={index:a,mesh,center:new THREE.Vector3(),radius:1.85};
+        continue;
+      }
       const o = makeActor(a, e);
       ((o.x = o.z = 0),
         model(o, !0),
@@ -28566,11 +28599,12 @@ function startPractice(index = practiceIndex) {
 
 function startPracticeNow(index, track){practiceActive=true;mode=0;setArenaSize(mode);manual=true;paused=false;running=false;arenaZoom=1;setScreen('battle',track);$('exit').textContent=selectionBeforePractice?'← 캐릭터 선택으로':'나가기';document.body.classList.add('practice-mode');$('arena').append(renderer.domElement);$('modal').classList.add('hidden');$('battleMode').textContent='PRACTICE · 연습 모드';$('pause').textContent='일시정지';practiceSelectedType='';practiceSetup(index);running=true;drawPracticeRoster();renderPracticePanel();resize();}
 function selectPracticeFighter(index) {
+  index=resolveSelection(index);
   if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_DATABASE.length) return;
   return withMatchResources([index], musicKey, () => selectPracticeFighterNow(index));
 }
 function selectPracticeFighterNow(index){practiceSelectedType='';practiceSetup(index);paused=false;running=true;if(!headless){$('pause').textContent='일시정지';drawPracticeRoster();renderPracticePanel();}}
-function drawPracticeRoster(){const root=$('practiceRoster');if(!root.children.length){root.innerHTML=CHARACTER_DATABASE.map((c,i)=>`<button type="button" class="roster-orb" data-practice-index="${i}" aria-label="${c.name} 선택" aria-pressed="false" style="--fighter-tint:${hex(c.color)}"><img src="${fighterPortrait(c)}" alt="" loading="lazy" draggable="false"><span class="orb-name">${c.short}</span></button>`).join('');root.querySelectorAll('button').forEach(button=>button.onclick=()=>selectPracticeFighter(+button.dataset.practiceIndex));}for(const button of root.querySelectorAll('button')){const selected=+button.dataset.practiceIndex===practiceIndex;button.classList.toggle('orb-active',selected);button.setAttribute('aria-pressed',String(selected));}}
+function drawPracticeRoster(){const root=$('practiceRoster');if(!root.children.length){root.innerHTML='<button type="button" class="roster-orb random-orb" data-practice-index="-1" aria-label="랜덤 캐릭터 연습"><b>?</b><span class="orb-name">랜덤</span></button>'+CHARACTER_DATABASE.map((c,i)=>`<button type="button" class="roster-orb" data-practice-index="${i}" aria-label="${c.name} 선택" aria-pressed="false" style="--fighter-tint:${hex(c.color)}"><img src="${fighterPortrait(c)}" alt="" loading="lazy" draggable="false"><span class="orb-name">${c.short}</span></button>`).join('');root.querySelectorAll('button').forEach(button=>button.onclick=()=>selectPracticeFighter(+button.dataset.practiceIndex));}for(const button of root.querySelectorAll('button')){const selected=+button.dataset.practiceIndex===practiceIndex;button.classList.toggle('orb-active',selected);button.setAttribute('aria-pressed',String(selected));}}
 const practiceArtCache=new Map();
 function practiceArtwork(type,c){preloadSkillBanner(type);if(bannerAssets[type]?.src)return bannerAssets[type].src;const key=c.id+':'+type;if(practiceArtCache.has(key))return practiceArtCache.get(key);const canvas=document.createElement('canvas');canvas.width=650;canvas.height=150;const ctx=canvas.getContext('2d'),name=practiceName(type,c);let font=56;ctx.font='900 '+font+'px sans-serif';while(ctx.measureText(name).width>600&&font>22){font--;ctx.font='900 '+font+'px sans-serif';}ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.shadowColor=hex(c.color);ctx.shadowBlur=18;ctx.strokeStyle='#080d17';ctx.lineWidth=11;ctx.strokeText(name,325,75);const gradient=ctx.createLinearGradient(0,40,0,110);gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.5,'#f5f6ff');gradient.addColorStop(1,hex(c.color));ctx.fillStyle=gradient;ctx.fillText(name,325,75);const url=canvas.toDataURL();practiceArtCache.set(key,url);return url;}
 function renderPracticePanel(){if(!practiceActive||headless)return;const c=CHARACTER_DATABASE[practiceIndex],a=actors[0];$('practicePortrait').src=fighterPortrait(c);$('practicePortrait').alt=c.name;$('practiceName').textContent=c.name;$('practiceRole').textContent=c.role||c.battleType;const skills=practiceSkills(c);$('practiceSkills').innerHTML=skills.map(s=>{const url=practiceArtwork(s.type,c);return `<button type="button" class="practice-skill${s.type===practiceSelectedType?' active':''}" data-practice-skill="${s.type}" aria-label="${s.name} 사용" aria-pressed="${s.type===practiceSelectedType}" title="${s.name}">${url?`<img src="${url}" alt="${s.name}" draggable="false">`:`<strong>${s.name}</strong>`}<span>${s.special?'스페셜':'일반 기술'}</span></button>`;}).join('');$('practiceSkills').querySelectorAll('button').forEach(button=>button.onclick=()=>practiceCast(button.dataset.practiceSkill));renderPracticeDamageInfo();}
@@ -31866,8 +31900,8 @@ function enterOnlineSelection(session) {
   selection();
   const other = 1 - session.slot;
   listenOnlineRoom(session, other === 0 ? "hostPick" : "guestPick", fighter => {
-    const index = onlineFighterIndex(fighter);
-    if (session.phase !== "selection" || index < 0 || session.picks[other]) return;
+    const index = fighter===randomChoice.id?RANDOM_PICK:onlineFighterIndex(fighter);
+    if (session.phase !== "selection" || (fighter!==randomChoice.id && index < 0) || session.picks[other]) return;
     session.picks[other] = fighter;
     chosen[other] = selectionChoices[other] = index;
     drawSelection();
@@ -31914,7 +31948,7 @@ async function confirmOnlineFighter(slot) {
   const session = onlineSession;
   if (session.phase !== "selection" || slot !== session.slot || session.picks[slot] || session.savingPick) return;
   const index = selectionChoices[slot];
-  const fighter = CHARACTER_DATABASE[index]?.id;
+  const fighter = selectionRecord(index)?.id;
   if (!fighter) return;
   session.savingPick = true;
   drawSelection();
@@ -31956,10 +31990,11 @@ function startOnlineMatchIfReady(session) {
   session.phase = "loading";
   updateOnlineSelectionStatus();
   const track = randomBattleTrack();
-  const indices = session.picks.map(onlineFighterIndex);
+  const indices = session.picks.map(id=>id===randomChoice.id?resolveSelection(RANDOM_PICK):onlineFighterIndex(id));
   const launch = async () => {
     if (onlineSession !== session) return;
     try {
+      session.picks=indices.map(i=>CHARACTER_DATABASE[i].id);
       chosen = indices;
       manual = true;
       document.body.classList.add("online-battle");
