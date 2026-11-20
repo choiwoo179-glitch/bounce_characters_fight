@@ -2607,6 +2607,15 @@ body.practice-mode #practicePanel {grid-template-columns:minmax(0,1fr);gap:15px;
 @media(max-width:360px){.practice-heading{grid-template-columns:minmax(120px,.85fr) minmax(0,1.15fr);gap:8px;}.practice-identity{grid-template-columns:44px minmax(0,1fr);gap:8px;}.practice-identity img{width:44px;height:58px;}.practice-identity h2{font-size:14px;}#practiceDamageInfo{padding:8px;}}
 
 
+
+/* [Graphics stage 2] mild dusk sky behind home / selection (battle maps override it inline). */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(130% 60% at 50% -8%, rgba(255, 170, 118, 0.16), rgba(255, 170, 118, 0) 62%),
+    linear-gradient(180deg, #1e1d37 0%, #181a2c 48%, #10141c 100%);
+  background-attachment: fixed;
+}
 </style>
   <style id="landscape-battle-layout">
 /* Landscape battle: 1P/3P on the left, 2P/4P on the right.
@@ -2793,7 +2802,22 @@ body.startup-loading { overflow: hidden; }
   .online-battle #pause[hidden] { display: none; }
   #modalActions:has(.online-code-input) { flex-wrap: wrap; }
 </style>
-</head>
+<style>
+#hud .fighter{border-inline-start:4px solid var(--accent);background-image:linear-gradient(108deg,color-mix(in srgb,var(--accent) 20%,transparent) 0 24%,transparent 24.5%)}
+#hud .fighter-right{border-inline-start-width:1px;border-inline-end:4px solid var(--accent)}
+@font-face{font-family:ArenaKR;src:url("assets/fonts/arena-ko.otf") format("opentype");font-weight:700 900;font-display:swap}
+.brand,.fighter-head,.mode,.battle-result,button,.quality{font-family:ArenaKR,system-ui,sans-serif}
+.quality{display:flex;align-items:center;gap:.35rem;color:#f3f7ff;font-size:.8rem}.quality select{background:#142235;color:white;border:1px solid #63819e;border-radius:4px;padding:.3em}
+.fighter{border-inline-start:4px solid var(--accent);clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);background-image:linear-gradient(112deg,color-mix(in srgb,var(--accent) 20%,transparent),transparent 55%)}
+.fighter-head b,.track output,.gauge-label,.battle-result strong{paint-order:stroke fill;-webkit-text-stroke:2px #131822}
+.fighter .gauge-hp .track{min-height:14px}.hp-loss{transform-origin:left;animation:damage-tail .72s ease-out both}.fighter-right .hp-loss{transform-origin:right}
+@keyframes damage-tail{0%,20%{background:white;transform:scaleX(1)}75%{background:#ef364d}100%{background:#ef364d;transform:scaleX(0)}}
+.mode,.start-mode,.battle-result,button:not(.roster-orb):not(.audio-toggle){border-radius:4px;clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+.mode{border-bottom:3px solid #7dadc9}.mode[aria-pressed=true],.mode.active{border-color:#ccff61}.battle-result{border-inline-start:5px solid #d8ff65}
+@media(max-width:900px),(pointer:coarse){button,.quality select,.cast-buttons button{min-height:44px!important;min-width:44px!important}.quality{gap:2px}}
+@media(max-width:480px){.quality{font-size:10px}.fighter .gauge-hp .track{min-height:12px}}
+@media(prefers-reduced-motion:reduce){.hp-loss{animation-duration:.01s}}
+</style></head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
       <div class="startup-card">
@@ -2808,7 +2832,7 @@ body.startup-loading { overflow: hidden; }
     <header>
       <div class="brand">BALL<span>FIGHT.</span></div>
       <div class="tag">ANIME ARENA / AUTO BATTLER</div>
-      <div class="status"><i class="dot"></i> LOCAL · OFFLINE READY</div>
+      <label class="quality">화질 <select id="graphicsLevel"><option value="0">낮음</option><option value="1" selected>중간</option><option value="2">높음</option></select></label><div class="status"><i class="dot"></i> LOCAL · OFFLINE READY</div>
     <div class="music-control" aria-label="소리 설정">
       <div class="audio-control-row"><button type="button" id="bgmToggle" class="audio-toggle" aria-pressed="true" aria-label="배경음악 끄기"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="speaker-body" d="M4 12h6l8-7v22l-8-7H4z"/><path class="speaker-waves" d="M22 11c3 3 3 7 0 10m4-14c5 5 5 13 0 18"/><path class="speaker-cross" d="M6 5l21 22M27 5L6 27"/></svg></button><label id="musicHint" for="bgmVolume">배경음악</label><input id="bgmVolume" aria-label="배경음악 음량" type="range" min="0" max="100" step="1" value="50"><output id="bgmPercent" for="bgmVolume">50%</output></div>
       <div class="audio-control-row"><button type="button" id="sfxToggle" class="audio-toggle" aria-pressed="true" aria-label="효과음 끄기"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="speaker-body" d="M4 12h6l8-7v22l-8-7H4z"/><path class="speaker-waves" d="M22 11c3 3 3 7 0 10m4-14c5 5 5 13 0 18"/><path class="speaker-cross" d="M6 5l21 22M27 5L6 27"/></svg></button><label for="sfxVolume">효과음</label><input id="sfxVolume" aria-label="효과음 음량" type="range" min="0" max="100" step="1" value="100"><output id="sfxPercent" for="sfxVolume">100%</output></div>
@@ -3585,7 +3609,464 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
 }
 </script>
-    <script id="game-code">// World-space ranges here are independent of arena dimensions.
+    <script id="game-code">
+// ===== [Graphics stage 1] Cel shading: shared toon materials, gradient maps and lights =====
+// Visual only. Game rules, damage, collision and timing never read anything below.
+const CEL_STYLE = {
+  // 8 texels sampled by dot(N,L)*.5+.5 -> shadow (back side) / mid (0..0.5) / lit (>0.5)
+  gradient: [0.3, 0.3, 0.3, 0.3, 0.62, 0.62, 1, 1],
+  // Metals (metalness >= .5) get a higher-contrast ramp instead of PBR reflections.
+  metalGradient: [0.17, 0.17, 0.17, 0.17, 0.46, 0.78, 1, 1],
+  // How much the selected battle map's average color tints the lights (0 = none).
+  moodMix: 0.2,
+  shadowColor: 0x221633,
+  shadowOpacity: 0.36,
+  rigs: {
+    // Mild late-afternoon: warm key, dusk-violet bounce, cool rim from behind.
+    main: {
+      sky: 0xfff0e0, ground: 0x46405f, hemi: 1.45,
+      key: 0xffdcb6, keyI: 2.3, keyPos: [-24, 38, 20],
+      rim: 0xa8c4ff, rimI: 1.05, rimPos: [24, 16, -30],
+    },
+    selection: {
+      sky: 0xfff2e6, ground: 0x4a4462, hemi: 1.6,
+      key: 0xffdfbd, keyI: 2.4, keyPos: [-4, 6, 8],
+      rim: 0xa8c4ff, rimI: 1.1, rimPos: [5, 3.5, -7],
+    },
+  },
+};
+
+const celGradientCache = {};
+function celGradient(kind) {
+  if (celGradientCache[kind]) return celGradientCache[kind];
+  const steps = kind === "metal" ? CEL_STYLE.metalGradient : CEL_STYLE.gradient;
+  const data = new Uint8Array(steps.length * 4);
+  steps.forEach((value, index) => {
+    const v = Math.round(Math.max(0, Math.min(1, value)) * 255);
+    data.set([v, v, v, 255], index * 4);
+  });
+  const texture = new THREE.DataTexture(data, steps.length, 1, THREE.RGBAFormat);
+  texture.minFilter = texture.magFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  if (typeof sharedTextures !== "undefined") sharedTextures.add(texture);
+  return (celGradientCache[kind] = texture);
+}
+
+let CelToonMaterialClass = null;
+function celToonClass() {
+  if (CelToonMaterialClass) return CelToonMaterialClass;
+  CelToonMaterialClass = class CelToonMaterial extends THREE.MeshToonMaterial {
+    constructor(params) {
+      super();
+      // Kept as plain fields so existing code that reads/writes them keeps working.
+      this.roughness = 1;
+      this.metalness = 0;
+      this.flatShading = false;
+      this.gradientMap = celGradient("base");
+      if (params) this.setCelValues(params);
+    }
+    setCelValues(params) {
+      const toon = {};
+      for (const key of Object.keys(params)) {
+        const value = params[key];
+        if (value === undefined || key === "envMap" || key === "envMapIntensity") continue;
+        if (key === "roughness" || key === "metalness" || key === "flatShading") this[key] = value;
+        else if (this[key] === undefined) this[key] = value;
+        else toon[key] = value;
+      }
+      this.setValues(toon);
+      if (this.metalness >= 0.5) this.gradientMap = celGradient("metal");
+    }
+    copy(source) {
+      super.copy(source);
+      this.roughness = source.roughness ?? 1;
+      this.metalness = source.metalness ?? 0;
+      this.flatShading = !!source.flatShading;
+      return this;
+    }
+  };
+  return CelToonMaterialClass;
+}
+
+// Drop-in replacement for `new THREE.MeshStandardMaterial(params)`.
+// Parts that use a reflection envMap (polished metal props) keep the PBR material.
+function celMaterial(params = {}) {
+  if (params && params.envMap) return new THREE.MeshStandardMaterial(params);
+  const Cel = celToonClass();
+  return new Cel(params);
+}
+
+const celLightRigs = {};
+function celInstallLights(target, name) {
+  const preset = CEL_STYLE.rigs[name] || CEL_STYLE.rigs.main;
+  const hemi = new THREE.HemisphereLight(preset.sky, preset.ground, preset.hemi);
+  const key = new THREE.DirectionalLight(preset.key, preset.keyI);
+  key.position.set(...preset.keyPos);
+  key.name = "cel-key-light";
+  const rim = new THREE.DirectionalLight(preset.rim, preset.rimI);
+  rim.position.set(...preset.rimPos);
+  rim.name = "cel-rim-light";
+  target.add(hemi, key, rim);
+  celLightRigs[name] = { hemi, key, rim, preset };
+  celApplyMood(celLightRigs[name], name === "main" ? celCurrentMood : null);
+  return target;
+}
+
+let celCurrentMood = null;
+function celApplyMood(rig, tint) {
+  if (!rig) return;
+  if (rig === celLightRigs.main) celApplyStageMood(tint);
+  const { hemi, key, rim, preset } = rig;
+  hemi.color.set(preset.sky);
+  hemi.groundColor.set(preset.ground);
+  key.color.set(preset.key);
+  rim.color.set(preset.rim);
+  if (!tint) return;
+  const hsl = {};
+  tint.getHSL(hsl);
+  const s = Math.min(0.55, hsl.s);
+  const mix = CEL_STYLE.moodMix;
+  hemi.color.lerp(new THREE.Color().setHSL(hsl.h, s, 0.74), mix);
+  hemi.groundColor.lerp(new THREE.Color().setHSL(hsl.h, s, 0.24), mix);
+  key.color.lerp(new THREE.Color().setHSL(hsl.h, s * 0.7, 0.8), mix * 0.6);
+}
+
+// Reads the average color of the selected battle background so each map keeps its own mood.
+let celMoodToken = 0;
+function celApplyMapMood(url) {
+  const token = ++celMoodToken;
+  celCurrentMood = null;
+  celApplyMood(celLightRigs.main, null);
+  if (!url || typeof Image === "undefined") return;
+  const image = new Image();
+  image.onload = () => {
+    if (token !== celMoodToken) return;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 12;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0, 12, 12);
+      const pixels = context.getImageData(0, 0, 12, 12).data;
+      let red = 0, green = 0, blue = 0, count = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        red += pixels[i]; green += pixels[i + 1]; blue += pixels[i + 2]; count++;
+      }
+      celCurrentMood = new THREE.Color().setRGB(red / count / 255, green / count / 255, blue / count / 255, THREE.SRGBColorSpace);
+      celApplyMood(celLightRigs.main, celCurrentMood);
+    } catch (error) {
+      // file:// or cross-origin images cannot be sampled; the default late-afternoon rig stays.
+    }
+  };
+  image.src = url;
+}
+
+// Soft blob shadow texture shared by every fighter.
+let celShadowTex = null;
+function celShadowTexture() {
+  if (celShadowTex) return celShadowTex;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 64;
+  const context = canvas.getContext("2d");
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.55, "rgba(255,255,255,.9)");
+  gradient.addColorStop(0.82, "rgba(255,255,255,.35)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  celShadowTex = new THREE.CanvasTexture(canvas);
+  celShadowTex.colorSpace = THREE.SRGBColorSpace;
+  if (typeof sharedTextures !== "undefined") sharedTextures.add(celShadowTex);
+  return celShadowTex;
+}
+// ===== [/Graphics stage 1] =====
+// ===== [Graphics stage 2] Outlines, painted arena floor, dusk backdrop and fog =====
+// Visual only. Collision, arena size and item rules never read anything below.
+const CEL_OUTLINE = {
+  color: 0x1a1430,          // deep navy-violet "ink" line
+  pxPerHeight: 300,         // line width in CSS px = viewport height / this value
+  minPx: 1.3, maxPx: 2.5,   // clamp for phones / large monitors
+  maxPerModel: 16,          // largest parts only (body, hair, weapons)
+  minSize: 0.22,            // parts smaller than this radius get no outline
+};
+const CEL_STAGE = {
+  fogColor: 0x2a2340, fogNear: 66, fogFar: 190, fogMoodMix: 0.3,
+  floorMoodMix: 0.25,
+  wallColor: 0xdcc6a6, wallEmissive: 0x2a1c30,
+  slotRingOpacity: 0.9,
+  floor: {
+    center: "rgba(255,214,176,0.20)", mid: "rgba(120,96,140,0.22)", edge: "rgba(28,22,44,0.50)",
+    panel: "rgba(255,240,225,0.04)", grid: "rgba(255,236,214,0.07)", gridStrong: "rgba(255,236,214,0.13)",
+    centerLine: "rgba(255,240,222,0.16)", border: "rgba(255,232,205,0.32)",
+  },
+  // Battle map overlay (mild dusk instead of the old flat dark layer).
+  backdrop: "radial-gradient(130% 70% at 50% -10%,#ffb07a24,#ffb07a00 60%)," +
+    "linear-gradient(180deg,#241f3c80 0%,#1b1832a0 55%,#120f1fb8 100%)",
+};
+
+// Smoothed-normal copy of a geometry so hard-edged parts (boxes, cones) get an unbroken hull.
+const celOutlineGeoCache = new WeakMap();
+function celOutlineGeometry(geo) {
+  let out = celOutlineGeoCache.get(geo);
+  if (out) return out;
+  const pos = geo.attributes.position, nrm = geo.attributes.normal, count = pos.count;
+  const sums = new Map(), keys = new Array(count);
+  for (let i = 0; i < count; i++) {
+    const key = Math.round(pos.getX(i) * 1e4) + "," + Math.round(pos.getY(i) * 1e4) + "," + Math.round(pos.getZ(i) * 1e4);
+    keys[i] = key;
+    let sum = sums.get(key);
+    if (!sum) sums.set(key, (sum = [0, 0, 0]));
+    sum[0] += nrm.getX(i); sum[1] += nrm.getY(i); sum[2] += nrm.getZ(i);
+  }
+  const smooth = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const sum = sums.get(keys[i]);
+    let l = Math.hypot(sum[0], sum[1], sum[2]);
+    if (l < 1e-6) { smooth.set([nrm.getX(i), nrm.getY(i), nrm.getZ(i)], i * 3); continue; }
+    smooth.set([sum[0] / l, sum[1] / l, sum[2] / l], i * 3);
+  }
+  out = new THREE.BufferGeometry();
+  out.setAttribute("position", pos);
+  out.setAttribute("normal", new THREE.BufferAttribute(smooth, 3));
+  if (geo.index) out.setIndex(geo.index);
+  if (!geo.boundingSphere) geo.computeBoundingSphere();
+  out.boundingSphere = geo.boundingSphere.clone();
+  out.boundingSphere.radius *= 1.08;
+  out.userData.celOutline = true;
+  if (geo.userData.akiCached) out.userData.akiCached = true;
+  celOutlineGeoCache.set(geo, out);
+  return out;
+}
+
+function celOutlineCompile(shader) {
+  shader.uniforms.uCelWidth = this.celUniforms.uCelWidth;
+  shader.uniforms.uCelHide = this.celUniforms.uCelHide;
+  shader.vertexShader = "uniform float uCelWidth;\nuniform float uCelHide;\n" + shader.vertexShader.replace(
+    "#include <project_vertex>",
+    [
+      "vec4 mvPosition = vec4( transformed, 1.0 );",
+      "mvPosition = modelViewMatrix * mvPosition;",
+      "float celDepth = max( 1.0, -mvPosition.z );",
+      "vec3 celViewNormal = normalize( normalMatrix * normal );",
+      "mvPosition.xyz += celViewNormal * uCelWidth * celDepth;",
+      "mvPosition.z -= uCelWidth * celDepth * 1.5;",
+      "gl_Position = projectionMatrix * mvPosition;",
+      "if ( uCelHide > 0.5 ) gl_Position = vec4( 2.0, 2.0, 2.0, 1.0 );",
+    ].join("\n"),
+  );
+}
+
+let CelOutlineMaterialClass = null, CelOutlineMeshClass = null;
+function celOutlineClasses() {
+  if (CelOutlineMaterialClass) return;
+  // Subclass so material.clone() (ghosts, hit flash) keeps the outline shader.
+  CelOutlineMaterialClass = class CelOutlineMaterial extends THREE.MeshBasicMaterial {
+    constructor(params) {
+      super();
+      this.isCelOutlineMaterial = true;
+      this.side = THREE.BackSide;
+      this.color.set(CEL_OUTLINE.color);
+      this.celUniforms = { uCelWidth: { value: 0.0006 }, uCelHide: { value: 0 } };
+      this.onBeforeCompile = celOutlineCompile;
+      this.customProgramCacheKey = () => "cel-outline-v1";
+      if (params) this.setValues(params);
+    }
+    copy(source) {
+      super.copy(source);
+      this.isCelOutlineMaterial = true;
+      if (source.celUniforms) {
+        this.celUniforms.uCelWidth.value = source.celUniforms.uCelWidth.value;
+        this.celUniforms.uCelHide.value = source.celUniforms.uCelHide.value;
+      }
+      return this;
+    }
+  };
+  const viewport = new THREE.Vector4();
+  CelOutlineMeshClass = class CelOutlineMesh extends THREE.Mesh {
+    constructor(geometry, material) {
+      super(geometry, material);
+      this.isCelOutline = true;
+      this.userData.celOutline = true;
+    }
+    get material() { return this._celMaterial; }
+    // Effects that replace every material of a cloned model (ghosts, overlays) hide the outline.
+    set material(value) {
+      this._celMaterial = value;
+      if (value && !Array.isArray(value)) this.visible = !!value.isCelOutlineMaterial;
+    }
+    onBeforeRender(activeRenderer, activeScene, activeCamera) {
+      const own = this._celMaterial;
+      if (!own?.celUniforms) return;
+      const parent = this.parent?.material;
+      const hide = !parent || Array.isArray(parent) || parent.visible === false || parent.colorWrite === false ||
+        (parent.transparent && parent.opacity < 0.97) || (own.transparent && own.opacity < 0.97);
+      own.celUniforms.uCelHide.value = hide ? 1 : 0;
+      activeRenderer.getCurrentViewport(viewport);
+      const height = Math.max(1, viewport.w / activeRenderer.getPixelRatio());
+      const px = Math.min(CEL_OUTLINE.maxPx, Math.max(CEL_OUTLINE.minPx, height / CEL_OUTLINE.pxPerHeight));
+      const p5 = activeCamera.projectionMatrix.elements[5] || 1;
+      own.celUniforms.uCelWidth.value = (2 * px * (this.userData.lineScale||1)) / (height * p5);
+    }
+  };
+}
+
+const celSkipOutlineGeometry = /Plane|Circle|Ring|Shape|Edges|Wireframe/;
+function celAddOutlines(root, options = {}) {
+  if (!root || (typeof headless !== "undefined" && headless)) return root;
+  celOutlineClasses();
+  root.updateMatrixWorld(true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const local = new THREE.Matrix4(), scale = new THREE.Vector3();
+  const candidates = [];
+  root.traverse((node) => {
+    if (!node.isMesh || node.isInstancedMesh || node.isSkinnedMesh || node.isCelOutline || node.parent?.isCelOutline) return;
+    const material = node.material;
+    if (!material || Array.isArray(material)) return;
+    if (!(material.isMeshToonMaterial || material.isMeshStandardMaterial)) return;
+    if (material.transparent || material.side !== THREE.FrontSide || material.colorWrite === false || material.wireframe) return;
+    if (material.clippingPlanes?.length) return;
+    const geo = node.geometry;
+    if (!geo?.attributes?.position || !geo.attributes.normal || geo.morphAttributes?.position) return;
+    if (celSkipOutlineGeometry.test(geo.type || "")) return;
+    if (!geo.boundingSphere) geo.computeBoundingSphere();
+    scale.setFromMatrixScale(local.multiplyMatrices(toRoot, node.matrixWorld));
+    const size = geo.boundingSphere.radius * Math.max(scale.x, scale.y, scale.z);
+    if (size < (options.minSize ?? CEL_OUTLINE.minSize)) return;
+    candidates.push([size, node]);
+  });
+  candidates.sort((a, b) => b[0] - a[0]);
+  for (const [, node] of candidates.slice(0, options.max ?? CEL_OUTLINE.maxPerModel)) {
+    const outline = new CelOutlineMeshClass(celOutlineGeometry(node.geometry), new CelOutlineMaterialClass());
+    if (options.color != null) outline.material.color.set(options.color);
+    outline.userData.lineScale=options.max===8||options.max===9?.78:1;
+    outline.name = "cel-outline";
+    outline.renderOrder = node.renderOrder;
+    outline.frustumCulled = node.frustumCulled;
+    node.add(outline);
+  }
+  return root;
+}
+
+// Team color moves from the old glowing shell to a ring at the fighter's feet.
+function celAddSlotRing(shadow, color) {
+  if (color == null || !shadow) return;
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(1.42, 1.68, 48),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: CEL_STAGE.slotRingOpacity, depthWrite: false }),
+  );
+  const edge = new THREE.Mesh(
+    new THREE.RingGeometry(1.68, 1.8, 48),
+    new THREE.MeshBasicMaterial({ color: CEL_OUTLINE.color, transparent: true, opacity: 0.55, depthWrite: false }),
+  );
+  ring.name = "cel-slot-ring";
+  edge.name = "cel-slot-ring-edge";
+  ring.position.z = edge.position.z = 0.02;
+  shadow.add(edge, ring);
+}
+
+// Items: opaque glossy core + ink outline + ground ring so they never read as a skill effect.
+function celDecoratePotion(group, core, color) {
+  if (!group) return;
+  const gloss = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 10, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthWrite: false }),
+  );
+  gloss.name = "cel-potion-gloss";
+  gloss.position.set(-0.3, 0.3, 0.55);
+  core.add(gloss);
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.95, 1.15, 40),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false }),
+  );
+  const edge = new THREE.Mesh(
+    new THREE.RingGeometry(1.15, 1.24, 40),
+    new THREE.MeshBasicMaterial({ color: 0xfff4e6, transparent: true, opacity: 0.6, depthWrite: false }),
+  );
+  for (const mesh of [ring, edge]) {
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.y = -0.82;
+    group.add(mesh);
+  }
+  ring.name = "cel-potion-ring";
+  edge.name = "cel-potion-ring-edge";
+  celAddOutlines(group, { max: 3, minSize: 0.1 });
+}
+
+function celFloorTexture(width, height) {
+  const canvas = document.createElement("canvas");
+  const cw = 1024, ch = Math.max(256, Math.min(1024, Math.round((1024 * height) / width)));
+  canvas.width = cw;
+  canvas.height = ch;
+  const c = canvas.getContext("2d");
+  const st = CEL_STAGE.floor;
+  const base = c.createRadialGradient(cw / 2, ch * 0.46, 0, cw / 2, ch / 2, Math.hypot(cw, ch) / 2);
+  base.addColorStop(0, st.center);
+  base.addColorStop(0.55, st.mid);
+  base.addColorStop(1, st.edge);
+  c.fillStyle = base;
+  c.fillRect(0, 0, cw, ch);
+  const inset = Math.round(Math.min(cw, ch) * 0.05);
+  c.fillStyle = st.panel;
+  c.fillRect(inset, inset, cw - 2 * inset, ch - 2 * inset);
+  const cell = cw / 20;
+  for (let i = 1; i < 20; i++) {
+    c.strokeStyle = i % 5 === 0 ? st.gridStrong : st.grid;
+    c.lineWidth = i % 5 === 0 ? 2 : 1;
+    c.beginPath(); c.moveTo(i * cell, 0); c.lineTo(i * cell, ch); c.stroke();
+  }
+  for (let j = 1, rows = Math.round(ch / cell); j < rows; j++) {
+    c.strokeStyle = j % 5 === 0 ? st.gridStrong : st.grid;
+    c.lineWidth = j % 5 === 0 ? 2 : 1;
+    c.beginPath(); c.moveTo(0, j * cell); c.lineTo(cw, j * cell); c.stroke();
+  }
+  c.strokeStyle = st.centerLine;
+  c.lineWidth = 3;
+  c.beginPath(); c.arc(cw / 2, ch / 2, Math.min(cw, ch) * 0.14, 0, Math.PI * 2); c.stroke();
+  c.strokeStyle = st.border;
+  c.lineWidth = 6;
+  c.strokeRect(inset / 2, inset / 2, cw - inset, ch - inset);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function celBuildArenaFloor(board, width, height) {
+  if (typeof document === "undefined") return;
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    new THREE.MeshBasicMaterial({ map: celFloorTexture(width, height), transparent: true, depthWrite: false }),
+  );
+  floor.name = "arena-floor-paint";
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.085;
+  floor.renderOrder = -1;
+  board.add(floor);
+  board.userData.celFloor = floor;
+}
+
+// Fog and floor follow the selected map's average color (same source as the light mood).
+function celApplyStageMood(tint) {
+  try {
+    const hsl = {};
+    if (tint) tint.getHSL(hsl);
+    if (scene?.fog?.isFog) {
+      scene.fog.color.set(CEL_STAGE.fogColor);
+      if (tint) scene.fog.color.lerp(new THREE.Color().setHSL(hsl.h, Math.min(0.45, hsl.s), 0.2), CEL_STAGE.fogMoodMix);
+    }
+    const floor = arenaBoard?.userData.celFloor;
+    if (floor) {
+      floor.material.color.set(0xffffff);
+      if (tint) floor.material.color.lerp(new THREE.Color().setHSL(hsl.h, Math.min(0.5, hsl.s), 0.75), CEL_STAGE.floorMoodMix);
+    }
+  } catch (error) {
+    // Called before the scene exists: the defaults are applied when the arena is built.
+  }
+}
+// ===== [/Graphics stage 2] =====
+
+// World-space ranges here are independent of arena dimensions.
 const OPM_BALANCE = {
   normalPunch: {reach:15, width:9, windReach:15, direct:100, wind:45, impulse:70},
   seriousPunch: {reach:15, width:10, windReach:20, direct:200, wind:85, impulse:70, charge:.5},
@@ -3700,7 +4181,7 @@ function ninjaPullRocks(actor, life) {
   group.name = "bansho-attached-rocks";
   for (let i = 0; i < 9; i++) {
     const angle = i * 2.4;
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22 + (i % 3) * 0.06), new THREE.MeshStandardMaterial({color:0x6b625a,roughness:1}));
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22 + (i % 3) * 0.06), celMaterial({color:0x6b625a,roughness:1}));
     rock.position.set(Math.cos(angle) * 1.2, 0.25 + (i % 3) * 0.5, Math.sin(angle) * 1.2);
     group.add(rock);
   }
@@ -4420,11 +4901,21 @@ function thunderGodLightningTrail(actor,state,previous) {
 }
 
 let susanooWarriorTemplate=null;
+class SpiritSurface extends THREE.MeshPhongMaterial {
+  constructor(params={}){
+    super({transparent:true,depthWrite:true,side:THREE.FrontSide,shininess:28,...params});
+  }
+  onBeforeCompile(shader){
+    const marker=shader.fragmentShader.includes('#include <opaque_fragment>')?'#include <opaque_fragment>':'#include <output_fragment>';
+    shader.fragmentShader=shader.fragmentShader.replace(marker,
+      'float edge=pow(1.-abs(dot(normalize(normal),normalize(vViewPosition))),2.); outgoingLight+=diffuseColor.rgb*edge*.68;diffuseColor.a=mix(diffuseColor.a,min(1.,diffuseColor.a+.30),edge);\n'+marker);
+  }
+}
 function makeSusanooWarrior() {
   if(!susanooWarriorTemplate){
     const root=new THREE.Group(),body=new THREE.Group();root.add(body);
-    const armor=new THREE.MeshBasicMaterial({color:0x7936d2,transparent:true,opacity:.42,depthWrite:false,side:THREE.DoubleSide});
-    const bone=new THREE.MeshBasicMaterial({color:0xc390ff,transparent:true,opacity:.75,depthWrite:false});
+    const armor=new SpiritSurface({color:0x7834c9,transparent:true,opacity:.64,depthWrite:true,side:THREE.FrontSide});
+    const bone=celMaterial({color:0xdfb8ff,emissive:0x421373,emissiveIntensity:.12});
     const dark=new THREE.MeshBasicMaterial({color:0x3c1675,transparent:true,opacity:.65,depthWrite:false});
     const eye=new THREE.MeshBasicMaterial({color:0xffcb62,transparent:true,opacity:1,depthWrite:false,blending:THREE.AdditiveBlending});
     const ell=(parent,mat,x,y,z,sx,sy,sz)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(1,12,8),mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);return m;};
@@ -4865,12 +5356,12 @@ function trioGhost(e, a, o, n) {
 
 function addTrioDetails(e, a) {
   if ("law" !== e.d.id) return;
-  const o = new THREE.MeshStandardMaterial({ color: 15657435, roughness: 0.5 }),
+  const o = celMaterial({ color: 15657435, roughness: 0.5 }),
     n = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.5, 0.14), o);
   (n.position.set(1.3, 0.1, 0), (n.rotation.z = -0.2), a.add(n));
   const s = new THREE.Mesh(
     new THREE.BoxGeometry(0.75, 0.15, 0.25),
-    new THREE.MeshStandardMaterial({ color: 14863960 }),
+    celMaterial({ color: 14863960 }),
   );
   (s.position.set(1.15, -0.6, 0), a.add(s));
 }
@@ -5152,7 +5643,7 @@ function addEmperorDetails(e, a, o) {
   const part = (e, a, o, n, s, i, r = 0) => {
       const l = new THREE.Mesh(
         a,
-        new THREE.MeshStandardMaterial({
+        celMaterial({
           color: o,
           emissive: r,
           emissiveIntensity: 0.5,
@@ -5608,14 +6099,21 @@ function shakeStrength(e) {
     : 0;
 }
 
-function triggerArenaShake(e) {
-  // Kept as an API for existing skill hooks; cinematic impulses are damage-directed.
+function triggerArenaShake(damage) {
+  if(headless || reducedGraphics())return;
+  arenaShake.strength=Math.max(arenaShake.strength,shakeStrength(damage));
+  arenaShake.remaining=.17;arenaShake.age=0;
 }
-function updateArenaShake(e) {
-  if (!headless && $("arena")?.style) $("arena").style.transform = "";
+function updateArenaShake(dt){
+  if(!arenaShake.remaining)return 0;
+  arenaShake.age+=dt;arenaShake.remaining=Math.max(0,arenaShake.remaining-dt);
+  const x=.075*arenaShake.strength*Math.sin(arenaShake.age*131)*Math.pow(arenaShake.remaining/.17,2);
+  if(!arenaShake.remaining)arenaShake.strength=0;
+  return x;
 }
 
 function resetBattleFeedback() {
+  if(!headless){gfx.events=[];if(gfx.pool){gfx.pool.slots.length=0;gfx.pool.next=0;gfx.pool.mesh.count=0;}}
   clearCombatFeedback();
   resetCinema();
   ((arenaShake.strength = arenaShake.remaining = arenaShake.age = 0),
@@ -5903,7 +6401,7 @@ function clearKira() {
 
 function addKiraDetails(e, a) {
   const part = (e, o, n, s, i) => {
-      const r = new THREE.Mesh(e, new THREE.MeshStandardMaterial({ color: o, roughness: 0.5 }));
+      const r = new THREE.Mesh(e, celMaterial({ color: o, roughness: 0.5 }));
       return (r.position.set(n, s, i), a.add(r), r);
     },
     o = void 0;
@@ -5949,7 +6447,7 @@ function iceSpeedOffset(e) {
 }
 
 function iceMaterial(e = 8772863, a = 0.55) {
-  return new THREE.MeshStandardMaterial({
+  return celMaterial({
     color: e,
     transparent: !0,
     opacity: a,
@@ -6095,17 +6593,47 @@ function spawnIceWall(e) {
   const a = { owner: e.owner, x: e.x, z: e.z, until: t + 5, contacts: new Map(), mesh: null };
   if (!headless && world) {
     a.mesh = new THREE.Group();
-    for (let e = 0; e < 64; e++) {
-      const o = (e * Math.PI) / 32,
-        n = a.x + 5 * Math.cos(o),
-        s = a.z + 5 * Math.sin(o);
-      if (Math.abs(n) > W / 2 || Math.abs(s) > H / 2) continue;
-      const i = new THREE.Mesh(
-        new THREE.ConeGeometry(0.65, 2.4 + (e % 3) * 0.5, 4),
-        iceMaterial(7723007, 0.72),
-      );
-      (i.position.set(n, 1.1, s), (i.rotation.y = o), a.mesh.add(i));
+    const crystal=new THREE.BufferGeometry(), vertices=[],colors=[];
+    const dark=new THREE.Color(0x236285),light=new THREE.Color(0xd8faff),mid=new THREE.Color(0x76cfe3);
+    function tri(a,b,c,ca,cb,cc){vertices.push(...a,...b,...c);colors.push(...ca.toArray(),...cb.toArray(),...cc.toArray());}
+    for(const [cx,cz,r,h] of [[0,0,.43,2.9],[-.38,.05,.23,1.6],[.32,-.07,.2,1.35]]){
+      for(let i=0;i<6;i++){
+        const pt=(j,y)=>[cx+r*Math.cos(j*Math.PI/3),y,cz+r*Math.sin(j*Math.PI/3)];
+        const l=pt(i,0),r0=pt(i+1,0),u=pt(i,h*.73),v=pt(i+1,h*.73);
+        tri(l,u,v,dark,mid,mid);tri(l,v,r0,dark,mid,dark);tri(u,[cx,h,cz+.19],v,mid,light,mid);
+      }
     }
+    crystal.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+    crystal.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));crystal.computeVertexNormals();
+    const material=iceMaterial(0xb8eaff,.78);material.vertexColors=true;material.depthWrite=true;
+    const spikes=new THREE.InstancedMesh(crystal,material,18),pose=new THREE.Object3D();
+    const band=[],ringPoint=(theta,r,y)=>[a.x+r*Math.cos(theta),y,a.z+r*Math.sin(theta)];
+    for(let j=0;j<36;j++){
+      const q=j*Math.PI/18,end=(j+1)*Math.PI/18;
+      const p=ringPoint(q,5,.02),u=ringPoint(q,5,.55),v=ringPoint(end,5,.55),w=ringPoint(end,5,.02);
+      if([p,w].every(([x,y,z])=>Math.abs(x)<=W/2&&Math.abs(z)<=H/2))band.push(...p,...u,...v,...p,...v,...w);
+    }
+    const strip=new THREE.BufferGeometry();strip.setAttribute('position',new THREE.Float32BufferAttribute(band,3));strip.computeVertexNormals();
+    a.mesh.add(new THREE.Mesh(strip,iceMaterial(0x498fb1,.85)));
+    const sites=[];
+    for(let j=0;j<18;j++){
+      const q=j*Math.PI/9, x=a.x+4.65*Math.cos(q),z=a.z+4.65*Math.sin(q);
+      if(Math.abs(x)+.58>W/2||Math.abs(z)+.58>H/2)continue;
+      sites.push([x,z,q,.8+.42*(.5+.5*Math.sin(j*13.73))]);
+    }
+    spikes.count=sites.length;spikes.frustumCulled=false;a.mesh.add(spikes);
+    const born=t;
+    a.mesh.userData.animateIce=()=>{
+      const age=t-born;
+      sites.forEach(([x,z,q,h],i)=>{
+        pose.position.set(x,.05,z);pose.rotation.y=Math.PI/2-q;
+        pose.scale.set(1,h*Math.min(1,Math.max(.04,(age-i*.008)*14)),1);
+        pose.updateMatrix();spikes.setMatrixAt(i,pose.matrix);
+      });
+      spikes.instanceMatrix.needsUpdate=true;
+      material.color.setHex(age>4.6?0xe8fcff:0xb8eaff);
+    };
+    a.mesh.userData.animateIce();
     world.add(a.mesh);
   }
   iceWalls.push(a);
@@ -6161,7 +6689,7 @@ function resolveIceWallContact(e) {
     s < 0 && ((e.dx -= 2 * s * n.x), (e.dz -= 2 * s * n.z)),
     t - (o.contacts.get(e) ?? -99) >= 0.25 - 1e-8 &&
       (o.contacts.set(e, t),
-      o.kind === "doumaBuddha" ? doumaBuddhaHit(o, e) : hurt(o.owner, e, 40)),
+      o.kind === "doumaBuddha" ? doumaBuddhaHit(o, e) : (particleBurst(e.x,1,e.z,0xb0eaff),hurt(o.owner, e, 40))),
     !0
   );
 }
@@ -6255,7 +6783,7 @@ function clearKuzan() {
 function addKuzanDetails(e, a) {
   const o = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.43, 1),
-    new THREE.MeshStandardMaterial({ color: 10349311, roughness: 0.6 }),
+    celMaterial({ color: 10349311, roughness: 0.6 }),
   );
   (o.position.set(1.18, -0.25, 0.45), o.scale.set(1, 1.3, 1), a.add(o));
 }
@@ -7394,7 +7922,7 @@ function updateLightSword(e) {
       ((o.position.y = n.position.y = 1.6), a.add(o, n));
       const s = new THREE.Mesh(
         new THREE.BoxGeometry(0.7, 0.13, 0.2),
-        new THREE.MeshStandardMaterial({ color: 16768075, metalness: 0.7, roughness: 0.2 }),
+        celMaterial({ color: 16768075, metalness: 0.7, roughness: 0.2 }),
       );
       (a.add(s),
         a.position.set(1.15, -0.1, 0.65),
@@ -8431,13 +8959,13 @@ function executeSkill(e, a, o, n = !1) {
 
 function buildPowerWeapon(kind) {
   const g = new THREE.Group(),
-    red = new THREE.MeshStandardMaterial({
+    red = celMaterial({
       color: 0x970b22,
       emissive: 0x260006,
       metalness: 0.55,
       roughness: 0.24,
     }),
-    edge = new THREE.MeshStandardMaterial({ color: 0xed2942, metalness: 0.45, roughness: 0.2 });
+    edge = celMaterial({ color: 0xed2942, metalness: 0.45, roughness: 0.2 });
   const add = (geo, mat, x, y, z) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
@@ -10107,20 +10635,19 @@ function spawnPotion() {
     const e = new THREE.Group(),
       n = new THREE.Mesh(
         new THREE.SphereGeometry(0.7 * R, 16, 12),
-        new THREE.MeshStandardMaterial({
+        celMaterial({
           color: a[1],
           emissive: a[1],
-          emissiveIntensity: 0.65,
-          transparent: !0,
-          opacity: 0.86,
+          emissiveIntensity: 0.42,
         }),
       ),
       s = new THREE.Mesh(
         new THREE.CylinderGeometry(0.24, 0.28, 0.48, 10),
-        new THREE.MeshStandardMaterial({ color: 14215149, metalness: 0.35, roughness: 0.3 }),
+        celMaterial({ color: 14215149, metalness: 0.35, roughness: 0.3 }),
       );
     ((s.position.y = 0.72 * R),
       e.add(n, s),
+      celDecoratePotion(e, n, a[1]),
       e.position.set(o.x, 0.9, o.z),
       world.add(e),
       (o.mesh = e));
@@ -11049,6 +11576,7 @@ function clearWorld() {
 }
 
 function fx(e, a, o, n, s, i) {
+  if(e==="hit"){particleBurst(a,1.4,o,s,10,n);return;}
   if (headless || !world) return;
   let r, l;
   ((r =
@@ -11416,7 +11944,7 @@ function updateTransientEffects(e) {
 
 function addExtraDetails(e, a) {
   if (!EXTRA_IDS.includes(e.d.id)) return;
-  const o = new THREE.MeshStandardMaterial({ color: 11777198, metalness: 0.6, roughness: 0.5 }),
+  const o = celMaterial({ color: 11777198, metalness: 0.6, roughness: 0.5 }),
     blade = (e, n) => {
       const s = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 3.2), o);
       (s.position.set(e, 0, n), (s.rotation.y = 0.4), a.add(s));
@@ -11429,13 +11957,13 @@ function addExtraDetails(e, a) {
     for (const e of [-1, 1]) {
       const o = new THREE.Mesh(
         new THREE.CylinderGeometry(0.45, 0.5, 1, 10),
-        new THREE.MeshStandardMaterial({ color: 4811314 }),
+        celMaterial({ color: 4811314 }),
       );
       (o.position.set(1.3 * e, 0, 0), (o.rotation.z = Math.PI / 2), a.add(o));
     }
   if ("jotaro" === e.d.id) {
     const e = new THREE.Group(),
-      o = new THREE.MeshStandardMaterial({ color: 10781405, transparent: !0, opacity: 0.45 }),
+      o = celMaterial({ color: 10781405, transparent: !0, opacity: 0.45 }),
       n = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 8), o);
     (n.scale.set(1, 1.5, 0.6), e.add(n));
     const s = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 8), o);
@@ -11451,7 +11979,7 @@ function addExtraDetails(e, a) {
 function addJjkDetails(e, a) {
   if (!jjkIds.includes(e.d.id)) return;
   const part = (e, o, n, s, i) => {
-      const r = new THREE.Mesh(e, new THREE.MeshStandardMaterial({ color: o, roughness: 0.6 }));
+      const r = new THREE.Mesh(e, celMaterial({ color: o, roughness: 0.6 }));
       return (r.position.set(n, s, i), a.add(r), r);
     },
     o = void 0;
@@ -11518,7 +12046,7 @@ function addAvatarAppearance(
     part = (e, a, o = 0, n = 0, s = 0, l = "accessory") => {
       let c = r.get(a);
       c ||
-        ((c = new THREE.MeshStandardMaterial({ color: a, roughness: 0.72, metalness: 0.03 })),
+        ((c = celMaterial({ color: a, roughness: 0.72, metalness: 0.03 })),
         r.set(a, c));
       const h = new THREE.Mesh(e, c);
       return (h.position.set(o, n, s), (h.name = l), i.add(h), h);
@@ -11614,7 +12142,7 @@ function addAvatarAppearance(
   const l = Math.acos(-0.42 / R),
     c = new THREE.Mesh(
       new THREE.SphereGeometry(R + 0.012, 28, 10, 0, 2 * Math.PI, l, Math.PI - l),
-      new THREE.MeshStandardMaterial({ map: avatarCloth(s), roughness: 0.84 }),
+      celMaterial({ map: avatarCloth(s), roughness: 0.84 }),
     );
   ((c.name = "upper-clothing"), i.add(c));
   const h = part(
@@ -12200,7 +12728,7 @@ function addAvatarAppearance(
     part(new THREE.BoxGeometry(.53,.64,.11),0x231f23,0,-.71,.96,"black-shirt");
     part(new THREE.TorusGeometry(.19,.047,7,15),0xc6d0d5,0,-.56,1.06,"coat-clasp");
     const sleeve=ell(0x838f9b,-1.03,-.56,.33,.38,.38,.58,"automail-shoulder");
-    sleeve.material=new THREE.MeshStandardMaterial({color:0x838f9b,metalness:.68,roughness:.34});
+    sleeve.material=celMaterial({color:0x838f9b,metalness:.68,roughness:.34});
     for(let j=0;j<3;j++) part(new THREE.BoxGeometry(.32,.09,.10),0xc9d6dc,-1.04,-.47-j*.14,.83,"automail-plate");
   }
   if (n === "alphonse") {
@@ -12209,7 +12737,7 @@ function addAvatarAppearance(
     o.material.roughness=.39;
     ell(0x3f4b58,0,.23,.88,.83,.65,.35,"helmet-shadow");
     const crown=ell(0x879ca8,0,.79,.06,1.07,.47,.91,"steel-helmet-crown");
-    crown.material=new THREE.MeshStandardMaterial({color:0x879ca8,metalness:.51,roughness:.37});
+    crown.material=celMaterial({color:0x879ca8,metalness:.51,roughness:.37});
     for (const side of [-1,1]) {
       ell(0x93aab5,side*.97,-.58,0,.47,.49,.63,"pauldron");
       ell(0x526575,side*1.01,-.76,.14,.47,.26,.60,"pauldron-edge");
@@ -12218,7 +12746,7 @@ function addAvatarAppearance(
       patch([[side*.05,.42],[side*.65,.61],[side*.83,.29],[side*.31,.16]],0x8fa2ad,"steel-brow");
       const eye=part(new THREE.BoxGeometry(.38,.086,.10),0xff94a5,side*.32,.22,1.22,"glowing-eye-slit");
       eye.rotation.z=side*.24;
-      eye.material=new THREE.MeshStandardMaterial({color:0xff9cab,emissive:0xff3c69,emissiveIntensity:.85});
+      eye.material=celMaterial({color:0xff9cab,emissive:0xff3c69,emissiveIntensity:.85});
       for(let j=0;j<3;j++) stroke([[side*.37,-.055-j*.12],[side*.64,.005-j*.12]],0x283645,.029,"helmet-vent");
     }
     const horn=part(new THREE.ConeGeometry(.21,.77,5),0xbdd1db,0,1.36,.53,"helmet-horn");
@@ -12831,7 +13359,7 @@ function addAvatarAppearance(
           n.stroke());
     const i = new THREE.CanvasTexture(o);
     ((i.colorSpace = THREE.SRGBColorSpace),
-      (a.material = new THREE.MeshStandardMaterial({ map: i, roughness: 0.8 })));
+      (a.material = celMaterial({ map: i, roughness: 0.8 })));
     for (const e of [-1, 1]) {
       const a = void 0;
       part(
@@ -13144,7 +13672,7 @@ function addNewCharacterDetails(e, a) {
     for (const e of [-1, 1]) {
       const o = new THREE.Mesh(
         new THREE.SphereGeometry(0.45, 12, 8),
-        new THREE.MeshStandardMaterial({ color: 15920866 }),
+        celMaterial({ color: 15920866 }),
       );
       (o.position.set(1.25 * e, -0.2, 0.25), a.add(o));
     }
@@ -13984,7 +14512,7 @@ function useHeavenIceWall(a, b) {
         const height = 2 + ((x + z) % 3) * 0.9,
           m = new THREE.Mesh(
             new THREE.ConeGeometry(0.95, height, 5),
-            new THREE.MeshStandardMaterial({
+            celMaterial({
               color: 0x9cdeff,
               emissive: 0x214f80,
               transparent: true,
@@ -14642,7 +15170,7 @@ function dimensionalCrescent(radius, thin, color, aura = false, halfAngle = 66) 
   const group = new THREE.Group(),
     blade = new THREE.Mesh(
       geometry,
-      new THREE.MeshStandardMaterial({
+      celMaterial({
         color,
         emissive: color,
         emissiveIntensity: 0.45,
@@ -14684,7 +15212,7 @@ function dimensionalCrescent(radius, thin, color, aura = false, halfAngle = 66) 
 
 function buildReusable_stoneFlailModel(radius) {
   const group = new THREE.Group(),
-    metal = new THREE.MeshStandardMaterial({
+    metal = celMaterial({
       color: 0xc2cbd5,
       metalness: 0.92,
       roughness: 0.17,
@@ -14695,7 +15223,7 @@ function buildReusable_stoneFlailModel(radius) {
   group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 1), metal));
   const band = new THREE.Mesh(
     new THREE.TorusGeometry(radius * 0.93, radius * 0.08, 8, 24),
-    new THREE.MeshStandardMaterial({
+    celMaterial({
       color: 0xecf3fa,
       metalness: 1,
       roughness: 0.12,
@@ -14915,7 +15443,7 @@ function megumiSummonModel(e) {
   function ell(e, o, n, s, i, r, l, c = a) {
     const h = new THREE.Mesh(
       new THREE.SphereGeometry(1, 12, 8),
-      new THREE.MeshStandardMaterial({ color: e, roughness: 0.65 }),
+      celMaterial({ color: e, roughness: 0.65 }),
     );
     return (h.position.set(o, n, s), h.scale.set(i, r, l), c.add(h), h);
   }
@@ -14967,7 +15495,7 @@ function megumiSummonModel(e) {
     for (let e = 0; e < 5; e++) ell(10241320, 0.16 * (e - 2), -0.35, -0.85, 0.16, 0.16, 0.6);
     a.scale.setScalar(0.72 * R);
   }
-  return ((a.userData.summonKind = e), a);
+  return ((a.userData.summonKind = e), celAddOutlines(a,{max:8,minSize:.08}));
 }
 
 function healthDashModel(e) {
@@ -15096,7 +15624,7 @@ function buildReusable_sheerHeartModel() {
     part = (a, o, n, s, i) => {
       const r = new THREE.Mesh(
         a,
-        new THREE.MeshStandardMaterial({ color: o, roughness: 0.45, metalness: 0.45 }),
+        celMaterial({ color: o, roughness: 0.45, metalness: 0.45 }),
       );
       return (r.position.set(n, s, i), e.add(r), r);
     };
@@ -15325,7 +15853,7 @@ function buildReusable_tengenWeaponsModel() {
     ((n.rotation.y = Math.PI / 2), o.add(n));
     const s = new THREE.Mesh(
       new THREE.BoxGeometry(0.16, 1.7, 0.6),
-      new THREE.MeshStandardMaterial({ color: 3423560, metalness: 0.6, roughness: 0.25 }),
+      celMaterial({ color: 3423560, metalness: 0.6, roughness: 0.25 }),
     );
     ((s.position.y = 1.65), o.add(s));
     const i = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.65, 0.06), healthMaterial(16767558));
@@ -15333,7 +15861,7 @@ function buildReusable_tengenWeaponsModel() {
     for (let e = 0; e < 7; e++) {
       const a = new THREE.Mesh(
         new THREE.TorusGeometry(0.1, 0.025, 5, 10),
-        new THREE.MeshStandardMaterial({ color: 13090182, metalness: 0.6, roughness: 0.3 }),
+        celMaterial({ color: 13090182, metalness: 0.6, roughness: 0.3 }),
       );
       ((a.position.y = 0.22 * e), (a.rotation.y = e % 2 ? Math.PI / 2 : 0), o.add(a));
     }
@@ -15646,13 +16174,13 @@ function magmaFistModel(e) {
   const a = new THREE.Group(),
     o = new THREE.Group();
   a.add(o);
-  const n = new THREE.MeshStandardMaterial({
+  const n = celMaterial({
       color: 2167054,
       roughness: 0.9,
       emissive: 5181704,
       emissiveIntensity: 0.45,
     }),
-    s = new THREE.MeshStandardMaterial({
+    s = celMaterial({
       color: 16732439,
       emissive: 16726790,
       emissiveIntensity: 1.25,
@@ -15765,7 +16293,13 @@ function makePunchModel(e, a, o) {
   const n = new THREE.Group(),
     s = new THREE.MeshBasicMaterial({ color: o, transparent: !0, opacity: 0.9 }),
     i = new THREE.Mesh(new THREE.CylinderGeometry(0.43 * e, 0.23, Math.max(0.01, a), 12), s),
-    r = new THREE.Mesh(new THREE.SphereGeometry(0.58 * e, 16, 10), s.clone());
+    r = new THREE.Mesh(new THREE.BoxGeometry(.94*e,.72*e,.85*e),celMaterial({color:o}));
+  for(let k=0;k<4;k++){
+    const knuckle=new THREE.Mesh(new THREE.CapsuleGeometry(.13*e,.26*e,3,6),r.material);
+    knuckle.position.set((k-1.5)*.23*e,.13*e,.39*e);r.add(knuckle);
+  }
+  const thumb=new THREE.Mesh(new THREE.SphereGeometry(.24*e,8,6),r.material);
+  thumb.position.set(.46*e,-.11*e,.16*e);r.add(thumb);
   return (n.add(i, r), (n.userData.length = Math.max(0.01, a)), n);
 }
 
@@ -15774,6 +16308,7 @@ function posePunchModel(e, a, o, n, s = 1.3) {
   (i.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(o.x, 0, o.z)),
     (i.scale.y = n / e.userData.length),
     i.position.set(a.x + (o.x * n) / 2, s, a.z + (o.z * n) / 2),
+    r.rotation.y=Math.atan2(o.x,o.z),
     r.position.set(a.x + o.x * n, s, a.z + o.z * n));
 }
 
@@ -15787,15 +16322,15 @@ function rezeHeadModel() {
     [],
     () => {
       const g = new THREE.Group(),
-        metal = new THREE.MeshStandardMaterial({
+        metal = celMaterial({
           color: 0x1b2532,
           metalness: 0.78,
           roughness: 0.22,
           envMap: silverFlailEnvironment(),
           envMapIntensity: 0.65,
         }),
-        seam = new THREE.MeshStandardMaterial({ color: 0x080d14, roughness: 0.45 }),
-        tooth = new THREE.MeshStandardMaterial({ color: 0xe9e2d0, roughness: 0.3 });
+        seam = celMaterial({ color: 0x080d14, roughness: 0.45 }),
+        tooth = celMaterial({ color: 0xe9e2d0, roughness: 0.3 });
       const ell = (x, y, z, sx, sy, sz, mat) => {
         const m = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), mat);
         m.position.set(x, y, z);
@@ -15844,7 +16379,7 @@ function rezeHeadModel() {
 
 function akiMesh(kind, color) {
   const g = new THREE.Group(),
-    mat = new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.15 });
+    mat = celMaterial({ color, roughness: 0.45, metalness: 0.15 });
   const ell = (x, y, z, sx, sy, sz) => {
     const m = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), mat);
     m.position.set(x, y, z);
@@ -15910,9 +16445,9 @@ function akiMesh(kind, color) {
 function akiBuildFoxModel() {
   const g = new THREE.Group();
   g.name = "aki-fox-devil";
-  const fur = new THREE.MeshStandardMaterial({ color: 0xc9d5d1, roughness: 0.86 }),
-    red = new THREE.MeshStandardMaterial({ color: 0x821e2b, roughness: 0.45 }),
-    gold = new THREE.MeshStandardMaterial({
+  const fur = celMaterial({ color: 0xc9d5d1, roughness: 0.86 }),
+    red = celMaterial({ color: 0x821e2b, roughness: 0.45 }),
+    gold = celMaterial({
       color: 0xffb83e,
       emissive: 0x9e4200,
       emissiveIntensity: 0.6,
@@ -15926,16 +16461,16 @@ function akiBuildFoxModel() {
     return m;
   }
   ell(g, fur, 0, 2.6, -0.8, 3.2, 2.5, 2.7);
-  ell(g, fur, 0, 1.9, 2, 2.25, 1.15, 3.1);
+  ell(g, fur, 0, 1.9, 2.2, 1.97, 1.02, 3.35);
   ell(g, red, 0, 1.1, 2.4, 2, 0.55, 2.4);
   const jaw = new THREE.Group();
   jaw.position.set(0, 0.6, 0.5);
   g.add(jaw);
-  ell(jaw, fur, 0, 0, 2.2, 2.15, 0.65, 2.9);
+  ell(jaw, fur, 0, 0, 2.4, 1.84, 0.54, 3.08);
   g.userData.jaw = jaw;
   ell(
     g,
-    new THREE.MeshStandardMaterial({ color: 0x252a29, roughness: 0.3 }),
+    celMaterial({ color: 0x252a29, roughness: 0.3 }),
     0,
     2.2,
     4.8,
@@ -15977,7 +16512,7 @@ function akiBuildFoxModel() {
     for (const lower of [false, true]) {
       const tooth = new THREE.Mesh(
         new THREE.ConeGeometry(0.18, 0.85, 7),
-        new THREE.MeshStandardMaterial({ color: 0xe8e1ca, roughness: 0.5 }),
+        celMaterial({ color: 0xe8e1ca, roughness: 0.5 }),
       );
       tooth.position.set(i * 0.5, lower ? 0.35 : 1.5, 3.25 + (0.4 - Math.abs(i) * 0.12));
       if (!lower) tooth.rotation.z = Math.PI;
@@ -16113,6 +16648,7 @@ function reusableModel(name, args, build, batch = false) {
   if (!template) {
     template = build(...args);
     if (batch) template = batchStaticModel(template);
+    if(/Model|opm-|akiFox/.test(name))celAddOutlines(template,{max:8,minSize:.15});
     template.traverse((m) => {
       if (m.geometry) m.geometry.userData.akiCached = true;
     });
@@ -16349,12 +16885,13 @@ function extraVisual(e, a, o, n = {}) {
     const o = "asura" === a ? 0 : 1;
     for (let e = 0; e < o; e++) {
       const a = new THREE.Group(),
-        n = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 8), mat(11235564));
+        n = new THREE.Mesh(new THREE.CylinderGeometry(.78,.44,1.45,6), mat(11235564));
       (n.scale.set(0.9, 1.7, 0.6), a.add(n));
       const i = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), mat(13673215));
       ((i.position.y = 1.2), a.add(i));
       for (const e of [-1, 1]) {
         const o = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), mat(13874175));
+        const arm=new THREE.Mesh(new THREE.CylinderGeometry(.28,.35,.94,7),mat(11235564));arm.rotation.x=1.1;arm.position.set(e*.78,.53,.37);a.add(arm);
         (o.position.set(e, 0.4, 0.8), a.add(o));
       }
       (a.position.set(1.1 * (e - (o - 1) / 2), 1, -1.5), s.add(a));
@@ -16363,7 +16900,7 @@ function extraVisual(e, a, o, n = {}) {
     for (let e = 0; e < 2; e++) {
       const a = new THREE.Mesh(
         e ? new THREE.BoxGeometry(2, 1.3, 0.5) : new THREE.IcosahedronGeometry(1.2, 1),
-        new THREE.MeshStandardMaterial({ color: 0x343a40, metalness: 0.9, roughness: 0.24 }),
+        celMaterial({ color: 0x343a40, metalness: 0.9, roughness: 0.24 }),
       );
       s.add(a);
     }
@@ -16377,7 +16914,7 @@ function extraVisual(e, a, o, n = {}) {
     for (let e = 0; e < 18; e++) {
       const a = new THREE.Mesh(
         new THREE.DodecahedronGeometry(0.6 + 0.12 * (e % 4), 0),
-        new THREE.MeshStandardMaterial({
+        celMaterial({
           color: e % 2 ? 0x737b79 : 0x9b9b8a,
           roughness: 0.88,
           metalness: 0.08,
@@ -16669,7 +17206,7 @@ function rebuildArenaBoard() {
   arenaBoard.userData.height = H;
   const a = new THREE.Mesh(
     new THREE.BoxGeometry(W, 0.7, H),
-    new THREE.MeshStandardMaterial({
+    celMaterial({
       colorWrite: false,
       depthWrite: true,
       transparent: false,
@@ -16677,8 +17214,8 @@ function rebuildArenaBoard() {
     }),
   );
   ((a.name = "arena-floor-occluder"), (a.renderOrder = -1), (a.position.y = -0.45), arenaBoard.add(a));
-  const o = new THREE.GridHelper(W, 20, 3166811, 2113353);
-  ((o.position.y = -0.08), arenaBoard.add(o));
+  // [Graphics stage 2] painted anime-style floor replaces the dark GridHelper.
+  celBuildArenaFloor(arenaBoard, W, H);
   for (const [e, a, o, n] of [
     [0, -H / 2, W, 0.3],
     [0, H / 2, W, 0.3],
@@ -16687,26 +17224,26 @@ function rebuildArenaBoard() {
   ]) {
     const s = new THREE.Mesh(
       new THREE.BoxGeometry(o, 1.1, n),
-      new THREE.MeshStandardMaterial({ color: 5470074, emissive: 1522234, roughness: 0.4 }),
+      celMaterial({ color: CEL_STAGE.wallColor, emissive: CEL_STAGE.wallEmissive, roughness: 0.6 }),
     );
     (s.position.set(e, 0.3, a), arenaBoard.add(s));
   }
+  celAddOutlines(arenaBoard, { max: 4, minSize: 0 });
   scene.add(arenaBoard);
+  celApplyStageMood(celCurrentMood);
 }
 
 function initScene() {
   ((renderer = new THREE.WebGLRenderer({ antialias: !0, alpha: !0 })),
     (renderer.localClippingEnabled = true),
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2)),
+    graphicsLevel(Number($("graphicsLevel").value)),
     (renderer.outputColorSpace = THREE.SRGBColorSpace),
     (scene = new THREE.Scene()),
-    (scene.fog = new THREE.Fog(1187367, 85, 155)),
+    (scene.fog = new THREE.Fog(CEL_STAGE.fogColor, CEL_STAGE.fogNear, CEL_STAGE.fogFar)),
     (camera = new THREE.PerspectiveCamera(43, 1, 0.1, 180)),
     camera.position.set(0, 52, 47),
     camera.lookAt(0, 0, 0),
-    scene.add(new THREE.HemisphereLight(14285055, 2373443, 2)));
-  const e = new THREE.DirectionalLight(16770763, 2.5);
-  (e.position.set(-20, 40, 20), scene.add(e));
+    celInstallLights(scene, "main"));
   rebuildArenaBoard();
   ((world = new THREE.Group()),
     scene.add(world),
@@ -16728,7 +17265,7 @@ function resize() {
   if ((renderer.setSize(a, o, !1), "selectionCanvas" === e.id)) return void drawSelectionRoster();
   camera.aspect = a / o;
   camera.far = 180;
-  if(scene.fog?.isFog){scene.fog.near=85;scene.fog.far=155;}
+  if(scene.fog?.isFog){scene.fog.near=CEL_STAGE.fogNear;scene.fog.far=CEL_STAGE.fogFar;}
   camera.zoom = e.id === "arena" ? arenaZoom : 1;
   if (arenaBoard?.userData.width !== W || arenaBoard?.userData.height !== H) rebuildArenaBoard();
   const n = Math.tan((camera.fov * Math.PI) / 360);
@@ -16832,7 +17369,7 @@ function frame(timestamp) {
   if (!running && !$("selection").classList.contains("hidden")) {
     renderSelectionPreviews(timestamp);requestAnimationFrame(frame);return;
   }
-  updateArenaShake(0);
+
   updateCinemaCamera(running&&!paused ? realDt : 0);
   renderFrame(visualDt);
   publishOnlineScene(timestamp);
@@ -16858,7 +17395,7 @@ function updateActorMeshes(e) {
           o = a.mesh.scale.y;
         ((a.groundShadow.position.y = (0.06 - a.mesh.position.y) / o),
           a.groundShadow.scale.setScalar(1 - 0.06 * e),
-          (a.groundShadow.material.opacity = 0.3 - 0.03 * e),
+          (a.groundShadow.material.opacity = CEL_STYLE.shadowOpacity - 0.03 * e),
           (a.jumpVisual.visible = e > 0),
           (a.jumpVisual.position.y = (0.08 - a.mesh.position.y) / o),
           a.jumpVisual.scale.setScalar(1 / o),
@@ -17121,11 +17658,11 @@ function summonModel(e) {
   function ell(o, n, s, i, r, l, c) {
     const h = new THREE.Mesh(
       new THREE.SphereGeometry(1, 16, 12),
-      new THREE.MeshStandardMaterial({
+      celMaterial({
         color: o,
         roughness: 0.55,
         emissive: "rika" === e ? 4657199 : 0,
-        emissiveIntensity: 0.18,
+        emissiveIntensity: 0.08,
       }),
     );
     return (h.position.set(n, s, i), h.scale.set(r, l, c), a.add(h), h);
@@ -17133,7 +17670,7 @@ function summonModel(e) {
   function cone(e, o, n, s, i, r) {
     const l = new THREE.Mesh(
       new THREE.ConeGeometry(i, r, 5),
-      new THREE.MeshStandardMaterial({ color: e }),
+      celMaterial({ color: e }),
     );
     return (l.position.set(o, n, s), a.add(l), l);
   }
@@ -17161,28 +17698,28 @@ function summonModel(e) {
     const e = new THREE.Group(),
       o = new THREE.Mesh(
         new THREE.TorusGeometry(0.85, 0.055, 6, 32),
-        new THREE.MeshStandardMaterial({ color: 13018974, metalness: 0.6, roughness: 0.3 }),
+        celMaterial({ color: 13018974, metalness: 0.6, roughness: 0.3 }),
       );
     e.add(o);
     for (let a = 0; a < 8; a++) {
       const o = (a * Math.PI) / 4,
         n = new THREE.Mesh(
           new THREE.BoxGeometry(0.045, 0.85, 0.045),
-          new THREE.MeshStandardMaterial({ color: 13018974 }),
+          celMaterial({ color: 13018974 }),
         );
       (n.position.set(0.43 * Math.cos(o), 0.43 * Math.sin(o), 0),
         (n.rotation.z = o - Math.PI / 2),
         e.add(n));
       const s = new THREE.Mesh(
         new THREE.SphereGeometry(0.12, 8, 6),
-        new THREE.MeshStandardMaterial({ color: 14731145 }),
+        celMaterial({ color: 14731145 }),
       );
       (s.position.set(0.85 * Math.cos(o), 0.85 * Math.sin(o), 0), e.add(s));
     }
     ((e.position.y = 2.1), a.add(e), (a.userData.wheel = e));
     const n = new THREE.Mesh(
       new THREE.BoxGeometry(0.16, 0.16, 1.7),
-      new THREE.MeshStandardMaterial({ color: 16056319, metalness: 0.7, roughness: 0.2 }),
+      celMaterial({ color: 16056319, metalness: 0.7, roughness: 0.2 }),
     );
     (n.position.set(1, -0.3, 0.7), a.add(n), a.scale.setScalar(1.2));
   } else {
@@ -17227,7 +17764,7 @@ function summonModel(e) {
     }
     a.add(n);
   }
-  return a;
+  return celAddOutlines(a,{max:8,minSize:.12});
 }
 
 function portrait(e) {
@@ -17461,11 +17998,12 @@ function batchAvatarParts(e) {
 }
 
 function model(e, a = !1) {
+  const celSlotColor = a ? [5301709, 15040715, 15060056, 9205221][e.slot] : null;
   const o = e.d,
     n = new THREE.Group(),
     s = new THREE.Mesh(
       new THREE.SphereGeometry(R, 28, 20),
-      new THREE.MeshStandardMaterial({ color: 15054741, roughness: 0.78, metalness: 0.05 }),
+      celMaterial({ color: 15054741, roughness: 0.78, metalness: 0.05 }),
     );
   if (((s.rotation.y = -Math.PI / 2), a)) {
     const a = [5301709, 15040715, 15060056, 9205221],
@@ -17473,7 +18011,8 @@ function model(e, a = !1) {
         new THREE.SphereGeometry(1.07 * R, 32, 24),
         new THREE.MeshBasicMaterial({ color: a[e.slot], side: THREE.BackSide, depthWrite: !1 }),
       );
-    n.add(o);
+    // [Graphics stage 2] kept for scene structure (online sync), team color now shown by the foot ring.
+    ((o.name = "legacy-slot-shell"), (o.visible = !1), n.add(o));
   }
   n.add(s);
   if (o.id === "reze") {
@@ -17487,7 +18026,7 @@ function model(e, a = !1) {
     for (const side of [-1, 1]) {
       const horn = new THREE.Mesh(
         new THREE.ConeGeometry(0.2, 1.3, 8),
-        new THREE.MeshStandardMaterial({ color: 0xa6132c, metalness: 0.3, roughness: 0.3 }),
+        celMaterial({ color: 0xa6132c, metalness: 0.3, roughness: 0.3 }),
       );
       horn.position.set(side * 0.48, 1.4, 0);
       horn.rotation.z = -side * 0.12;
@@ -17497,14 +18036,14 @@ function model(e, a = !1) {
   if (o.id === "aki") {
     const knot = new THREE.Mesh(
       new THREE.ConeGeometry(0.28, 1.5, 7),
-      new THREE.MeshStandardMaterial({ color: 0x182b36 }),
+      celMaterial({ color: 0x182b36 }),
     );
     knot.position.set(0, 1.7, -0.3);
     knot.rotation.x = -0.2;
     n.add(knot);
   }
-  const i = new THREE.MeshStandardMaterial({ color: 2633787, metalness: 0.5, roughness: 0.4 }),
-    r = new THREE.MeshStandardMaterial({ color: 13031391, metalness: 0.6, roughness: 0.3 });
+  const i = celMaterial({ color: 2633787, metalness: 0.5, roughness: 0.4 }),
+    r = celMaterial({ color: 13031391, metalness: 0.6, roughness: 0.3 });
   if (["aki", "tanjiro", "zenitsu", "inosuke", "sasuke"].includes(o.id))
     for (const a of "inosuke" === o.id ? [-1, 1] : [1]) {
       const s = new THREE.Group(),
@@ -17567,10 +18106,10 @@ function model(e, a = !1) {
     addTrioDetails(e, n),
     "emperor_luffy" === o.id && addEmperorDetails(e, n, s));
   const h = new THREE.Mesh(
-    new THREE.CircleGeometry(1.6, 24),
-    new THREE.MeshBasicMaterial({ color: 0, transparent: !0, opacity: 0.3, depthWrite: !1 }),
+    new THREE.CircleGeometry(1.75, 28),
+    new THREE.MeshBasicMaterial({ color: CEL_STYLE.shadowColor, map: celShadowTexture(), transparent: !0, opacity: CEL_STYLE.shadowOpacity, depthWrite: !1 }),
   );
-  if (((h.rotation.x = -Math.PI / 2), (h.position.y = -1.15), n.add(h), "teach" === o.id)) {
+  if (((h.rotation.x = -Math.PI / 2), (h.position.y = -1.15), n.add(h), celAddSlotRing(h, celSlotColor), "teach" === o.id)) {
     e.groundShadow = h;
     const a = new THREE.Group(),
       o = new THREE.Mesh(
@@ -17595,12 +18134,15 @@ function model(e, a = !1) {
     );
     (a.add(o, s), (a.visible = !1), n.add(a), (e.jumpVisual = a));
   }
+  celAddOutlines(n);
   const d = document.createElement("canvas");
-  ((d.width = 256), (d.height = 64));
+  ((d.width = 512), (d.height = 128));
   const u = d.getContext("2d");
+  u.scale(2,2);u.lineWidth=4;u.lineJoin="round";u.strokeStyle="#101327";
   ((u.font = "bold 24px sans-serif"),
     (u.textAlign = "center"),
     (u.fillStyle = "#ffffff"),
+    u.strokeText("P" + (e.slot + 1) + " · " + o.short, 128, 42),
     u.fillText("P" + (e.slot + 1) + " · " + o.short, 128, 42));
   const m = new THREE.Sprite(
     new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(d), depthTest: !1 }),
@@ -17667,13 +18209,13 @@ function buildReusable_shurikenModel() {
 
 function buildReusable_chainsawModel() {
   const e = new THREE.Group(),
-    a = new THREE.MeshStandardMaterial({ color: 12898517, metalness: 0.65, roughness: 0.3 }),
-    o = new THREE.MeshStandardMaterial({ color: 2699321 }),
+    a = celMaterial({ color: 12898517, metalness: 0.65, roughness: 0.3 }),
+    o = celMaterial({ color: 2699321 }),
     n = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 2.6), a);
   e.add(n);
   const s = new THREE.Mesh(
     new THREE.BoxGeometry(0.65, 0.5, 0.65),
-    new THREE.MeshStandardMaterial({ color: 16021800 }),
+    celMaterial({ color: 16021800 }),
   );
   ((s.position.z = -1.25), e.add(s));
   for (let a = 0; a < 11; a++)
@@ -17686,8 +18228,8 @@ function buildReusable_chainsawModel() {
 
 function buildReusable_sharkModel() {
   const e = new THREE.Group(),
-    a = new THREE.MeshStandardMaterial({ color: 6721183, roughness: 0.55 }),
-    o = new THREE.MeshStandardMaterial({ color: 15135473 }),
+    a = celMaterial({ color: 6721183, roughness: 0.55 }),
+    o = celMaterial({ color: 15135473 }),
     n = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), a);
   (n.scale.set(1.05, 0.6, 2.6), e.add(n));
   const s = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10), o);
@@ -17696,7 +18238,7 @@ function buildReusable_sharkModel() {
   (i.moveTo(0, 0), i.lineTo(0, 1.5), i.lineTo(1.1, 0), i.closePath());
   const r = new THREE.Mesh(
     new THREE.ShapeGeometry(i),
-    new THREE.MeshStandardMaterial({ color: 5340302, side: THREE.DoubleSide }),
+    celMaterial({ color: 5340302, side: THREE.DoubleSide }),
   );
   ((r.rotation.y = Math.PI / 2), r.position.set(0, 0.4, 0.3), e.add(r));
   for (const o of [-1, 1]) {
@@ -17727,11 +18269,11 @@ function buildReusable_guyBeastModel(dragon = false) {
   const part = (geo, col, x, y, z, sx = 1, sy = 1, sz = 1) => {
     const m = new THREE.Mesh(
       geo,
-      new THREE.MeshBasicMaterial({
+      new SpiritSurface({
         color: col,
         transparent: true,
         opacity: dragon ? 0.68 : 0.6,
-        depthWrite: false,
+        depthWrite: true,
       }),
     );
     m.position.set(x, y, z);
@@ -17743,7 +18285,8 @@ function buildReusable_guyBeastModel(dragon = false) {
     part(new THREE.SphereGeometry(1, 16, 12), c, x, y, z, sx, sy, sz);
   ball(color, 0, 0, 0, 1, 0.85, 0.95);
   ball(color, 0.77, -0.2, 0, 0.6, 0.4, 0.65);
-  ball(color, 0.65, -0.65, 0, 0.6, 0.12, 0.65);
+  const jaw=part(new THREE.CylinderGeometry(.45,.70,1.1,5),tip,.66,-.52,0,.88,1,.75);
+  jaw.rotation.z=-Math.PI/2;
   for (const s of [-1, 1]) {
     if (dragon) ball(color, -0.28, 0.78, s * 0.65, 0.3, 0.38, 0.25);
     else part(new THREE.ConeGeometry(0.3, 0.62, 3), color, -0.3, 0.85, s * 0.63);
@@ -17877,7 +18420,7 @@ function buildReusable_doumaBuddhaModel() {
   const mat = iceMaterial(0xafdef1, 0.68),
     pale = iceMaterial(0xe6faff, 0.8);
   const ell = (x, y, z, sx, sy, sz, m = mat) => {
-    const p = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 12), m);
+    const p = new THREE.Mesh((Math.abs(x)>2 ? new THREE.IcosahedronGeometry(1,0) : new THREE.SphereGeometry(1,18,12)), m);
     p.position.set(x, y, z);
     p.scale.set(sx, sy, sz);
     g.add(p);
@@ -17953,7 +18496,7 @@ function akazaFlurryVisual(a, d, i) {
     angle = Math.atan2(d.z, d.x) + ((i % 5) - 2) * 0.28,
     len = 11,
     mesh = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = celMaterial({
     color,
     emissive: color,
     emissiveIntensity: 0.45,
@@ -18048,10 +18591,10 @@ function akazaFlurryVisual(a, d, i) {
 
 function buildReusable_shadowModel() {
   const g = new THREE.Group(),
-    m = new THREE.MeshStandardMaterial({
+    m = celMaterial({
       color: 0x211832,
       emissive: 0x321650,
-      emissiveIntensity: 0.35,
+      emissiveIntensity: 0.07,
       roughness: 0.6,
     });
   const body = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), m);
@@ -18060,7 +18603,7 @@ function buildReusable_shadowModel() {
   for (let i = 0; i < 12; i++) {
     const p = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.9, 5), m);
     p.position.set(Math.cos(i * 2.4) * 0.7, 0.5 + (i % 3) * 0.16, Math.sin(i * 2.4) * 0.8);
-    p.rotation.x = -0.7;
+    p.rotation.set(Math.sin(i*2.4)*.85,0,-Math.cos(i*2.4)*.85);
     g.add(p);
   }
   for (const side of [-1, 1]) {
@@ -18169,13 +18712,13 @@ function updateDarkDekuVisual(a) {
 
 function hawksFeatherMesh() {
   const g = new THREE.Group(),
-    m = new THREE.MeshStandardMaterial({ color: 0xb51e39, emissive: 0x550818, roughness: 0.5 });
+    m = celMaterial({ color: 0xb51e39, emissive: 0x550818, roughness: 0.5 });
   const blade = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), m);
   blade.scale.set(0.23, 0.08, 0.85);
   g.add(blade);
   const spine = new THREE.Mesh(
     new THREE.BoxGeometry(0.035, 0.04, 1.65),
-    new THREE.MeshStandardMaterial({ color: 0xff8a83 }),
+    celMaterial({ color: 0xff8a83 }),
   );
   g.add(spine);
   for (let i = 0; i < 6; i++)
@@ -18400,10 +18943,11 @@ function setMusicScreen(screen, battleTrack) {
   const key = battle ? battleTrack ?? randomBattleTrack() : "select";
   const track = musicAssets[key];
   const background = battle && startupAssetUrl(track?.image);
+  if (!headless) celApplyMapMood(background || "");
   const audio = startupAssetUrl(track?.audio) || "";
   document.body.classList.toggle("battle-theme", battle);
   document.body.style.backgroundImage = background
-    ? 'linear-gradient(#10151c80,#10151cb0),url("' + background + '")'
+    ? CEL_STAGE.backdrop + ',url("' + background + '")'
     : "";
   if (key !== musicKey || battle || bgm.src !== audio) {
     bgm.pause();
@@ -18509,6 +19053,7 @@ function setScreen(e, battleTrack) {
   document.body.classList.toggle("practice-mode",e==="battle"&&practiceActive);
   "selection" !== e && clearSelectionPreviews();
   for (const a of ["home", "selection", "battle"]) $(a).classList.toggle("hidden", a !== e);
+  if(!reducedGraphics())$(e).animate?.([{translate:"12px 0",opacity:.5},{translate:"0 0",opacity:1}],{duration:170,easing:"ease-out"});
   setMusicScreen(e, battleTrack);
 }
 
@@ -18579,11 +19124,9 @@ function selection(snapshot) {
     setScreen("selection"),
     (selectionScene = new THREE.Scene()),
     (selectionWorld = new THREE.Group()),
-    selectionScene.add(selectionWorld, new THREE.HemisphereLight(15334143, 3687509, 2.4)));
-  const a = new THREE.DirectionalLight(16771797, 2.7);
-  (a.position.set(-4, 6, 8),
-    selectionScene.add(a),
-    (selectionCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100)),
+    selectionScene.add(selectionWorld),
+    celInstallLights(selectionScene, "selection"));
+  ((selectionCamera = new THREE.PerspectiveCamera(38, 1, 0.1, 100)),
     $("selectionCanvas").append(renderer.domElement),
     drawSelection());
   if (returning) {
@@ -24329,7 +24872,7 @@ function bleachLocked(a) { return (a.bleachLockUntil||0)>t+1e-8; }
 function bleachLive(a) { return a.alive&&!kamuiHidden(a); }
 function bleachClamp(a) {const r=actorRadius(a);a.x=Math.max(-W/2+r,Math.min(W/2-r,a.x));a.z=Math.max(-H/2+r,Math.min(H/2-r,a.z));}
 function bleachPrepare(a,seconds,fn){ninjaPrep(a,seconds,fn);}
-function bleachMat(color,opacity=1){return new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.42,metalness:.18,transparent:opacity<1,opacity,depthWrite:opacity>=1,side:THREE.DoubleSide});}
+function bleachMat(color,opacity=1){return celMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.42,metalness:.18,transparent:opacity<1,opacity,depthWrite:opacity>=1,side:THREE.DoubleSide});}
 function bleachPart(g,geo,color,x=0,y=0,z=0,opacity=1){const m=new THREE.Mesh(geo,bleachMat(color,opacity));m.position.set(x,y,z);g.add(m);return m;}
 function bleachLine(g,points,color,width=.045,opacity=.8){return bleachPart(g,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),Math.max(8,points.length*4),width,4,false),color,0,0,0,opacity);}
 function bleachEffect(g,life,animate){if(headless||!world)return;akiEffect(g,life,p=>{animate?.(p);g.traverse(m=>{if(m.material)m.userData.akiCustomOpacity=m.material.opacity;});});}
@@ -24393,7 +24936,37 @@ function useSokatsui(a,b){const d=unit(b.x-a.x,b.z-a.z),s={a,bleachKind:'sokatsu
 function useKurohitsugi(a,b){const f={kind:'coffin',x:b.x,z:b.z,start:t,capture:t+1,until:t+2,target:b,targets:[],captured:false,hit:false};(a.bleachFields??=[]).push(f);coffinTrackingVisual(f);}
 
 function useToshiroWall(a){bleachPrepare(a,.3,()=>{const b=nearest(a);if(!b)return;const d=unit(b.x-a.x,b.z-a.z),f={kind:'wall',x:a.x+d.x*7,z:a.z+d.z*7,nx:d.x,nz:d.z,start:t,until:t+6,hits:new Set(),contacts:new Map()};(a.bleachFields??=[]).push(f);bleachWallVisual(f);});}
-function bleachWallVisual(f){if(headless)return;const g=new THREE.Group();g.position.set(f.x,0,f.z);g.rotation.y=Math.atan2(f.nx,f.nz);const panel=bleachPart(g,new THREE.BoxGeometry(13,3.5,1.5),0x84defb,0,1.75,0,.2);for(let i=-5;i<=5;i++){bleachLine(g,[[i,0,.76],[i+.12,1.8,.77],[i,3.6,.76]],0xd8faff,.045,.7);}for(let j=0;j<5;j++){bleachLine(g,[[-5,j*.8,.77],[0,j*.8+.13,.78],[5,j*.8,.77]],0xe8ffff,.04,.6);}for(let i=0;i<5;i++)bleachLine(g,[[i*2-4,.2,.8],[i*2-4.6,1.3,.8],[i*2-3.7,2.4,.8],[i*2-4,3.4,.8]],0x2a9cdd,.025,.7);f.mesh=g;bleachEffect(g,6,p=>{if(!f.active){g.visible=false;return;}g.scale.y=Math.min(1,p*30);panel.material.opacity=.23;});f.active=true;}
+function bleachWallVisual(f){
+  if(headless||!world)return;
+  const g=new THREE.Group(), shape=new THREE.Shape();
+  g.position.set(f.x,0,f.z);g.rotation.y=Math.atan2(f.nx,f.nz);
+  shape.moveTo(-6.5,0);shape.lineTo(6.5,0);
+  for(let i=0;i<=20;i++){
+    const x=6.5-i*.65;
+    shape.lineTo(x,2.55+1.05*(1-Math.abs(x)/6.5)+(i%2?.68:0)+.13*Math.sin(i*3.7));
+  }
+  shape.closePath();
+  const geo=new THREE.ExtrudeGeometry(shape,{depth:1.5,bevelEnabled:false});
+  const panel=bleachPart(g,geo,0x68cce5,0,0,-.75,.68);
+  panel.material.depthWrite=true;panel.material.side=THREE.FrontSide;
+  const pts=[];
+  for(let i=0;i<9;i++){
+    const x=-5.9+i*1.46,h=2.35+.37*Math.sin(i*7);
+    for(const z of [-.757,.757])pts.push(x,.12,z,x+.26,h*.55,z,x+.26,h*.55,z,x-.27,h,z,x+.26,h*.55,z,x+.66,h*.82,z);
+  }
+  const lines=new THREE.BufferGeometry();lines.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  const crack=new THREE.LineSegments(lines,new THREE.LineBasicMaterial({color:0xc4faff}));g.add(crack);
+  bleachPart(g,new THREE.BoxGeometry(13,.13,1.5),0x244c72,0,.08,0);
+  f.mesh=g;f.active=true;
+  let last=-1,broken=false;
+  bleachEffect(g,6,p=>{
+    const ending=!f.active||p>.99;
+    if(ending&&!broken){broken=true;particleBurst(f.x,2,f.z,0xa1efff,18,2);}
+    g.visible=f.active;if(!g.visible)return;
+    g.scale.y=Math.min(1,.25+p*55);crack.material.color.setHex(p>.916?0xffffff:0xb3eaf5);
+    for(const [actor,at] of f.contacts)if(at>last){particleBurst(actor.x,1.6,actor.z,0xc5f6ff,10);last=at;}
+  });
+}
 function useTensoJurin(a){bleachPrepare(a,.4,()=>{const f={kind:'snow',x:a.x,z:a.z,start:t,until:t+5,next:t,ticks:0,counts:new Map(),follow:a};(a.bleachFields??=[]).push(f);bleachSnowTicks(a,f);bleachSnowVisual(f);});}
 
 function bleachSnowTicks(a,f){while(f.ticks<5&&t+1e-8>=f.next){for(const b of actors)if(b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9){const n=f.counts.get(b)||0;if(n<5){hurt(a,b,30,'bleachDot');f.counts.set(b,n+1);}}f.ticks++;f.next=f.start+f.ticks;}}
@@ -24404,7 +24977,8 @@ function advanceBleachDash(a,dt){const s=a.bleachDash;if(!s)return false;const t
 function bleachSegmentRect(x,z,ex,ez,f,pad=0){const ux=f.nz,uz=-f.nx;let ax=(x-f.x)*ux+(z-f.z)*uz,az=(x-f.x)*f.nx+(z-f.z)*f.nz,bx=(ex-f.x)*ux+(ez-f.z)*uz,bz=(ex-f.x)*f.nx+(ez-f.z)*f.nz;let lo=0,hi=1;for(const [v,d,r]of[[ax,bx-ax,6.5+pad],[az,bz-az,.75+pad]]){if(Math.abs(d)<1e-9){if(Math.abs(v)>r)return false;}else{let n=(-r-v)/d,m=(r-v)/d;if(n>m)[n,m]=[m,n];lo=Math.max(lo,n);hi=Math.min(hi,m);if(lo>hi)return false;}}return true;}
 function bleachWalls(){return actors.flatMap(a=>(a.bleachFields||[]).filter(f=>a.alive&&f.kind==='wall'&&t<f.until).map(f=>({a,f})));}
 function resolveBleachWalls(b,old={x:b.x,z:b.z}){for(const {a,f}of bleachWalls()){if(b===a||!bleachLive(b)||!bleachSegmentRect(old.x,old.z,b.x,b.z,f,actorRadius(b)))continue;const normal=(old.x-f.x)*f.nx+(old.z-f.z)*f.nz,side=Math.sign(normal)||-1,lat=(b.x-f.x)*f.nz-(b.z-f.z)*f.nx,r=actorRadius(b);b.x=f.x+Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nz+f.nx*side*(.75+r+.025);b.z=f.z-Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nx+f.nz*side*(.75+r+.025);const dot=b.dx*f.nx+b.dz*f.nz;if(dot*side<0){b.dx-=2*dot*f.nx;b.dz-=2*dot*f.nz;}const last=f.contacts?.get(b)??-99;if(t-last>=.3-1e-8){const first=!f.hits.has(b),stun=first?.3:.2;f.hits.add(b);(f.contacts??=new Map()).set(b,t);hurt(a,b,first?80:15);b.rootUntil=Math.max(b.rootUntil||0,t+stun);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+stun);}bleachClamp(b);}}
-function bleachBlockShots(list,dt){const walls=bleachWalls();return list.filter(s=>{if(!s.a)return true;const length=Math.min(s.remaining??Infinity,(s.speed||0)*dt);if(walls.some(({a,f})=>a!==s.a&&bleachSegmentRect(s.x,s.z,s.x+(s.dx||0)*length,s.z+(s.dz||0)*length,f,s.bleachKind==='getsuga'?5:(s.r??(s.width||.2)/2)))){if(s.sandShadowType==="GAARA_SHOWER" && s.a.alive)addSandPile(s.a,s.x+s.dx*length,s.z+s.dz*length);removeMesh(s.mesh);removeMesh(s.chain);return false;}return true;});}
+function bleachBlockShots(list,dt){const walls=bleachWalls();return list.filter(s=>{if(!s.a)return true;const length=Math.min(s.remaining??Infinity,(s.speed||0)*dt);if(walls.some(({a,f})=>a!==s.a&&bleachSegmentRect(s.x,s.z,s.x+(s.dx||0)*length,s.z+(s.dz||0)*length,f,s.bleachKind==='getsuga'?5:(s.r??(s.width||.2)/2)))){wallDeflection(s,length);
+if(s.sandShadowType==="GAARA_SHOWER" && s.a.alive)addSandPile(s.a,s.x+s.dx*length,s.z+s.dz*length);removeMesh(s.mesh);removeMesh(s.chain);return false;}return true;});}
 function advanceBleachShot(s,dt){if(s.bleachKind==='kageBlade')return advanceKageBlade(s,dt);if(!s.a.alive||t>s.until)return removeMesh(s.mesh),false;const ox=s.x,oz=s.z;if(s.bleachKind==='petal'&&t<s.homeUntil&&s.target?.alive){const current=Math.atan2(s.dz,s.dx),desired=Math.atan2(s.target.z-s.z,s.target.x-s.x),diff=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),turn=Math.max(-4*dt,Math.min(4*dt,diff))+Math.sin(t*12+s.phase)*dt*.8;s.dx=Math.cos(current+turn);s.dz=Math.sin(current+turn);}const n=Math.min(s.remaining,s.speed*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;let impact=false;for(const b of opmProjectileActors()){if(b===s.a||!bleachLive(b)||s.hit?.has(b))continue;const dist=segmentDistance(b.x,b.z,ox,oz,s.x,s.z),r=s.bleachKind==='getsuga'?5:s.r;if(dist>r+actorRadius(b))continue;
 const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);
 const impactDamage=s.bleachKind==='getsuga'?(lateral<=2.5?s.damage:s.edge):s.bleachKind==='petal'?34:125;
@@ -24920,7 +25494,7 @@ function addSandShadowFighters() {
   const newFighters = [
     {
       id: "shikamaru", name: "나라 시카마루", short: "시카마루", color: 0x566749,
-      maxHp: 1200, maxMp: 86, maxSp: 112, baseDamage: 43, speed: 37, radius: 1.2,
+      maxHp: 1220, maxMp: 86, maxSp: 103, baseDamage: 43, speed: 37, radius: 1.2,
       skillType: "NARA_CHOICE", specialType: "NARA_STITCHING",
       skill: "그림자 흉내 / 그림자 잡기", special: "그림자 바느질의 술",
       role: "그림자 궤적 · 이동 조종 · 벽 충돌",
@@ -25280,7 +25854,7 @@ function advanceSandShadowShot(shot, dt) {
 }
 
 function sandShadowPart(parent, geometry, color, x, y, z) {
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: .88 }));
+  const mesh = new THREE.Mesh(geometry, celMaterial({ color, roughness: .88 }));
   mesh.position.set(x, y, z);
   parent.add(mesh);
   return mesh;
@@ -25311,7 +25885,7 @@ function addSandShadowAvatar(id, group) {
 
 function sandPileVisual(x, z, index) {
   const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 0),
-    new THREE.MeshStandardMaterial({ color: index % 2 ? 0xc2975d : 0xd0aa72, roughness: .96 }));
+    celMaterial({ color: index % 2 ? 0xc2975d : 0xd0aa72, roughness: .96 }));
   mesh.name = "gaara-sand-pile";
   mesh.position.set(x, .12, z);
   mesh.rotation.y = index * 2.39996;
@@ -25323,7 +25897,7 @@ function sandPileVisual(x, z, index) {
 function sandConvergenceVisual(pile, target) {
   if (headless || !world) return;
   const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(.47, 0),
-    new THREE.MeshStandardMaterial({ color: 0xc6a166, transparent: true, opacity: .9, roughness: .91 }));
+    celMaterial({ color: 0xc6a166, transparent: true, opacity: .9, roughness: .91 }));
   mesh.position.set(pile.x, .14, pile.z);
   world.add(mesh);
   effects.push({ kind: "aki", mesh, life: GAARA_COFFIN_MERGE_TIME, total: GAARA_COFFIN_MERGE_TIME, animate(progress) {
@@ -25602,7 +26176,7 @@ function addDuelFighters() {
     {
       id: "yuugi", name: "무토우 유우기", short: "유우기", color: 0xb38beb, radius: 1.2,
       anime: "유희왕", battleType: "특수형", role: "카드 소환 · 마법진 연계",
-      maxHp: 1050, maxMp: 70, maxSp: 110, speed: 34, baseDamage: 43,
+      maxHp: 1100, maxMp: 65, maxSp: 110, speed: 34, baseDamage: 43,
       skillType: "DUEL_YUUGI_CHOICE", specialType: "DUEL_OSIRIS",
       skill: "블랙 매지션 / 블랙 매지션걸", special: "오시리스의 천공룡",
       desc: "1.5초간 제자리에서 무적 상태로 카드를 내고 두 일반 기술 중 하나를 소환합니다. 블랙 매지션의 무작위 마법진은 반경 5, 유지 5초이며 첫 상대에게 옮아 5초간 초당 20 피해를 줍니다. 블랙 매지션걸은 약하게 추적하는 화염구 4개를 0.3초 간격으로 발사합니다. 대상당 최대 3회 명중하며, 평소에는 40, 마법진이 붙은 상대에게는 80 피해를 줍니다.",
@@ -25881,7 +26455,7 @@ function advanceDuelShot(shot, dt) {
 function duelPart(parent, geo, color, x, y, z, glow = 0) {
   const material = glow
     ? new THREE.MeshBasicMaterial({ color, transparent: true, opacity: glow, depthWrite: false, side: THREE.DoubleSide })
-    : new THREE.MeshStandardMaterial({ color, roughness: .43, metalness: .22, side: THREE.DoubleSide });
+    : celMaterial({ color, roughness: .43, metalness: .22, side: THREE.DoubleSide });
   const mesh = new THREE.Mesh(geo, material);
   mesh.position.set(x, y, z);
   parent.add(mesh);
@@ -26011,7 +26585,7 @@ function duelDragon(group, type) {
   const bodyColor = red ? 0x9a3038 : 0x6db2d7;
   const pale = red ? 0xfc5c4e : 0xc4e9f9;
   const shade = red ? 0x48172d : 0x42599d;
-  const belly = duelPart(group, new THREE.IcosahedronGeometry(1, 1), bodyColor, 0, 1.66, 0);
+  const belly = duelPart(group, new THREE.IcosahedronGeometry(1, 2), bodyColor, 0, 1.66, 0);
   belly.scale.set(1.0, 1.02, red ? 1.94 : 1.55);
   const tailPath = new THREE.CatmullRomCurve3([
     new THREE.Vector3(0,1.59,-1),
@@ -26032,7 +26606,7 @@ function duelDragon(group, type) {
     const head = new THREE.Group();
     head.position.set(x, height, 1.67 - Math.abs(side)*.18);
     head.rotation.y = side * .25;
-    const skull = duelPart(head, new THREE.IcosahedronGeometry(.57, 0), pale, 0, 0, .24);
+    const skull = duelPart(head, new THREE.IcosahedronGeometry(.57, 2), pale, 0, 0, .24);
     skull.scale.set(.86, .66, 1.5);
     for (let jaw = 0; jaw < (red ? 2 : 1); jaw++) {
       const muzzle = duelPart(head, new THREE.ConeGeometry(.33, .96, 4), pale, 0, -.13 + .26 * jaw, .70);
@@ -26080,6 +26654,7 @@ function duelSummonVisual(summon) {
     duelMagician(body, summon.type === "DUEL_MAGICIAN_GIRL");
   else if (summon.type === "DUEL_XYZ") duelMech(body);
   else duelDragon(body, summon.type);
+  celAddOutlines(body,{max:9,minSize:.12});
   group.userData.body = body;
   group.add(body);
   const ring = duelPart(group, new THREE.RingGeometry(summon.radius * .90, summon.radius, 36), summon.rules.color, 0, .04, 0, .63);
@@ -27120,13 +27695,13 @@ function dioRoadRoller(actor) {
   if (headless || !world) return;
   const group = new THREE.Group();
   group.name = "dio-road-roller";
-  const gold = new THREE.MeshStandardMaterial({color:0xdbac28,metalness:0.5,roughness:0.45});
-  const steel = new THREE.MeshStandardMaterial({color:0x484c51,metalness:0.7,roughness:0.3});
+  const gold = celMaterial({color:0xdbac28,metalness:0.5,roughness:0.45});
+  const steel = celMaterial({color:0x484c51,metalness:0.7,roughness:0.3});
   const body = new THREE.Mesh(new THREE.BoxGeometry(3.5,1.2,4.4),gold);
   body.position.y = 1.9; group.add(body);
   const cab = new THREE.Mesh(new THREE.BoxGeometry(2.1,1.8,1.6),gold);
   cab.position.set(0,3.1,-0.7);group.add(cab);
-  const window = new THREE.Mesh(new THREE.BoxGeometry(1.7,1,1.65),new THREE.MeshStandardMaterial({color:0x203846}));
+  const window = new THREE.Mesh(new THREE.BoxGeometry(1.7,1,1.65),celMaterial({color:0x203846}));
   window.position.set(0,3.3,-0.7);group.add(window);
   for (const z of [-1.6,1.6]) {
     const drum = new THREE.Mesh(new THREE.CylinderGeometry(1,1,4,20),steel);
@@ -27173,7 +27748,7 @@ function zipperVisual(a, x, z, dx = 0, dz = 1, length = 4, life = .6) {
   if (headless || !world) return;
   const g = new THREE.Group();
   g.name = "gold-zipper";
-  const mat = new THREE.MeshStandardMaterial({color:0xe8b83e,metalness:.75,roughness:.3});
+  const mat = celMaterial({color:0xe8b83e,metalness:.75,roughness:.3});
   const geometry = reuseEffectGeometry("zipper-tooth", () => new THREE.BoxGeometry(.22,.1,.13));
   for (let j=0;j<Math.ceil(length*4);j++) for (const side of [-1,1]) {
     const m = new THREE.Mesh(geometry,mat);
@@ -27250,7 +27825,7 @@ function zipHandModel() {
   teeth.frustumCulled=false;
   const slit=new THREE.Mesh(new THREE.BoxGeometry(.28,.06,1),new THREE.MeshBasicMaterial({color:0x152a43}));
   tether.add(slit,teeth);
-  const blue=new THREE.MeshStandardMaterial({color:0x318def,emissive:0x092b65,roughness:.35});
+  const blue=celMaterial({color:0x318def,emissive:0x092b65,roughness:.35});
   const fist=new THREE.Mesh(new THREE.SphereGeometry(.9,12,8),blue);
   fist.scale.set(1,.8,1.2);hand.add(fist);
   const knuckleGeometry=new THREE.SphereGeometry(.28,8,6);
@@ -27959,7 +28534,7 @@ function practiceSetup(index,preserve=false){
  if(!headless){model(a,true);practiceDummyModel(b);preloadFighterBanners(a.d);}
  return a;
 }
-function practiceDummyModel(a){const group=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(R,24,16),new THREE.MeshStandardMaterial({color:0xfafcff,roughness:.6,metalness:.03}));group.add(body);const band=new THREE.Mesh(new THREE.TorusGeometry(R*.62,.045,5,32),new THREE.MeshBasicMaterial({color:0xc0cbd8}));band.position.z=.95;group.add(band);const canvas=document.createElement('canvas');canvas.width=128;canvas.height=48;const ctx=canvas.getContext('2d');ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.fillStyle='#eef5ff';ctx.fillText('DUMMY',64,32);const label=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),depthTest:false}));label.scale.set(3,.95,1);label.position.y=2.2;group.add(label);group.position.set(a.x,1.25,a.z);group.scale.setScalar(1.25);world.add(group);a.mesh=group;a.aura=new THREE.Group();a.powerVisual=new THREE.Group();group.add(a.aura,a.powerVisual);return group;}
+function practiceDummyModel(a){const group=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(R,24,16),celMaterial({color:0xfafcff,roughness:.6,metalness:.03}));group.add(body);const band=new THREE.Mesh(new THREE.TorusGeometry(R*.62,.045,5,32),new THREE.MeshBasicMaterial({color:0xc0cbd8}));band.position.z=.95;group.add(band);const canvas=document.createElement('canvas');canvas.width=128;canvas.height=48;const ctx=canvas.getContext('2d');ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.fillStyle='#eef5ff';ctx.fillText('DUMMY',64,32);const label=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),depthTest:false}));label.scale.set(3,.95,1);label.position.y=2.2;group.add(label);group.position.set(a.x,1.25,a.z);group.scale.setScalar(1.25);world.add(group);a.mesh=group;a.aura=new THREE.Group();a.powerVisual=new THREE.Group();group.add(a.aura,a.powerVisual);return group;}
 let selectionBeforePractice = null;
 
 function practiceFromSelection() {
@@ -28220,7 +28795,7 @@ function clearOpm() {
 }
 
 function opmMaterial(color,opacity=1,metal=0) {
-  return new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:metal?.12:.3,metalness:metal,roughness:metal?.25:.5,transparent:opacity<1,opacity,depthWrite:opacity>=1,side:THREE.DoubleSide});
+  return celMaterial({color,emissive:color,emissiveIntensity:metal?.065:.05,metalness:metal,roughness:metal?.25:.5,transparent:opacity<1,opacity,depthWrite:opacity>=1,side:THREE.DoubleSide});
 }
 function opmPart(group,geometry,color,x=0,y=0,z=0,opacity=1,metal=0) {
   const mesh=new THREE.Mesh(geometry,opmMaterial(color,opacity,metal));mesh.position.set(x,y,z);group.add(mesh);return mesh;
@@ -28973,81 +29548,8 @@ function renderCinemaGhost() {
 BATTLE_STATE_FIELDS.push(['cinema',()=>cinema,value=>{cinema=value;},freshCinemaState]);
 
 
-function knockoutSparks(hit, ending) {
-  if (headless || !world) return;
-  const group = new THREE.Group();
-  group.name = 'knockout-welding-sparks';
-  group.position.set(hit.x - hit.dx * hit.radius * .82, hit.y, hit.z - hit.dz * hit.radius * .82);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 64;
-  const context = canvas.getContext('2d');
-  const glow = context.createRadialGradient(32,32,0,32,32,32);
-  glow.addColorStop(0,'rgba(255,255,255,1)');
-  glow.addColorStop(.14,'rgba(255,249,222,.96)');
-  glow.addColorStop(.4,'rgba(255,185,74,.48)');
-  glow.addColorStop(1,'rgba(255,108,18,0)');
-  context.fillStyle = glow;
-  context.fillRect(0,0,64,64);
-  const texture = new THREE.CanvasTexture(canvas);
-  const flash = new THREE.Sprite(new THREE.SpriteMaterial({
-    map:texture, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, toneMapped:false,
-  }));
-  flash.scale.set(2.8,2.8,1);
-  group.add(flash);
-
-  const count = 96;
-  const sparks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.016,.05,1,5),
-    new THREE.MeshBasicMaterial({transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, toneMapped:false}),count);
-  sparks.frustumCulled = false;
-  sparks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  group.add(sparks);
-  const heading = Math.atan2(-hit.dz,-hit.dx);
-  const seeds = Array.from({length:count},(_,i)=>{
-    const angle = heading + (((i*.618034)%1)-.5)*5.25;
-    const speed = 5.5 + 14.5*((i*.414214)%1);
-    return {x:Math.cos(angle)*speed, z:Math.sin(angle)*speed,
-      up:2.0+8.5*((i*.732051)%1), delay:.09*((i*.381966)%1), life:.32+.49*((i*.267949)%1)};
-  });
-  const transform = new THREE.Object3D(), color = new THREE.Color();
-  const up = new THREE.Vector3(0,1,0), head = new THREE.Vector3(), tail = new THREE.Vector3(), tangent = new THREE.Vector3();
-  function sparkPosition(seed, age, out) {
-    const travel = (1-Math.exp(-2.65*age))/2.65;
-    out.set(seed.x*travel,Math.max(.065-hit.y,seed.up*age-10.8*age*age),seed.z*travel);
-  }
-  function animate() {
-    if (cinema.finished || cinema.ending !== ending || ending.age >= .93) {
-      group.visible = false;
-      return;
-    }
-    const time = ending.age;
-    flash.material.opacity = .94*Math.max(0,1-time/.21)**2;
-    flash.userData.akiCustomOpacity = flash.material.opacity;
-    flash.scale.set(2.8+2.5*time,2.8+2.5*time,1);
-    for (let i=0;i<count;i++) {
-      const seed = seeds[i], age = time+.018-seed.delay;
-      if (age<=0 || age>=seed.life) {
-        transform.scale.setScalar(0);
-      } else {
-        const fade = 1-age/seed.life;
-        sparkPosition(seed,age,head);
-        sparkPosition(seed,Math.max(0,age-.048),tail);
-        tangent.subVectors(head,tail);
-        const length = Math.max(.02,tangent.length());
-        transform.position.copy(head).lerp(tail,.5);
-        transform.quaternion.setFromUnitVectors(up,tangent.normalize());
-        transform.scale.set(.55+.75*fade,length,.55+.75*fade);
-        color.setRGB(fade,fade*(.24+.72*fade),fade*(.025+.64*fade));
-        sparks.setColorAt(i,color);
-      }
-      transform.updateMatrix();
-      sparks.setMatrixAt(i,transform.matrix);
-    }
-    sparks.instanceMatrix.needsUpdate = true;
-    if(sparks.instanceColor)sparks.instanceColor.needsUpdate = true;
-  }
-  animate();
-  akiEffect(group,.25,animate);
+function knockoutSparks(hit,ending){
+  particleBurst(hit.x-hit.dx*hit.radius*.82,hit.y,hit.z-hit.dz*hit.radius*.82,0xffbd52,40,2.4);
 }
 
 function meteorImpactVisual(radius) {
@@ -29058,7 +29560,7 @@ function meteorImpactVisual(radius) {
 
   const count = 78;
   const rocks = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,0),
-    new THREE.MeshStandardMaterial({roughness:.95, metalness:.02, flatShading:true}),count);
+    celMaterial({roughness:.95, metalness:.02, flatShading:true}),count);
   rocks.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   rocks.frustumCulled = false;
   group.add(rocks);
@@ -29309,7 +29811,7 @@ function alchemyWall(owner, x, z, direction, halfLength, halfWidth, duration, pi
         const side=i%3-1,row=Math.floor(i/3);
         const height=1.7+(1+Math.cos(i*2.33))*.88;
         const geometry=new THREE.CylinderGeometry(.67+.08*(i%3),.81,height,6,1,false,i*.78);
-        const rock=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+        const rock=new THREE.Mesh(geometry,celMaterial({
           color:[0x887461,0xb59a7d,0x69594e][i%3],roughness:.96,flatShading:true
         }));
         rock.scale.x=.77;
@@ -29322,7 +29824,7 @@ function alchemyWall(owner, x, z, direction, halfLength, halfWidth, duration, pi
     for (let i=0;i<blocks;i++) {
       const height=2.4+.5*Math.sin(i*2.3)**2;
       const block=new THREE.Mesh(new THREE.BoxGeometry(2*halfLength/blocks+.02,height,2*halfWidth),
-        new THREE.MeshStandardMaterial({color:i%2?0x9a7861:0x75665e,roughness:.95}));
+        celMaterial({color:i%2?0x9a7861:0x75665e,roughness:.95}));
       block.position.set((i+.5)*2*halfLength/blocks-halfLength,height/2,0);
       group.add(block);
     }
@@ -29416,7 +29918,7 @@ function reflectAlchemyShot(shot,defender,fromX,fromZ,damage,radius,speed=shot.s
 function alchemyReflectedOrb(radius) {
   if (headless || !world) return null;
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,12,8),
-    new THREE.MeshStandardMaterial({color:0xa0c4dd,metalness:.55,roughness:.30}));
+    celMaterial({color:0xa0c4dd,metalness:.55,roughness:.30}));
   world.add(mesh);
   return mesh;
 }
@@ -29595,7 +30097,7 @@ function launchEdwardCannon(cast) {
   cast.shot=shot;
   if(!headless&&world){
     shot.mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,28,20),
-      new THREE.MeshStandardMaterial({color:0x202127,metalness:.65,roughness:.29}));
+      celMaterial({color:0x202127,metalness:.65,roughness:.29}));
     shot.mesh.name="edward-black-metal-cannonball";
     shot.mesh.position.set(x,shot.height,z);
     world.add(shot.mesh);
@@ -30038,7 +30540,7 @@ function advanceScarCarry(actor,dt) {
 // Three-dimensional transmutation, flame and fracture effects.
 function alchemyDebris(x,z,radius,count=28,color=0xa58262) {
   if (headless || !world) return;
-  const material=new THREE.MeshStandardMaterial({color,roughness:.96,flatShading:true});
+  const material=celMaterial({color,roughness:.96,flatShading:true});
   const stones=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),material,count);
   stones.name="alchemy-flying-stone";
   stones.position.set(x,0,z);
@@ -30858,7 +31360,7 @@ BATTLE_STATE_FIELDS.push(
 function higurumaPart(parent, geometry, color, x, y, z, glow = false) {
   const material = glow
     ? new THREE.MeshBasicMaterial({ color })
-    : new THREE.MeshStandardMaterial({ color, roughness: .52, metalness: .18 });
+    : celMaterial({ color, roughness: .52, metalness: .18 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.set(x, y, z);
   parent.add(mesh);
@@ -31567,6 +32069,10 @@ function applyOnlineHud(msg) {
     ["hp", "mp", "sp"].forEach((resource, index) => {
       const gauge = fighter.gauges[index];
       if (!Array.isArray(gauge) || !/^\d+(\.\d+)?%$/.test(gauge[0]) || typeof gauge[1] !== "string") return;
+      if(resource==="hp"){
+        const previous=parseFloat($(resource+slot).style.width),next=parseFloat(gauge[0]);
+        if(previous>next){flashHpLoss({slot,maxHp:100},previous,next);triggerArenaShake((previous-next)*data.maxHp/100);}
+      }
       $(resource + slot).style.width = gauge[0];
       $(resource + "v" + slot).textContent = gauge[1];
     });
@@ -31750,7 +32256,7 @@ function onlineEffectMaterial(node) {
   return [color, onlineRound(material.isShaderMaterial ? Math.min(material.opacity, .38) : material.opacity),
     +material.transparent, material.side, +material.depthWrite, +material.depthTest,
     +(material.blending === THREE.AdditiveBlending), +!!material.map,
-    +(material.isMeshStandardMaterial || material.isMeshPhongMaterial)];
+    +(material.isMeshStandardMaterial || material.isMeshToonMaterial || material.isMeshPhongMaterial)];
 }
 
 function onlineSceneEffects(arena, roomBudget) {
@@ -31758,6 +32264,7 @@ function onlineSceneEffects(arena, roomBudget) {
   const candidates = [];
   world.traverseVisible(node => {
     if (base.has(node) || node === stormMesh || node.parent === stormMesh) return;
+    if (node.isCelOutline) return;
     const kind = onlineEffectKind(node);
     if (!kind || !node.material) return;
     candidates.push({node, kind});
@@ -31816,7 +32323,7 @@ function collectOnlineScene(session) {
   world.updateMatrixWorld(true);
   const now = performance.now();
   const view = {
-    seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
+    bursts:gfx.events||[],seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
     combatFeedback: actors.map(actor => encodeCombatFeedback(actor, now)),
     fighters: arena.models.map(onlineFighterState),
     motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
@@ -31916,7 +32423,7 @@ function onlineDrawMaterial(kind, style) {
   if (kind === "points") return new THREE.PointsMaterial({ ...params, size: .2 });
   if (kind === "line" || kind === "segments") return new THREE.LineBasicMaterial(params);
   if (style[7]) return new THREE.MeshBasicMaterial({ ...params, map: onlineEffectGlow() });
-  return style[8] ? new THREE.MeshStandardMaterial(params) : new THREE.MeshBasicMaterial(params);
+  return style[8] ? celMaterial(params) : new THREE.MeshBasicMaterial(params);
 }
 
 function onlineVector(values, length) {
@@ -32060,6 +32567,10 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
       !Number.isFinite(view.time) || !Number.isFinite(view.cameraTime) ||
       !Array.isArray(view.fighters) || view.fighters.length !== 2 || !view.fighters.every(Array.isArray) ||
       !Array.isArray(view.motion) || view.motion.length !== 2 || !view.motion.every(row => onlineVector(row, 5))) return;
+  for(const row of (Array.isArray(view.bursts)?view.bursts:[]).slice(-16)){
+    if(!(Array.isArray(row)&&row.length===7&&row.every(Number.isFinite)&&row[4]>=0&&row[4]<=0xffffff&&row[5]>=0&&row[6]>0)||row[0]<=(arena.lastBurst||0))continue;
+    arena.lastBurst=row[0];particleBurst(row[1],row[2],row[3],row[4],Math.min(40,row[5]),Math.min(4,row[6]));
+  }
   arena.blendStarted = now;
   arena.blendDuration = final || !arena.seq ? 1 :
     Math.max(30, Math.min(125, now - (arena.receivedAt ?? now - ONLINE_SCENE_INTERVAL)));
@@ -32272,6 +32783,120 @@ function combatHitOpacity(actor, now) {
   return .9 * Math.max(0, Math.min(1, 1 - elapsed / COMBAT_HIT_MS));
 }
 
+const gfx = { level:1, last:0, slow:0, samples:0, pool:null, pass:null };
+function mobileGraphics(){return matchMedia('(pointer:coarse), (max-width:900px)').matches;}
+function reducedGraphics(){return matchMedia('(prefers-reduced-motion:reduce)').matches;}
+function graphicsLevel(level, automatic=false){
+  gfx.level=level; gfx.slow=gfx.samples=0;
+  const control=$('graphicsLevel');
+  if(control){control.value=String(level);control.title=automatic?'프레임 속도에 따라 자동 조정됨':'그래픽 품질';}
+  if(renderer) renderer.setPixelRatio(Math.min(devicePixelRatio,[1,1.5,2][level],mobileGraphics()?1.5:2));
+}
+function newPostPass(){
+  const scene=new THREE.Scene(), camera=new THREE.Camera();
+  const target=new THREE.WebGLRenderTarget(1,1), glow=new THREE.WebGLRenderTarget(1,1,{depthBuffer:false});
+  const vertexShader='varying vec2 uv0;void main(){uv0=uv;gl_Position=vec4(position.xy,0.,1.);}';
+  const uniforms={frame:{value:target.texture},blur:{value:glow.texture},stepUV:{value:new THREE.Vector2()},bloom:{value:0}};
+  const make=fragmentShader=>new THREE.ShaderMaterial({uniforms,vertexShader,fragmentShader,depthTest:false,depthWrite:false});
+  const bright=make(`varying vec2 uv0;uniform sampler2D frame;uniform vec2 stepUV;
+    void main(){vec3 sum=vec3(0.);for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){
+      vec3 c=texture2D(frame,uv0+vec2(float(i),float(j))*stepUV).rgb;
+      sum+=c*smoothstep(.73,.98,max(c.r,max(c.g,c.b)));}}gl_FragColor=vec4(sum/9.,1.);}`);
+  const grade=make(`varying vec2 uv0;uniform sampler2D frame,blur;uniform float bloom;
+    void main(){vec4 original=texture2D(frame,uv0);vec3 c=original.rgb;
+      float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,1.075);
+      c=(c-.18)*1.035+.18;c.b+=.008*(1.-smoothstep(.0,.32,l));
+      vec2 p=uv0-.5;c*=1.-.085*smoothstep(.30,.68,length(p));
+      c+=texture2D(blur,uv0).rgb*bloom;
+      gl_FragColor=vec4(max(c,vec3(0.)),original.a);
+      #include <colorspace_fragment>
+    }`);
+  const quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),bright);
+  quad.frustumCulled=false;scene.add(quad);
+  return {scene,camera,target,glow,uniforms,bright,grade,quad,size:new THREE.Vector2()};
+}
+function renderArenaGrade(now){
+  const dt=(now-gfx.last)/1000;gfx.last=now;
+  if(dt>0 && dt<.25 && !document.hidden){
+    gfx.samples++;if(dt>.030)gfx.slow++;
+    if(gfx.samples>=100){if(gfx.level && gfx.slow>55)graphicsLevel(gfx.level-1,true);gfx.samples=gfx.slow=0;}
+  }
+  for(const wall of iceWalls)wall.mesh?.userData.animateIce?.();
+  updateParticlePool(now);
+  const offset=updateArenaShake(Math.min(.05,Math.max(0,dt)));
+  camera.position.x+=offset;
+  const old=renderer.getRenderTarget();
+  try{
+    const pass=gfx.pass||(gfx.pass=newPostPass());
+    renderer.getDrawingBufferSize(pass.size);
+    const w=Math.max(1,pass.size.x),h=Math.max(1,pass.size.y);
+    pass.target.setSize(w,h);
+    const bloom=gfx.level>0 && (!mobileGraphics()||gfx.level===2);
+    renderer.setRenderTarget(pass.target);renderer.render(scene,camera);
+    if(bloom){
+      const div=gfx.level===2&&!mobileGraphics()?2:4;
+      pass.glow.setSize(Math.max(1,Math.ceil(w/div)),Math.max(1,Math.ceil(h/div)));
+      pass.uniforms.stepUV.value.set(div*1.65/w,div*1.65/h);
+      pass.quad.material=pass.bright;renderer.setRenderTarget(pass.glow);renderer.render(pass.scene,pass.camera);
+    }
+    pass.uniforms.bloom.value=bloom?(mobileGraphics()?.055:.105):0;
+    renderer.setRenderTarget(old);pass.quad.material=pass.grade;renderer.render(pass.scene,pass.camera);
+  }finally{renderer.setRenderTarget(old);camera.position.x-=offset;camera.updateMatrixWorld();}
+}
+function particleBurst(x,y,z,color,count=9,radius=1){
+  if(headless||!world)return;
+  if(!gfx.pool){
+    const mesh=new THREE.InstancedMesh(new THREE.OctahedronGeometry(1),new THREE.MeshBasicMaterial({depthWrite:false}),144);
+    mesh.frustumCulled=false;mesh.count=0;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    gfx.pool={mesh,slots:[],next:0,pose:new THREE.Object3D(),ink:new THREE.Color()};
+  }
+  const pool=gfx.pool;
+  if(pool.mesh.parent!==scene){scene.add(pool.mesh);pool.slots.length=0;pool.next=0;}
+  if(onlineSession?.slot===0){
+    const queue=gfx.events||(gfx.events=[]);gfx.serial=(gfx.serial||0)+1;
+    queue.push([gfx.serial,x,y,z,color,count,radius]);if(queue.length>16)queue.shift();
+  }
+  const born=performance.now();
+  for(let i=0;i<count;i++){
+    const angle=i*2.39996+born*.009, dust=i%4===0, speed=(1.8+(i%7)*.65)*Math.min(3,radius);
+    pool.slots[pool.next]={x,y,z,vx:Math.cos(angle)*speed,vz:Math.sin(angle)*speed,vy:2+i%5,
+      born,life:.24+.045*(i%7),color:dust?0xb8a598:i%3?color:0xffffff,dust};
+    pool.next=(pool.next+1)%144;
+  }
+}
+function updateParticlePool(now){
+  const pool=gfx.pool;if(!pool)return;
+  let n=0;
+  for(const p of pool.slots){
+    const age=(now-p.born)/1000;if(age<0||age>=p.life)continue;
+    const pose=pool.pose, k=1-age/p.life;
+    pose.position.set(p.x+p.vx*age,p.y+p.vy*age-7*age*age,p.z+p.vz*age);
+    pose.rotation.set(.4,Math.atan2(p.vx,p.vz),age*5);
+    pose.scale.set(.105*k,(p.dust?.14:.29)*k,(p.dust?.16:.41)*k);
+    pose.updateMatrix();pool.mesh.setMatrixAt(n,pose.matrix);pool.mesh.setColorAt(n++,pool.ink.setHex(p.color));
+  }
+  pool.mesh.count=n;pool.mesh.instanceMatrix.needsUpdate=true;
+  if(pool.mesh.instanceColor)pool.mesh.instanceColor.needsUpdate=true;
+}
+function wallDeflection(s,length){
+  if(headless)return;
+  const pad=s.bleachKind==='getsuga'?5:(s.r??(s.width||.2)/2);
+  let wall, first=Infinity;
+  for(const {a,f} of bleachWalls()){
+    if(a===s.a)continue;
+    const intersects=d=>bleachSegmentRect(s.x,s.z,s.x+(s.dx||0)*d,s.z+(s.dz||0)*d,f,pad);
+    if(!intersects(length))continue;
+    let lo=0,hi=length;for(let i=0;i<8;i++){const mid=(lo+hi)/2;if(intersects(mid))hi=mid;else lo=mid;}
+    if(hi<first){wall=f;first=hi;}
+  }
+  if(!wall)return;
+  const x=s.x+(s.dx||0)*first-wall.x,z=s.z+(s.dz||0)*first-wall.z;
+  const lateral=Math.max(-6.5,Math.min(6.5,x*wall.nz-z*wall.nx));
+  const face=Math.sign(x*wall.nx+z*wall.nz)*.75;
+  const px=wall.x+lateral*wall.nz+face*wall.nx,pz=wall.z-lateral*wall.nx+face*wall.nz;
+  fx('ring',px,pz,.85,0xd9fbff,.15);particleBurst(px,1.7,pz,0x7adaff,15);
+}
+
 function renderCombatFeedback(now = performance.now()) {
   const swapped = [];
   try {
@@ -32297,7 +32922,7 @@ function renderCombatFeedback(now = performance.now()) {
         part.material = tinted;
       });
     }
-    renderer.render(scene, camera);
+    renderArenaGrade(now);
   } finally {
     for (const [part, source] of swapped) part.material = source;
   }
@@ -32307,6 +32932,7 @@ function renderCombatFeedback(now = performance.now()) {
 ((bgm.loop = !0),
   (bgm.preload = "auto"),
   (bgm.volume = 0.5),
+  $("graphicsLevel").addEventListener("change",e=>graphicsLevel(Number(e.target.value))),
   $("bgmVolume").addEventListener("input", (e) => {
     ((bgm.volume = Number(e.target.value) / 100),
       ($("bgmPercent").textContent = e.target.value + "%"),
