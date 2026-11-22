@@ -1365,11 +1365,11 @@ body.battle-theme {
   grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr);
   column-gap: 10px;
 }
-.duel-hud .fighter-left {
+.duel-hud .fighter-hud-left {
   grid-column: 1;
   grid-row: 1;
 }
-.duel-hud .fighter-right {
+.duel-hud .fighter-hud-right {
   grid-column: 3;
   grid-row: 1;
 }
@@ -2658,7 +2658,6 @@ body {
   body.battle-theme:not(.practice-mode) #hud .fighter {
     min-width: 0;
     min-height: 0;
-    max-height: 100%;
     padding: 12px;
     overflow: auto;
     scrollbar-width: thin;
@@ -2667,12 +2666,12 @@ body {
     background: linear-gradient(155deg, #1d2b39eb, #101b28e8);
     align-self: stretch;
   }
-  body.battle-theme:not(.practice-mode) #hud #f0 {grid-area: 2 / 1 / 3 / 2;}
-  body.battle-theme:not(.practice-mode) #hud #f1 {grid-area: 2 / 3 / 3 / 4;}
-  body.battle-theme:not(.practice-mode) #hud #f2 {grid-area: 3 / 1 / 4 / 2;}
-  body.battle-theme:not(.practice-mode) #hud #f3 {grid-area: 3 / 3 / 4 / 4;}
-  body.battle-theme:not(.practice-mode) #hud.duel-hud #f0,
-  body.battle-theme:not(.practice-mode) #hud.duel-hud #f1 {
+  body.battle-theme:not(.practice-mode) #hud .fighter-hud[data-slot="0"] {grid-area: 2 / 1 / 3 / 2;}
+  body.battle-theme:not(.practice-mode) #hud .fighter-hud[data-slot="1"] {grid-area: 2 / 3 / 3 / 4;}
+  body.battle-theme:not(.practice-mode) #hud .fighter-hud[data-slot="2"] {grid-area: 3 / 1 / 4 / 2;}
+  body.battle-theme:not(.practice-mode) #hud .fighter-hud[data-slot="3"] {grid-area: 3 / 3 / 4 / 4;}
+  body.battle-theme:not(.practice-mode) #hud.duel-hud .fighter-hud[data-slot="0"],
+  body.battle-theme:not(.practice-mode) #hud.duel-hud .fighter-hud[data-slot="1"] {
     grid-row: 2 / 4;
     align-self: center;
   }
@@ -2818,30 +2817,47 @@ body.startup-loading { overflow: hidden; }
 @media(max-width:480px){.quality{font-size:10px}.fighter .gauge-hp .track{min-height:12px}}
 @media(prefers-reduced-motion:reduce){.hp-loss{animation-duration:.01s}}
 </style><style>.roster-orb.random-orb{--fighter-tint:#fff;background:radial-gradient(circle at 38% 32%,white 24%,#dae0e8 72%,#8192a5);color:#111}.random-orb>b{font:bold 2.4em/1 system-ui}.random-orb .orb-name{background:#202631;color:white}</style><style>
-  .fighter-statuses:not([hidden]) {
+  #hud {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  #hud .fighter-hud {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
     min-width: 0;
+    min-height: 0;
+  }
+  #hud .fighter {
+    padding: 8px;
+    border: 1px solid #526477;
+    border-radius: 12px;
+    background-color: #0c1522ed;
+  }
+  .fighter-statuses:not([hidden]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    justify-items: start;
+    flex-shrink: 0;
+    gap: 4px 6px;
     margin-top: 5px;
-    padding: 3px 2px 4px;
-    overflow-x: auto;
-    scrollbar-width: thin;
   }
   .fighter-status {
-    flex: none;
     display: inline-flex;
     align-items: center;
     gap: 3px;
+    box-sizing: border-box;
+    max-width: 100%;
     min-height: 20px;
     border-radius: 4px;
     background: #0e1925;
-    padding: 0 3px;
+    padding: 2px 3px;
     color: #f2f5fa;
     font: 700 11px/1.2 system-ui, sans-serif;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
-  .fighter-status img { display: block; width: 55px; height: 20px; object-fit: contain; }
+  .fighter-status img { display: block; flex: 0 1 auto; width: 55px; min-width: 0; height: 20px; object-fit: contain; }
   .fighter-status-count { padding-right: 2px; color: #ffdf88; }
   @media (max-width: 600px) {
     .fighter-statuses:not([hidden]) { gap: 4px; }
@@ -19510,7 +19526,8 @@ function buildHud(fighters = actors, remote = false) {
   hud.innerHTML = fighters
     .map((e) => {
       const right = e.slot % 2 === 1;
-      return `<section class="fighter ${right ? "fighter-right" : "fighter-left"}" id="f${e.slot}" style="--accent:${hex(e.d.color)}" aria-label="${e.slot + 1}P ${e.d.short} 상태">
+      return `<div class="fighter-hud fighter-hud-${right ? "right" : "left"}" data-slot="${e.slot}">
+    <section class="fighter ${right ? "fighter-right" : "fighter-left"}" id="f${e.slot}" style="--accent:${hex(e.d.color)}" aria-label="${e.slot + 1}P ${e.d.short} 상태">
       <div class="fighter-vitals">
         <div class="fighter-avatar"><img id="fighterPortrait${e.slot}" src="${remote ? fighterPortrait(e.d) : hudPortrait(e)}" alt="${e.d.name}" draggable="false"></div>
         <div class="fighter-gauges">${["hp", "mp", "sp"].map((a) => `<div class="gauge gauge-${a}"><div class="track"><div class="fill" id="${a + e.slot}"></div><span class="gauge-label">${a.toUpperCase()}</span><output id="${a}v${e.slot}"></output></div></div>`).join("")}</div>
@@ -19519,8 +19536,9 @@ function buildHud(fighters = actors, remote = false) {
         <div class="fighter-head"><b><span class="player-number">${e.slot + 1}P</span> ${e.d.short} <span class="fighter-speed" id="speed${e.slot}"></span></b><small>${mode === 1 && e.slot === 1 ? "AI" : manual ? "수동" : "AUTO"}</small></div>
         <div class="cast-buttons">${["mp", "sp"].map((a, i) => `<button id="${a}b${e.slot}" title="${i ? e.d.special : e.d.skill}"><span class="skill-kind" aria-hidden="true">${SKILL_KEYS[e.slot * 2 + i].toUpperCase()}</span><span class="skill-touch-label" aria-hidden="true">${e.slot + 1}P ${i ? "스페셜" : "일반"}</span><span class="skill-name" id="${a}name${e.slot}"></span><span class="skill-ready-label" aria-hidden="true">준비</span></button>`).join("")}</div>
       </div>
+    </section>
       <div class="fighter-statuses" id="fighterStatuses${e.slot}" role="list" aria-label="지속 효과" hidden></div>
-    </section>`;
+    </div>`;
     })
     .join("");
   if (fighters.length === 2) {
