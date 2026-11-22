@@ -2817,7 +2817,37 @@ body.startup-loading { overflow: hidden; }
 @media(max-width:900px),(pointer:coarse){button,.quality select,.cast-buttons button{min-height:44px!important;min-width:44px!important}.quality{gap:2px}}
 @media(max-width:480px){.quality{font-size:10px}.fighter .gauge-hp .track{min-height:12px}}
 @media(prefers-reduced-motion:reduce){.hp-loss{animation-duration:.01s}}
-</style><style>.roster-orb.random-orb{--fighter-tint:#fff;background:radial-gradient(circle at 38% 32%,white 24%,#dae0e8 72%,#8192a5);color:#111}.random-orb>b{font:bold 2.4em/1 system-ui}.random-orb .orb-name{background:#202631;color:white}</style></head>
+</style><style>.roster-orb.random-orb{--fighter-tint:#fff;background:radial-gradient(circle at 38% 32%,white 24%,#dae0e8 72%,#8192a5);color:#111}.random-orb>b{font:bold 2.4em/1 system-ui}.random-orb .orb-name{background:#202631;color:white}</style><style>
+  .fighter-statuses:not([hidden]) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin-top: 5px;
+    padding: 3px 2px 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .fighter-status {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-height: 20px;
+    border-radius: 4px;
+    background: #0e1925;
+    padding: 0 3px;
+    color: #f2f5fa;
+    font: 700 11px/1.2 system-ui, sans-serif;
+    white-space: nowrap;
+  }
+  .fighter-status img { display: block; width: 55px; height: 20px; object-fit: contain; }
+  .fighter-status-count { padding-right: 2px; color: #ffdf88; }
+  @media (max-width: 600px) {
+    .fighter-statuses:not([hidden]) { gap: 4px; }
+    .fighter-status img { width: 44px; height: 17px; }
+  }
+</style></head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
       <div class="startup-card">
@@ -5446,6 +5476,7 @@ function useBoundMan(e) {
     damage: e.d.baseDamage + 15,
     reduce: 0.2,
     emperorBound: !0,
+    banner: "BOUND_MAN",
   }),
     hold(e, 0.5),
     (e.busy = 1 / 0));
@@ -7605,13 +7636,13 @@ function useMagmaSkill(actor, target) {
   executeSkillVariant(actor, target, randomMagmaSkill(), MAGMA_NAMES, true);
 }
 
-function queueMagmaHit(e, a, o, n, s, i = null) {
+function queueMagmaHit(e, a, o, n, s, i = null, banner = "MEIGO") {
   const r = damageQueue.length;
   (hurt(e, a, o),
     damageQueue.length > r &&
       Object.assign(damageQueue[damageQueue.length - 1], {
         magmaCap: i,
-        magmaBurn: { a: e, duration: n, damage: s, specialSource: !!specialSourceOf(e) },
+        magmaBurn: { a: e, duration: n, damage: s, banner, specialSource: !!specialSourceOf(e) },
       }));
 }
 
@@ -7654,7 +7685,7 @@ function magmaShot(e, a, o = !1, n = null) {
     Object.assign(i, {
       lightType: "magma",
       bounces: 0,
-      magma: { duration: o ? 4 : 5, damage: 5, cap: n },
+      magma: { duration: o ? 4 : 5, damage: 5, cap: n, banner: o ? "RYUSEI_KAZAN" : "DAI_FUNKA" },
     }),
     i.mesh &&
       (removeMesh(i.mesh),
@@ -7849,14 +7880,14 @@ function advanceLightShot(e, a) {
       d)
     ) {
       if (reflectAlchemyShot(e,d,a,n,e.lightType==="mirror"?100:e.damage,e.r)) return false;
-      if (e.magma) queueMagmaHit(e.a, d, e.damage, e.magma.duration, e.magma.damage, e.magma.cap);
+      if (e.magma) queueMagmaHit(e.a, d, e.damage, e.magma.duration, e.magma.damage, e.magma.cap, e.magma.banner);
       else if ("radial" === e.lightType) {
         const a = damageQueue.length;
         (hurt(e.a, d, e.damage),
           damageQueue.length > a && (damageQueue[damageQueue.length - 1].lightCap = e.cap));
       } else
         (hurt(e.a, d, 100),
-          (e.a.extraReduce = { until: t + 1, value: 0.8 }),
+          (e.a.extraReduce = { until: t + 1, value: 0.8, banner: "YATA_MIRROR" }),
           (e.a.x = Math.max(-W / 2 + actorRadius(e.a), Math.min(W / 2 - actorRadius(e.a), e.x))),
           (e.a.z = Math.max(-H / 2 + actorRadius(e.a), Math.min(H / 2 - actorRadius(e.a), e.z))),
           enforceRooms(e.a, !1),
@@ -8583,7 +8614,7 @@ function useExplosionDrive(e, a, o) {
 
 function useHowitzerImpact(e, a, o) {
   (hold(e, 0.6),
-    (e.extraReduce = { until: 1 / 0, value: 0.3 }),
+    (e.extraReduce = { until: 1 / 0, value: 0.3, banner: "HOWITZER_IMPACT" }),
     extraVisual(e, "vortex", 0.6),
     extraSignal(e, "HOWITZER_IMPACT", "spin"),
     schedule(e, 0.6, () => {
@@ -8690,11 +8721,7 @@ function useTheWorld(e) {
 
 function useCrescentSlash(e, a, o) {
   e.busy = t + EXTRA_DEFAULTS.trailDuration;
-  const n = (e.moonRegenId = (e.moonRegenId || 0) + 1);
-  for (let a = 1; a <= 10; a++)
-    schedule(e, a, () => {
-      e.moonRegenId === n && heal(e, 8);
-    });
+  scheduleSkillRecovery(e, "moonRegenId", "CRESCENT_SLASH", 10, 8);
   (fireFan(e, o, [-30, -15, 0, 15, 30], 65, 0.7 * R, 40, 10844661, !0, new Map(), 3),
     extraSignal(e, "CRESCENT_SLASH", "launch"));
 }
@@ -8735,7 +8762,7 @@ function useStoneFlail(e, a, o) {
 
 function useStoneWhirlwind(e) {
   (hold(e, 1.9),
-    (e.extraReduce = { until: t + 1.9, value: 0.4 }),
+    (e.extraReduce = { until: t + 1.9, value: 0.4, banner: "STONE_WHIRLWIND" }),
     extraVisual(e, "stoneOrbit", 1.9),
     schedule(e, 0.4, () => extraSignal(e, "STONE_WHIRLWIND", "spinStart")));
   for (let a = 0; a < 4; a++)
@@ -10036,7 +10063,7 @@ function useRikaManifestation(e, a, o) {
 
 function useWaterSlash(e, a, o) {
   ((e.busy = t + 4),
-    buff(e, 4, { reduce: 0.2 }),
+    buff(e, 4, { reduce: 0.2, banner: "WATER_SLASH" }),
     schedule(e, 0.2, () => {
       (withAlchemyHitMode("melee",()=>area(e,e.x,e.z,11,170,6474495)), waterSlash(e));
     }));
@@ -10095,7 +10122,7 @@ function useBeastFangSlash(e, a, o) {
 function useBeastSpatialRampage(e, a, o) {
   (hold(e, 0.5),
     schedule(e, 0.5, () => {
-      (buff(e, 5, { speed: 37.5, damage: 110, spinBlades: !0 }), (e.busy = t + 5));
+      (buff(e, 5, { speed: 37.5, damage: 110, spinBlades: !0, banner: "BEAST_SPATIAL_RAMPAGE" }), (e.busy = t + 5));
       for (let a = 1; a <= 4; a++) schedule(e, 1.25 * a, () => withAlchemyHitMode("melee",()=>area(e,e.x,e.z,6,80,16777215)));
     }));
 }
@@ -10112,13 +10139,13 @@ function useCloneRasengan(e, a, o) {
 
 function useSageRasenshuriken(e, a, o) {
   ((e.busy = t + 6),
-    buff(e, 6, { speed: 27.3, damage: 72, reduce: 0.25 }),
+    buff(e, 6, { speed: 27.3, damage: 72, reduce: 0.25, banner: "SAGE_RASENSHURIKEN" }),
     projectile(e, e.x, e.z, a, 72, 0.9, 432, 110, 5819647, a));
 }
 
 function useKuramaRasengan(e, a, o) {
   ((e.busy = t + 5),
-    buff(e, 5, { speed: (e.d.speed / 1.6) * 1.3, reduce: 0.25, damage:e.d.baseDamage+15, kurama: !0 }),
+    buff(e, 5, { speed: (e.d.speed / 1.6) * 1.3, reduce: 0.25, damage:e.d.baseDamage+15, kurama: !0, banner: "KURAMA_RASENGAN" }),
     schedule(e, 2, () => {
       const a = nearest(e);
       a && projectile(e, e.x, e.z, a, 72, 1, 432, 160, 16747032, a, !0);
@@ -10131,7 +10158,7 @@ function useAmaterasu(e, a, o) {
 }
 
 function useSusanoo(e, a, o) {
-  ((e.busy = t + 5), buff(e, 5, { reduce: 0.5, susanoo: true }), startSusanooWarrior(e));
+  ((e.busy = t + 5), buff(e, 5, { reduce: 0.5, susanoo: true, banner: "SUSANOO" }), startSusanooWarrior(e));
   for (const a of [0.5, 2.5, 4.5]) schedule(e, a, () => area(e, e.x, e.z, 15, 75, 10451967));
 }
 
@@ -10146,11 +10173,7 @@ function useGearThirdGiantPistol(e, a, o) {
 }
 
 function useDestructiveDeathAirType(e, a, o) {
-  const n = (e.airRegenId = (e.airRegenId || 0) + 1);
-  for (let a = 1; a <= 5; a++)
-    schedule(e, a, () => {
-      e.airRegenId === n && heal(e, 10);
-    });
+  scheduleSkillRecovery(e, "airRegenId", "DESTRUCTIVE_DEATH_AIR_TYPE", 5, 10);
   ((e.busy = 1 / 0),
     schedule(e, 0.2, () => {
       (fireFan(e, o, [-15, -9, -3, 3, 9, 15], 40, 1.2, 50, 2460415, !1, new Map(), 3, "blueFlame"),
@@ -10160,7 +10183,7 @@ function useDestructiveDeathAirType(e, a, o) {
 
 function useCompassNeedleDisorder(e) {
   const a = t + 5;
-  (buff(e, 5, { speed: 27.6, reduce: 0.25 }),
+  (buff(e, 5, { speed: 27.6, reduce: 0.25, banner: "COMPASS_NEEDLE_DISORDER" }),
     hold(e, 1),
     (e.busy = a),
     schedule(e, 1, () => {
@@ -10314,7 +10337,7 @@ function useSharkRider(a) {
   const state = { kind: "shark", eligible: denjiSnapshot(a), hits: new Map(), until: t + 5 };
   a.denjiShark = state;
   a.busy = state.until;
-  buff(a, 5, { speed: (a.d.speed / 1.6) * 2, damage: 90, reduce: 0.3 });
+  buff(a, 5, { speed: (a.d.speed / 1.6) * 2, damage: 90, reduce: 0.3, banner: "SHARK_RIDER" });
 }
 
 function useSmashKick(e, a, o) {
@@ -13905,12 +13928,22 @@ function randomDoumaSkill() {
   return Math.random() < 0.5 ? "LOTUS_ICE" : "SCATTERING_LOTUSES";
 }
 
-function startDoumaRegen(a) {
-  const token = (a.doumaRegenId = (a.doumaRegenId || 0) + 1);
-  for (let i = 1; i <= 5; i++)
-    schedule(a, i, () => {
-      if (a.doumaRegenId === token) heal(a, 12);
+function scheduleSkillRecovery(actor, tokenKey, banner, ticks, amount) {
+  const token = actor[tokenKey] = (actor[tokenKey] || 0) + 1;
+  const recoveries = actor.hudRecoveries ??= {};
+  recoveries[tokenKey] = { banner, token };
+  for (let tick = 1; tick <= ticks; tick++) {
+    schedule(actor, tick, () => {
+      if (actor[tokenKey] !== token) return;
+      heal(actor, amount);
+      if (tick === ticks) delete recoveries[tokenKey];
     });
+  }
+}
+
+function startDoumaRegen(a, banner) {
+  scheduleSkillRecovery(a, "doumaRegenId", banner, 5, 12);
+
 }
 
 function useDoumaIce(actor, target) {
@@ -13960,7 +13993,7 @@ function doumaSweep(a, radius = 5, halfAngle = 180) {
 }
 
 function useLotusIce(a) {
-  startDoumaRegen(a);
+  startDoumaRegen(a, "LOTUS_ICE");
   radialAttack(a, a.x, a.z, 5, 80, 0xa5e6ff);
   doumaSweep(a);
   const ring = {
@@ -14017,7 +14050,7 @@ function doumaLotusFan(a, d, from) {
 }
 
 function useScatteringLotuses(a) {
-  startDoumaRegen(a);
+  startDoumaRegen(a, "SCATTERING_LOTUSES");
   const token = { count: 0 };
   a.doumaRush = token;
   const next = () => {
@@ -19331,6 +19364,145 @@ function renderSelectionPreviews(e) {
   }
 }
 
+const HUD_STATUS_NAMES = Object.freeze({
+  AMATERASU: "아마테라스",
+  TEACH_BLACK_HOLE: "블랙홀",
+  DAI_FUNKA: "대분화",
+  MEIGO: "명구",
+  RYUSEI_KAZAN: "유성화산",
+  DENJI_BLEED: "출혈",
+  ROY_INFERNO: "대규모 화염 연성",
+  DUEL_BLACK_MAGICIAN: "블랙 매지션",
+  HIGURUMA_GAVEL: "법봉 강화",
+  HIGURUMA_DEATH_PENALTY: "유죄 · 사형",
+  SUSANOO: "스사노오",
+  SAGE_RASENSHURIKEN: "선인 나선수리검",
+  KURAMA_RASENGAN: "쿠라마 나선환",
+  WATER_SLASH: "물의 호흡",
+  DEAD_CALM: "잔잔한 물결",
+  COMPASS_NEEDLE_DISORDER: "파괴살 · 나침",
+  BEAST_SPATIAL_RAMPAGE: "공간 식각 연계 난무",
+  SHARK_RIDER: "상어 라이딩",
+  RIKA_MANIFESTATION: "리카 현현",
+  BOUND_MAN: "기어4 바운드맨",
+  GEAR_FIFTH: "기어5 니카",
+  NIKA_GIGANT: "니카 · 고무고무기간트",
+  BLACK_ANKH: "블랙 앙크",
+  FIERCE_WINGS_SWORD: "강익-검화",
+  YATA_MIRROR: "야타의 거울",
+  HOWITZER_IMPACT: "하우저 임팩트",
+  STONE_WHIRLWIND: "바위의 호흡 · 암구의 살갗",
+  POWER_WEAPON: "피의 무기 · 망치",
+  TENSA_ZANGETSU: "천쇄참월",
+  KENPACHI_BANKAI: "만해",
+  ALPHONSE_GUARD: "갑옷 방어",
+  BRAVE_GIANT: "브레이브 자이언트",
+  BAT_BARRAGE: "돌진 난타",
+  FROZEN_WATER_LILY_BODHISATTVA: "무빙-수련보살",
+  HAKARI_JACKPOT: "잭팟",
+  BANG_GUARD: "강성호법",
+  BLACK_FLASH: "흑섬",
+  RASENGAN_AURA: "나선환",
+  CHIDORI_AURA: "치도리",
+  FA_JIN: "발경",
+  PROJECTION_SORCERY: "투사주법",
+  FIGHTING_SPIRIT: "기백",
+  EIGHT_GATES: "팔문둔갑의 진",
+  CRESCENT_SLASH: "달의 호흡 · 초승달 참격",
+  DESTRUCTIVE_DEATH_AIR_TYPE: "파괴살 · 공식",
+  LOTUS_ICE: "연잎 얼음",
+  SCATTERING_LOTUSES: "흩날리는 연꽃",
+  MAHORAGA: "마허라",
+});
+
+function fighterStatusEffects(actor) {
+  if (!actor.alive) return [];
+  const statuses = new Map();
+  const add = (banner, count = 1) => {
+    if (count > 0 && Object.hasOwn(HUD_STATUS_NAMES, banner)) statuses.set(banner, count);
+  };
+  const timed = (until, banner) => {
+    if (until > t + 1e-8) add(banner);
+  };
+
+  add("AMATERASU", actor.burns.length);
+  timed(actor.teachBurn?.until, "TEACH_BLACK_HOLE");
+  timed(actor.denjiBleed?.until, "DENJI_BLEED");
+  add("ROY_INFERNO", actor.royBurn?.remaining ?? 0);
+  for (const burn of actor.magmaBurns || []) add(burn.banner);
+  if (actor.duelMarks?.some(mark => mark.owner.alive && mark.until > t + 1e-8)) add("DUEL_BLACK_MAGICIAN");
+
+  timed(actor.higurumaGuardUntil, "HIGURUMA_GAVEL");
+  timed(actor.higurumaGavelUntil, "HIGURUMA_GAVEL");
+  timed(actor.higurumaSwordUntil, "HIGURUMA_DEATH_PENALTY");
+  timed(actor.buff?.until, actor.buff?.banner);
+  timed(actor.extraReduce?.until, actor.extraReduce?.banner);
+  if (deadCalmActive(actor)) add("DEAD_CALM");
+  if (rikaActive(actor)) add("RIKA_MANIFESTATION");
+  if (actor.nika) add("GEAR_FIFTH");
+  if (nikaGigantActive(actor)) add("NIKA_GIGANT");
+  if (actor.shadowState?.charges > 0) timed(actor.shadowState.armorUntil, "BLACK_ANKH");
+  timed(actor.hawksSwordUntil, "FIERCE_WINGS_SWORD");
+  timed(actor.powerHammerUntil, "POWER_WEAPON");
+  timed(actor.bankaiUntil, "TENSA_ZANGETSU");
+  if (kenpachiBankaiActive(actor)) add("KENPACHI_BANKAI");
+  if (alchemyGuardActive(actor)) add("ALPHONSE_GUARD");
+  if (braveActive(actor)) add("BRAVE_GIANT");
+  timed(actor.batBarrageUntil, "BAT_BARRAGE");
+  timed(actor.doumaBuddhaUntil, "FROZEN_WATER_LILY_BODHISATTVA");
+  timed(actor.jackpotUntil, "HAKARI_JACKPOT");
+  timed(actor.bangGuardUntil, "BANG_GUARD");
+  if (actor.blackFlash) add("BLACK_FLASH");
+  if (actor.contactAura) add(actor.contactAura);
+  if (actor.faJinStart != null) add("FA_JIN");
+  if (actor.projectionStacks > 0) add("PROJECTION_SORCERY");
+  if (metalStacks(actor) > 0) add("FIGHTING_SPIRIT");
+  if (actor.guyGates) add("EIGHT_GATES");
+
+  for (const [key, recovery] of Object.entries(actor.hudRecoveries || {})) {
+    if (actor[key] === recovery.token) add(recovery.banner);
+  }
+  if (summons.some(summon => summon.owner === actor && summon.kind === "mahoraga" &&
+      summon.alive && summon.until > t + 1e-8)) add("MAHORAGA");
+
+  return [...statuses].map(([banner, count]) => [banner, banner === "AMATERASU" ? count : 1]);
+}
+
+function renderFighterStatuses(slot, statuses) {
+  const row = $("fighterStatuses" + slot);
+  if (!row) return;
+  const banners = statuses.map(([id, count]) => [id, count, startupAssetUrl(skillBannerUrls?.[id])]);
+  const signature = JSON.stringify(banners);
+  if (row.dataset.signature === signature) return;
+  row.dataset.signature = signature;
+
+  const items = banners.map(([id, count, src]) => {
+    const name = HUD_STATUS_NAMES[id];
+    const item = document.createElement("span");
+    item.className = "fighter-status";
+    item.setAttribute("role", "listitem");
+    item.title = name;
+    if (src) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = name;
+      img.draggable = false;
+      item.append(img);
+    } else {
+      item.append(name);
+    }
+    if (id === "AMATERASU" && count > 1) {
+      const stacks = document.createElement("span");
+      stacks.className = "fighter-status-count";
+      stacks.textContent = "x" + count;
+      item.append(stacks);
+    }
+    return item;
+  });
+  row.replaceChildren(...items);
+  row.hidden = items.length === 0;
+}
+
 function buildHud(fighters = actors, remote = false) {
   const hud = $("hud");
   hud.style.removeProperty("grid-template-columns");
@@ -19347,6 +19519,7 @@ function buildHud(fighters = actors, remote = false) {
         <div class="fighter-head"><b><span class="player-number">${e.slot + 1}P</span> ${e.d.short} <span class="fighter-speed" id="speed${e.slot}"></span></b><small>${mode === 1 && e.slot === 1 ? "AI" : manual ? "수동" : "AUTO"}</small></div>
         <div class="cast-buttons">${["mp", "sp"].map((a, i) => `<button id="${a}b${e.slot}" title="${i ? e.d.special : e.d.skill}"><span class="skill-kind" aria-hidden="true">${SKILL_KEYS[e.slot * 2 + i].toUpperCase()}</span><span class="skill-touch-label" aria-hidden="true">${e.slot + 1}P ${i ? "스페셜" : "일반"}</span><span class="skill-name" id="${a}name${e.slot}"></span><span class="skill-ready-label" aria-hidden="true">준비</span></button>`).join("")}</div>
       </div>
+      <div class="fighter-statuses" id="fighterStatuses${e.slot}" role="list" aria-label="지속 효과" hidden></div>
     </section>`;
     })
     .join("");
@@ -19392,6 +19565,7 @@ function updateHud() {
   for (const actor of actors) {
     const slot = actor.slot;
     $("f" + slot).classList.toggle("dead", !actor.alive);
+    renderFighterStatuses(slot, running ? fighterStatusEffects(actor) : []);
     for (const resource of ["hp", "mp", "sp"]) {
       const maximum =
         resource === "hp" ? actor.maxHp : opmResourceMax(actor,resource);
@@ -19509,6 +19683,7 @@ function finish() {
     (events = []),
     clearMedia(true),
     (running = !1));
+  for (const actor of actors) renderFighterStatuses(actor.slot, []);
   const e = void 0,
     a = actors.filter((e) => e.alive)[0],
     o = 1 === mode && 0 === a?.slot;
@@ -32108,6 +32283,7 @@ function applyOnlineCast(slot, skill) {
 function collectOnlineHud() {
   const fighters = actors.map(({ slot, alive, d, nika }) => ({
     alive, speed: $("speed" + slot).textContent,
+    statuses: running ? fighterStatusEffects(actors[slot]) : [],
     portrait: nika ? "emperor_nika" : d.id === "kenpachi" && kenpachiBankaiActive(actors[slot]) ? "kenpachi_bankai" : "",
     gauges: ["hp", "mp", "sp"].map(resource => [
       $(resource + slot).style.width, $(resource + "v" + slot).textContent,
@@ -32128,6 +32304,10 @@ function applyOnlineHud(msg) {
     if (!fighter || !Array.isArray(fighter.gauges) || !Array.isArray(fighter.skills)) return;
     const data = CHARACTER_DATABASE[onlineFighterIndex(onlineSession.picks[slot])];
     $("f" + slot).classList.toggle("dead", !fighter.alive);
+    const statuses = fighter.alive && Array.isArray(fighter.statuses) ? fighter.statuses.slice(0, 48) : [];
+    renderFighterStatuses(slot, statuses.filter(row =>
+      Array.isArray(row) && Object.hasOwn(HUD_STATUS_NAMES, row[0]) && Number.isSafeInteger(row[1]) && row[1] > 0
+    ));
     if (typeof fighter.speed === "string") $("speed" + slot).textContent = fighter.speed;
     const alternate = ["emperor_nika", "kenpachi_bankai"].includes(fighter.portrait) && readyPortrait(fighter.portrait);
     const portrait = alternate || fighterPortrait(data);
