@@ -19355,12 +19355,14 @@ function updateSelectionModels() {
 
 let previewLayoutDirty = true, previewLayout, lastPreviewTime = -Infinity;
 const invalidatePreviewLayout = () => { previewLayoutDirty = true; };
-window.addEventListener("resize", invalidatePreviewLayout);
-document.addEventListener("scroll", invalidatePreviewLayout, {capture:true,passive:true});
-if (window.ResizeObserver) {
-  const observer = new ResizeObserver(invalidatePreviewLayout);
-  observer.observe($("selectionCanvas"));
-  observer.observe($("fighterWindows"));
+function observeSelectionLayout() {
+  window.addEventListener("resize", invalidatePreviewLayout);
+  document.addEventListener("scroll", invalidatePreviewLayout, {capture:true,passive:true});
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(invalidatePreviewLayout);
+    observer.observe($("selectionCanvas"));
+    observer.observe($("fighterWindows"));
+  }
 }
 function renderSelectionPreviews(e) {
   if (!selectionScene) return;
@@ -31340,6 +31342,7 @@ async function startGameAfterLoading() {
       retry.onclick = null;
     }
     initScene();
+    observeSelectionLayout();
     initUI();
     initArenaZoom();
 
