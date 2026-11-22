@@ -18948,7 +18948,7 @@ function stopLotteryVoice(e) {
 }
 
 function tryMusic() {
-  if (!musicEnabled || !musicKey || !bgm.paused) return;
+  if (!musicEnabled || !musicKey || !bgm.src || !bgm.paused) return;
   bgm
     .play()
     .then(() => {
@@ -18960,7 +18960,7 @@ function tryMusic() {
     });
 }
 
-function setMusicScreen(screen, battleTrack) {
+function setMusicScreen(screen, battleTrack, refreshAssets = false) {
   const battle = screen === "battle";
   const key = battle ? battleTrack ?? randomBattleTrack() : "select";
   const track = musicAssets[key];
@@ -18971,7 +18971,7 @@ function setMusicScreen(screen, battleTrack) {
   document.body.style.backgroundImage = background
     ? CEL_STAGE.backdrop + ',url("' + background + '")'
     : "";
-  if (key !== musicKey || battle || bgm.src !== audio) {
+  if (key !== musicKey || (battle && !refreshAssets) || (bgm.src || "") !== audio) {
     bgm.pause();
     bgm.src = audio;
     bgm.currentTime = 0;
@@ -30871,6 +30871,15 @@ const startupAssets = new Map();
 const assetJobs = new Map();
 const assetQueue = [];
 let loadingAssets = 0;
+let activeAssetGroup = -1;
+const assetLoadOrder = ["ui", "portraits", "music", "backgrounds", "skill-banners", "sfx"];
+const firstScreenAssets = [];
+
+function assetGroup(url) {
+  const folder = /(?:^|\/)assets\/([^/]+)\//.exec(url)?.[1];
+  const group = assetLoadOrder.indexOf(folder);
+  return group < 0 ? assetLoadOrder.length : group;
+}
 let matchLoading = false;
 
 function startupAssetUrl(url) {
@@ -30949,7 +30958,9 @@ function registerAssets() {
   skillBannerUrls = consumeAssetData("skill-image-data");
   const add = (url, kind) => {
     if (typeof url === "string" && url && !assetJobs.has(url)) {
-      assetJobs.set(url, { url, kind, state: "idle" });
+      const group = assetGroup(url);
+      assetJobs.set(url, { url, kind, group, state: "idle" });
+      if (group < 2) firstScreenAssets.push(url);
     }
   };
   for (const url of Object.values(skillVoices)) add(url, "audio");
@@ -30976,14 +30987,19 @@ function updateResourceStatus() {
   }));
   problems.hidden = !failed.length;
   if (!$("startupScreen").hidden) {
-    const essentials = [$("gameTitle").dataset.src, musicAssets.select?.audio].filter(Boolean);
-    $("startupProgress").max = essentials.length || 1;
-    $("startupProgress").value = essentials.filter(url => ["ready", "failed"].includes(assetJobs.get(url)?.state)).length;
+    const ready = firstScreenAssets.filter(url => assetJobs.get(url).state === "ready").length;
+    $("startupProgress").max = firstScreenAssets.length || 1;
+    $("startupProgress").value = ready;
+    if ($("startupRetry").hidden) {
+      const label = activeAssetGroup === 0 ? "UI" : "캐릭터 초상화";
+      $("startupStatus").textContent = `${label} 준비 중 · ${ready}/${firstScreenAssets.length}`;
+    }
   }
 }
 
 function runAssetQueue() {
-  while (loadingAssets < 6 && assetQueue.length) {
+  if (!loadingAssets) activeAssetGroup = assetQueue[0]?.group ?? -1;
+  while (loadingAssets < 6 && assetQueue[0]?.group === activeAssetGroup) {
     const job = assetQueue.shift();
     job.state = "loading";
     loadingAssets++;
@@ -30995,16 +31011,18 @@ function runAssetQueue() {
         title.hidden = false;
         $("gameTitleFallback").hidden = true;
       }
-      if (job.url === musicAssets.select?.audio && musicKey === "select" && !bgm.src &&
-          !$("home").classList.contains("hidden")) setMusicScreen("home");
+      const track = musicAssets[musicKey];
+      if (job.url === track?.audio || job.url === track?.image) {
+        setMusicScreen(musicKey === "select" ? "home" : "battle", musicKey, true);
+      }
     }, error => {
       job.state = "failed";
       job.error = error.message;
     }).finally(() => {
       loadingAssets--;
       job.resolve();
-      updateResourceStatus();
       runAssetQueue();
+      updateResourceStatus();
     });
   }
 }
@@ -31025,6 +31043,8 @@ function queueResources(urls, prioritize = false, retry = false) {
   }
   for (const job of promoted) assetQueue.splice(assetQueue.indexOf(job), 1);
   assetQueue.unshift(...promoted);
+  // A match or retry can promote a file only within its folder.
+  assetQueue.sort((a, b) => a.group - b.group);
   runAssetQueue();
   return pending;
 }
@@ -31113,9 +31133,20 @@ async function startGameAfterLoading() {
       queueResources(failed, true, true);
       updateResourceStatus();
     };
-    $("startupStatus").textContent = "첫 화면 준비 중…";
-    updateResourceStatus();
-    await waitForResources(queueResources([$("gameTitle").dataset.src, musicAssets.select?.audio], true), 4000);
+    const retry = $("startupRetry");
+    while (true) {
+      const tasks = queueResources(firstScreenAssets, false, true);
+      updateResourceStatus();
+      await Promise.all(tasks);
+      const failures = firstScreenAssets.filter(url => assetJobs.get(url).state !== "ready");
+      if (!failures.length) break;
+      $("startupStatus").textContent = `UI·초상화 ${failures.length}개를 불러오지 못했습니다. ${failures[0]}`;
+      retry.hidden = false;
+      retry.focus();
+      await new Promise(resolve => { retry.onclick = resolve; });
+      retry.hidden = true;
+      retry.onclick = null;
+    }
     initScene();
     initUI();
     initArenaZoom();
