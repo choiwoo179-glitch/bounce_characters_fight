@@ -2863,6 +2863,17 @@ body.startup-loading { overflow: hidden; }
     .fighter-statuses:not([hidden]) { gap: 4px; }
     .fighter-status img { width: 44px; height: 17px; }
   }
+@media(max-width:899px){
+body.battle-theme:not(.practice-mode) main:has(.multi-hud){overflow-y:auto}
+body.battle-theme:not(.practice-mode) #battle:has(.multi-hud){flex:1 0 auto}
+body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:clamp(200px,36dvh,360px)}
+.multi-hud .fighter-statuses[hidden]{display:block;visibility:hidden;height:20px;margin-top:5px}
+.multi-hud .fighter-head b{display:flex;align-items:center;gap:2px;white-space:nowrap;font-size:clamp(9px,2.5vw,13px)}
+}
+#hud .fighter-status{border:1px solid var(--status-color);cursor:pointer}
+.fighter-status::before{content:attr(data-mark);color:var(--status-color);font-weight:bold}
+#hud .fighter-status[data-open]::after{content:attr(aria-label);position:absolute;z-index:5;bottom:100%;left:0;background:#101925;color:white;padding:4px;width:max-content;max-width:145px}
+.fighter-status{position:relative}
 </style></head>
   <body class="startup-loading">
     <section id="startupScreen" aria-labelledby="startupTitle">
@@ -11396,7 +11407,40 @@ function renderSelectionInfo(){
 
 }
 
+const warmedFighters = new Set();
+const selectionWarmups = {
+  aki: () => { prepareAkiFoxTemplates(); return []; },
+  saitama: () => [opmPunchModel(15,6.8,0xcc1c24),opmPunchModel(14.32,1.7,0xd71f2d)],
+  tanjiro: () => [tanjiroSweepModel(false),tanjiroSweepModel(true),tanjiroSweepModel(true,true)],
+  reze: () => [rezeHeadModel()],
+  power: () => ["hammer","scythe","spear","pool"].map(kind=>powerWeaponModel(kind)),
+  douma: () => [doumaBuddhaModel(),doumaFanModel(1),doumaLotusModel(.62)],
+  gyomei: () => [stoneFlailModel(.45*R*3/1.345)],
+  kira: () => [sheerHeartModel()],
+  kuzan: () => [kuzanBirdModel()],
+  tengen: () => [tengenRoarModel(),tengenWeaponsModel()],
+  naruto: () => [rasenganModel(),shurikenModel()],
+  denji: () => [chainsawModel(),sharkModel()],
+  tokoyami: () => [shadowModel()],
+  guy: () => [guyBeastModel(false),guyBeastModel(true)]
+};
+function warmSelectedModels(id) {
+  if (!selectionWarmups[id] || warmedFighters.has(id) || headless) return;
+  warmedFighters.add(id);
+  requestAnimationFrame(() => {
+    if ($("selection").classList.contains("hidden") || !selectionChoices.some(i=>CHARACTER_DATABASE[i]?.id===id)) {
+      warmedFighters.delete(id);
+      return;
+    }
+    for (const mesh of selectionWarmups[id]()) removeMesh(mesh);
+  });
+}
+
 function drawSelection() {
+  previewLayoutDirty = true;
+  const selected = selectionChoices.filter(index => index >= 0);
+  queueResources(matchAssetUrls(selected), true);
+  for (const index of new Set(selected)) warmSelectedModels(CHARACTER_DATABASE[index].id);
   for (const index of selectionChoices) if(index!==RANDOM_PICK) preloadFighterBanners(CHARACTER_DATABASE[index]);
   const e = chosen.length,
     a = CHARACTER_DATABASE[selectionChoices[selectionSlot]];
@@ -16739,44 +16783,6 @@ function reusableModel(name, args, build, batch = false) {
   return model;
 }
 
-function prepareReusableBattleModels() {
-  // Called before battle, never from the animation loop. Dispose only instance materials.
-  const previews = [
- opmPunchModel(15,6.8,0xcc1c24),opmPunchModel(14.32,1.7,0xd71f2d),opmPunchModel(14.32,1.7,0xc1c6ce,true),
-    tanjiroSweepModel(false),tanjiroSweepModel(true),tanjiroSweepModel(true,true),
-    rezeHeadModel(),
-    powerWeaponModel("hammer"),
-    powerWeaponModel("scythe"),
-    powerWeaponModel("spear"),
-    powerWeaponModel("pool"),
-    doumaLotusModel(0.62),
-    doumaLotusModel(0.64),
-    doumaLotusModel(0.7),
-    doumaBuddhaModel(),
-    doumaFanModel(1),
-    doumaFanModel(0.65),
-    stoneFlailModel((0.45 * R * 3) / 1.345),
-    sheerHeartModel(),
-    kuzanBirdModel(),
-    tengenRoarModel(),
-    tengenWeaponsModel(),
-    rasenganModel(),
-    shurikenModel(),
-    chainsawModel(),
-    sharkModel(),
-    shadowModel(),
-    guyBeastModel(false),
-    guyBeastModel(true),
-  ];
-  for (const model of previews) removeMesh(model);
-  for (const radius of [0.7, 1, 1.5, 2, 3, 4, 5, 6, 7, 12, 15, 18])
-    reuseEffectGeometry(
-      "ring:" + radius,
-      () => new THREE.RingGeometry(Math.max(0.1, radius - 0.15), radius, 48),
-    );
-  reuseEffectGeometry("hit:.7", () => new THREE.SphereGeometry(0.7, 8, 6));
-}
-
 function doumaBuddhaModel(...args) {
   return reusableModel("doumaBuddhaModel", args, buildReusable_doumaBuddhaModel, true);
 }
@@ -19347,22 +19353,35 @@ function updateSelectionModels() {
   }
 }
 
+let previewLayoutDirty = true, previewLayout, lastPreviewTime = -Infinity;
+const invalidatePreviewLayout = () => { previewLayoutDirty = true; };
+window.addEventListener("resize", invalidatePreviewLayout);
+document.addEventListener("scroll", invalidatePreviewLayout, {capture:true,passive:true});
+if (window.ResizeObserver) {
+  const observer = new ResizeObserver(invalidatePreviewLayout);
+  observer.observe($("selectionCanvas"));
+  observer.observe($("fighterWindows"));
+}
 function renderSelectionPreviews(e) {
   if (!selectionScene) return;
   const host = $("selectionCanvas");
+  if (!previewLayoutDirty && gfx.level === 0 && e - lastPreviewTime < 1000/30) return;
+  lastPreviewTime = e;
+  if (previewLayoutDirty) {
+    previewLayout = {bounds:host.getBoundingClientRect(), slots:Array.from($("fighterWindows").querySelectorAll(".fighter-viewport"), node => [Number(node.dataset.slot),node.getBoundingClientRect()])};
+    previewLayoutDirty = false;
+  }
   renderer.getSize(selectionRenderSize);
-  if (selectionRenderSize.x !== host.clientWidth || selectionRenderSize.y !== host.clientHeight)
-    renderer.setSize(host.clientWidth, host.clientHeight, false);
-  const a = host.getBoundingClientRect();
+  const a = previewLayout.bounds;
+  if (selectionRenderSize.x !== Math.round(a.width) || selectionRenderSize.y !== Math.round(a.height))
+    renderer.setSize(Math.round(a.width), Math.round(a.height), false);
   if (a.width && a.height) {
     (renderer.setScissorTest(!1),
       renderer.setClearColor(0, 0),
       renderer.clear(),
       renderer.setScissorTest(!0));
-    for (const o of $("fighterWindows").querySelectorAll(".fighter-viewport")) {
-      const n = +o.dataset.slot,
-        s = selectionModels[n],
-        i = o.getBoundingClientRect();
+    for (const [n,i] of previewLayout.slots) {
+      const s = selectionModels[n];
       if (!s || !i.width || !i.height) continue;
       for (const [e, a] of selectionModels.entries()) a.mesh.visible = e === n;
       ((s.mesh.rotation.y = 64e-5 * e), (selectionCamera.aspect = i.width / i.height));
@@ -19484,6 +19503,12 @@ function fighterStatusEffects(actor) {
   return [...statuses].map(([banner, count]) => [banner, banner === "AMATERASU" ? count : 1]);
 }
 
+function statusCategory(id) {
+  if (["AMATERASU","TEACH_BLACK_HOLE","DAI_FUNKA","MEIGO","RYUSEI_KAZAN","DENJI_BLEED","ROY_INFERNO","DUEL_BLACK_MAGICIAN"].includes(id)) return ["지속 피해","↓","#ff867a"];
+  if (["HAKARI_JACKPOT","MAHORAGA","CRESCENT_SLASH","DESTRUCTIVE_DEATH_AIR_TYPE","LOTUS_ICE","SCATTERING_LOTUSES"].includes(id)) return ["회복","＋","#72eab1"];
+  if (["ALPHONSE_GUARD","BANG_GUARD","SUSANOO","BLACK_ANKH","DEAD_CALM","STONE_WHIRLWIND"].includes(id)) return ["방어","◇","#8dcaff"];
+  return ["강화","↑","#ffd883"];
+}
 function renderFighterStatuses(slot, statuses) {
   const row = $("fighterStatuses" + slot);
   if (!row) return;
@@ -19497,7 +19522,16 @@ function renderFighterStatuses(slot, statuses) {
     const item = document.createElement("span");
     item.className = "fighter-status";
     item.setAttribute("role", "listitem");
-    item.title = name;
+    const category = statusCategory(id);
+    item.style.setProperty("--status-color", category[2]);
+    item.dataset.mark = category[1];
+    item.tabIndex = 0;
+    item.setAttribute("role","button");
+    item.setAttribute("aria-label", name + (count > 1 ? " ×" + count : "") + " · " + category[0]);
+    item.onclick = () => item.toggleAttribute("data-open");
+    item.onblur = () => item.removeAttribute("data-open");
+    item.onkeydown = event => { if (["Enter"," "].includes(event.key)) {event.preventDefault();item.click();} };
+    item.title = item.getAttribute("aria-label");
     if (src) {
       const img = document.createElement("img");
       img.src = src;
@@ -19523,6 +19557,7 @@ function buildHud(fighters = actors, remote = false) {
   const hud = $("hud");
   hud.style.removeProperty("grid-template-columns");
   hud.classList.toggle("duel-hud", fighters.length === 2);
+  hud.classList.toggle("multi-hud", fighters.length >= 3);
   hud.innerHTML = fighters
     .map((e) => {
       const right = e.slot % 2 === 1;
@@ -19576,26 +19611,8 @@ function buildHud(fighters = actors, remote = false) {
   if (!remote) updateHud();
 }
 
-function updateHud() {
-  if(practiceActive)return practiceUpdateHud();
-  $("timer").textContent =
-    String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(Math.floor(t % 60)).padStart(2, "0");
-  for (const actor of actors) {
+function fighterHudState(actor) {
     const slot = actor.slot;
-    $("f" + slot).classList.toggle("dead", !actor.alive);
-    renderFighterStatuses(slot, running ? fighterStatusEffects(actor) : []);
-    for (const resource of ["hp", "mp", "sp"]) {
-      const maximum =
-        resource === "hp" ? actor.maxHp : opmResourceMax(actor,resource);
-      $(resource + slot).style.width =
-        Math.max(0, Math.min(100, (actor[resource] / maximum) * 100)) + "%";
-      $(resource + "v" + slot).textContent =
-        (Number.isInteger(maximum)
-          ? Math.floor(actor[resource])
-          : Math.floor((actor[resource] + 1e-8) * 10) / 10) +
-        "/" +
-        maximum;
-    }
     const blocked =
       !!timeStop ||
       paused ||
@@ -19605,54 +19622,42 @@ function updateHud() {
       higurumaSkillLocked(actor) || actor.busy > t + 1e-8 || !!actor.dash || !!bitesMovement || ballFrozen(actor) ||
       alchemyLocked(actor) || arrivederciStopped(actor) || bleachLocked(actor) || sandShadowLocked(actor) ||
       actor.guyTransformUntil > t || kenpachiBankaiActive(actor);
-    for (const [resource, maximum] of [
-      ["mp", actor.d.maxMp],
-      ["sp", opmResourceMax(actor,"sp")],
-    ]) {
-      const skillBlocked = resource === "mp"
-        ? tengenFestivalActive(actor) || (actor.painPending === "SHINRA_TENSEI" && t < actor.shinraReady)
-        : !!pendingTimeStop && ["THE_WORLD", "DIO_THE_WORLD"].includes(actor.d.specialType);
-      $(resource + "b" + slot).disabled = blocked || skillBlocked || actor[resource] < maximum;
-    }
-    if (actor.d.id === "gojo") {
-      const ready = hollowPurpleReady(actor);
-      $("rareb" + slot).disabled = blocked || !ready;
-      if (ready) for (const resource of ["mp", "sp"]) $(resource + "b" + slot).disabled = blocked;
-    }
-    if (actor.d.id === "kenpachi" || actor.d.id === "emperor_luffy") {
-      const portrait = hudPortrait(actor);
-      if ($("fighterPortrait" + slot).getAttribute("src") !== portrait)
-        $("fighterPortrait" + slot).src = portrait;
-    }
+    const rare = actor.d.id === "gojo" && hollowPurpleReady(actor);
+    const names = [actor.d.skill,actor.d.special];
     if (actor.d.id === "emperor_luffy") {
-      $("mpb" + slot).title = actor.nika ? EMPEROR_NAMES.NIKA_LIGHTNING : EMPEROR_NAMES.RED_ROC;
-      $("spb" + slot).title = actor.nika
+      names[0] = actor.nika ? EMPEROR_NAMES.NIKA_LIGHTNING : EMPEROR_NAMES.RED_ROC;
+      names[1] = actor.nika
         ? EMPEROR_NAMES.NIKA_GIGANT
         : 2 * actor.hp <= actor.maxHp
           ? EMPEROR_NAMES.GEAR_FIFTH
           : EMPEROR_NAMES.BOUND_MAN;
     }
     if (["tanjiro", "zenitsu", "naruto", "sasuke"].includes(actor.d.id)) {
-      $("mpb" + slot).title =
+      names[0] =
         HEALTH_SKILL_NAMES[healthSkillType(actor, false, actor.d.skillType)] || actor.d.skill;
-      $("spb" + slot).title =
+      names[1] =
         HEALTH_SKILL_NAMES[healthSkillType(actor, true, actor.d.specialType)] || actor.d.special;
     }
-    if(actor.d.id==='child_emperor'){ $("mpb"+slot).title=braveActive(actor)?OPM_NAMES.DELTA_SCALE_SABER:actor.d.skill; $("spb"+slot).title=braveActive(actor)?OPM_NAMES.MILLENNIUM_EMPEROR_NOVA:actor.d.special; }
-    if(actor.d.id==="ichigo") $("mpb"+slot).title=actor.bankaiUntil>t?"검붉은 월아천충":actor.d.skill;
-    $("speed" + slot).textContent = "속도 " + speedOf(actor).toFixed(1);
-    for (const resource of ["mp", "sp"]) {
-      const button = $(resource + "b" + slot);
-      const name = button.title || (resource === "mp" ? actor.d.skill : actor.d.special);
-      const ready = !button.disabled && running && !cinema.ending;
-      const label = `${slot + 1}P ${resource === "mp" ? "일반" : "스페셜"} 스킬 · ${name}${ready ? " · 준비" : ""}`;
-      button.classList.toggle("skill-ready", ready);
-      if (button.getAttribute("aria-label") !== label) button.setAttribute("aria-label", label);
-      $(resource + "name" + slot).textContent = name;
-    }
-  }
+    if(actor.d.id==='child_emperor'){ names[0]=braveActive(actor)?OPM_NAMES.DELTA_SCALE_SABER:actor.d.skill; names[1]=braveActive(actor)?OPM_NAMES.MILLENNIUM_EMPEROR_NOVA:actor.d.special; }
+    if(actor.d.id==="ichigo") names[0]=actor.bankaiUntil>t?"검붉은 월아천충":actor.d.skill;
+    const gauges = ["hp","mp","sp"].map(resource => {
+      const max = resource === "hp" ? actor.maxHp : opmResourceMax(actor, resource);
+      const value = actor[resource];
+      return [Math.max(0,Math.min(100,value/max*100))+"%", (Number.isInteger(max)?Math.floor(value):Math.floor((value+1e-8)*10)/10)+"/"+max];
+    });
+    const skills = names.map((name,index)=>{
+      const locked = index ? pendingTimeStop && ["THE_WORLD","DIO_THE_WORLD"].includes(actor.d.specialType) : tengenFestivalActive(actor) || (actor.painPending==="SHINRA_TENSEI" && t<actor.shinraReady);
+      const enough = index ? actor.sp>=opmResourceMax(actor,"sp") : actor.mp>=actor.d.maxMp;
+      return [name,!!(running && !cinema.ending && !blocked && (rare || (!locked && enough)))];
+    });
+    return {alive:actor.alive, speed:"속도 "+speedOf(actor).toFixed(1), statuses:running?fighterStatusEffects(actor):[], gauges, skills,
+      rare:!!(rare && !blocked && running && !cinema.ending),
+      portrait:actor.nika?"emperor_nika":actor.d.id==="kenpachi" && kenpachiBankaiActive(actor)?"kenpachi_bankai":""};
 }
-
+function updateHud(){
+  if(practiceActive)return practiceUpdateHud();
+  applyOnlineHud(collectOnlineHud(),false);
+}
 function showModal(e, a, o, n) {
   $("lastBattleHit").hidden = true;
   $('modal').classList.toggle('result-fade-in', e === 'BATTLE RESULT');
@@ -19800,6 +19805,7 @@ function togglePause() {
   }
 }
 
+let homeGeneration = 0;
 function home() {
   selectionBeforePractice = null;
   $("exit").textContent = "나가기";
@@ -19814,7 +19820,10 @@ function home() {
   $("preview").append(renderer.domElement);
   const available = CHARACTER_DATABASE.map((_, index) => index);
   const count = Math.min(8, available.length);
-  for (let index = 0; index < count; index++) {
+  const generation = ++homeGeneration;
+  let index = 0;
+  function addHomeModel() {
+    if (generation !== homeGeneration || $("home").classList.contains("hidden") || index >= count) return;
     const pick = index + Math.floor(Math.random() * (available.length - index));
     [available[index], available[pick]] = [available[pick], available[index]];
     const actor = makeActor(available[index], index % 4);
@@ -19826,7 +19835,10 @@ function home() {
       if (part.isSprite) part.visible = false;
     });
     ambientBalls.push(actor);
+    index++;
+    requestAnimationFrame(addHomeModel);
   }
+  requestAnimationFrame(() => requestAnimationFrame(addHomeModel));
   resize();
 }
 
@@ -19846,14 +19858,7 @@ function initUI() {
     .join("")),
     $("modes").querySelectorAll("button").forEach(button => {
       const players = +button.dataset.mode;
-      button.onclick = event => {
-        chooseMode(players);
-        if (event.detail === 0) selection();
-      };
-      button.ondblclick = () => {
-        chooseMode(players);
-        selection();
-      };
+      button.onclick = () => chooseMode(players);
     }),
     ($("startMode").onclick = selection),
     $("manual").addEventListener("change", updateSkillModeHint),
@@ -25490,8 +25495,7 @@ Object.assign(OPM_NAMES,{
   "SCAR_CHAIN": "연쇄 분해"
 });
 
-const portraits = CHARACTER_DATABASE.map(portrait),
-  officialPortraits = consumeAssetData("official-portrait-data");
+const officialPortraits = consumeAssetData("official-portrait-data");
 
 let last = 0,
   accumulator = 0;
@@ -25738,7 +25742,6 @@ function addSandShadowFighters() {
     },
   ];
   for (const fighter of newFighters) {
-    portraits[CHARACTER_DATABASE.length] = portrait(fighter);
     CHARACTER_DATABASE.push(fighter);
   }
 }
@@ -26419,7 +26422,6 @@ function addDuelFighters() {
     },
   ];
   for (const fighter of fighters) {
-    portraits.push(portrait(fighter));
     CHARACTER_DATABASE.push(fighter);
   }
 }
@@ -27089,7 +27091,6 @@ const kenpachiCharacter = {
   role:"내구형 · 묵직한 근접 압박",
   desc:"양손 베기(60%)는 0.2초 준비 후 상대를 약하게 추적하며 거리 10을 두 번 돌진합니다. 돌진당 첫 충돌에 80 피해와 밀어내기를 주며 최대 140 피해입니다. 돌진 중 받는 피해는 20% 줄어듭니다. 노자라시(40%)는 0.45초 준비를 마치면 상대 방향으로 재조준해 길이 15·폭 5를 내리찍어 150 피해를 줍니다.",
   spDesc:"0.4초 후 최대 12초간 만해 상태가 됩니다. 이동 속도는 20% 오르고 받는 피해는 20% 줄어듭니다. 새로 부딪힌 상대에게 충돌 피해 대신 110을 주며, 두 번 적중하거나 시간이 끝나면 0.35초 동안 자세를 추스릅니다. 만해 중에는 다른 기술을 사용할 수 없습니다."};
-portraits[CHARACTER_DATABASE.length] = portrait(kenpachiCharacter);
 CHARACTER_DATABASE.push(kenpachiCharacter);
 const higurumaCharacter = {
   id: "higuruma", name: "히구루마 히로미", short: "히구루마", anime: "주술회전",
@@ -27100,7 +27101,6 @@ const higurumaCharacter = {
   desc: "두 강화 중 하나를 같은 확률로 사용하며 2초간 받는 피해가 20% 감소합니다. 거대화는 6초간 충돌 피해 +25, 기본 충돌 반경 +50%. 다량화는 0.3초 간격으로 법봉 8개를 던집니다. 속력 58·폭 7·거리 35, 법봉 1개당 피해 34, 대상당 최대 피해 136. 벽이나 상대에 닿으면 사라집니다.",
   spDesc: "아레나를 일반 55%와 붉은 45%로 나눕니다. 3초 뒤 상대를 1초 멈춰 판결합니다. 두 판결 모두 3초간 기술 봉인과 MP·SP 몰수를 적용합니다. 붉은 구역은 추가로 6초간 처형인의 검, 충돌 피해 +50, 받는 피해 30% 감소가 적용됩니다. 판결 2초 후 거리 13 돌진 3회, 첫 적중당 120·최대 360 피해.",
 };
-portraits[CHARACTER_DATABASE.length] = portrait(higurumaCharacter);
 CHARACTER_DATABASE.push(higurumaCharacter);
 addSandShadowFighters();
 addDuelFighters();
@@ -31089,8 +31089,7 @@ function fighterPortrait(character) {
   const ready = readyPortrait(character.id);
   if (ready) return ready;
   if (!fallbackPortraitUrls.has(character.id)) {
-    const index = CHARACTER_DATABASE.findIndex(entry => entry.id === character.id);
-    fallbackPortraitUrls.set(character.id, (portraits[index] ?? portrait(character)).toDataURL());
+    fallbackPortraitUrls.set(character.id, portrait(character).toDataURL());
   }
   return fallbackPortraitUrls.get(character.id);
 }
@@ -31305,7 +31304,7 @@ function withMatchResources(indices, track, launch, isCurrent = () => true) {
   matchLoading = true;
   const wasPaused = paused;
   paused = true;
-  showModal("LOADING", "대전 리소스 준비 중", "준비가 끝나면 자동으로 시작합니다.", []);
+  showModal("LOADING", "대전 리소스 준비 중", "최대 5초 후 전투를 시작하며, 남은 리소스는 계속 불러옵니다.", []);
   $("modal").focus();
   return waitForResources(tasks, 5000).then(() => {
     matchLoading = false;
@@ -31343,12 +31342,11 @@ async function startGameAfterLoading() {
     initScene();
     initUI();
     initArenaZoom();
-    prepareAkiFoxTemplates();
-    prepareReusableBattleModels();
+
     home();
     document.body.classList.remove("startup-loading");
     $("startupScreen").hidden = true;
-    queueResources(assetJobs.keys());
+    queueResources([musicAssets.select.audio, ...assetJobs.keys()]);
     if (new URLSearchParams(location.search).has("test")) showSelfTestReport();
     requestAnimationFrame(frame);
   } catch (error) {
@@ -32299,28 +32297,14 @@ function applyOnlineCast(slot, skill) {
 }
 
 function collectOnlineHud() {
-  const fighters = actors.map(({ slot, alive, d, nika }) => ({
-    alive, speed: $("speed" + slot).textContent,
-    statuses: running ? fighterStatusEffects(actors[slot]) : [],
-    portrait: nika ? "emperor_nika" : d.id === "kenpachi" && kenpachiBankaiActive(actors[slot]) ? "kenpachi_bankai" : "",
-    gauges: ["hp", "mp", "sp"].map(resource => [
-      $(resource + slot).style.width, $(resource + "v" + slot).textContent,
-    ]),
-    skills: ["mp", "sp"].map(resource => {
-      const button = $(resource + "b" + slot);
-      return [button.title, !button.disabled && running && !cinema.ending];
-    }),
-    rare: d.id === "gojo" && !$("rareb" + slot).disabled && running && !cinema.ending,
-  }));
-  return { time: $("timer").textContent, fighters };
+  return {time:String(Math.floor(t/60)).padStart(2,"0")+":"+String(Math.floor(t%60)).padStart(2,"0"),fighters:actors.map(fighterHudState)};
 }
-
-function applyOnlineHud(msg) {
-  if (!/^\d{2,}:\d{2}$/.test(msg.time) || !Array.isArray(msg.fighters) || msg.fighters.length !== 2) return;
+function applyOnlineHud(msg, remote=true) {
+  if (!/^\d{2,}:\d{2}$/.test(msg.time) || !Array.isArray(msg.fighters) || (remote && msg.fighters.length !== 2)) return;
   $("timer").textContent = msg.time;
   msg.fighters.forEach((fighter, slot) => {
     if (!fighter || !Array.isArray(fighter.gauges) || !Array.isArray(fighter.skills)) return;
-    const data = CHARACTER_DATABASE[onlineFighterIndex(onlineSession.picks[slot])];
+    const data = remote ? CHARACTER_DATABASE[onlineFighterIndex(onlineSession.picks[slot])] : actors[slot].d;
     $("f" + slot).classList.toggle("dead", !fighter.alive);
     const statuses = fighter.alive && Array.isArray(fighter.statuses) ? fighter.statuses.slice(0, 48) : [];
     renderFighterStatuses(slot, statuses.filter(row =>
@@ -32333,7 +32317,7 @@ function applyOnlineHud(msg) {
     ["hp", "mp", "sp"].forEach((resource, index) => {
       const gauge = fighter.gauges[index];
       if (!Array.isArray(gauge) || !/^\d+(\.\d+)?%$/.test(gauge[0]) || typeof gauge[1] !== "string") return;
-      if(resource==="hp"){
+      if(remote && resource==="hp"){
         const previous=parseFloat($(resource+slot).style.width),next=parseFloat(gauge[0]);
         if(previous>next){flashHpLoss({slot,maxHp:100},previous,next);triggerArenaShake((previous-next)*data.maxHp/100);}
       }
@@ -32345,10 +32329,11 @@ function applyOnlineHud(msg) {
       if (!Array.isArray(skill) || typeof skill[0] !== "string") return;
       const button = $(resource + "b" + slot);
       button.title = $(resource + "name" + slot).textContent = skill[0];
-      button.disabled = skill[1] !== true || slot !== 1;
+      button.disabled = skill[1] !== true || (remote && slot !== 1);
+      button.setAttribute("aria-label",(slot+1)+"P "+(index?"스페셜":"일반")+" 스킬 · "+skill[0]+(skill[1]?" · 준비":""));
       button.classList.toggle("skill-ready", skill[1] === true);
     });
-    if (data.id === "gojo") $("rareb" + slot).disabled = fighter.rare !== true || slot !== 1;
+    if (data.id === "gojo") $("rareb" + slot).disabled = fighter.rare !== true || (remote && slot !== 1);
   });
 }
 
