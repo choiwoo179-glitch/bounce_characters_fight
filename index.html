@@ -2902,12 +2902,15 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-20">2026.11.20</time></span>
+            <span>최종 수정 <time datetime="2026-11-23">2026.11.23</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 유희왕</strong>
+                <strong>최신 패치 · 유우기·카이바 밸런스</strong>
+                <p>오시리스의 천공룡은 충돌 시 40, 빔 명중 시 180 피해를 줍니다. 블랙 매지션의 마법진은 옮은 상대를 반경 3으로 감싸며 따라갑니다.</p>
+                <p>궁극의 푸른눈의 백룡 우레탄은 발당 70, 최대 210 피해를 줍니다. XYZ 드래곤 캐논은 대상당 한 번 75 피해를 줍니다.</p>
+                <strong>이전 패치 · 유희왕</strong>
                 <p>유우기와 카이바가 카드로 몬스터를 소환합니다. 아마테라스의 흑염이 어두운 보라색으로 타오릅니다.</p>
                 <strong>이전 패치 · 가아라와 시카마루 밸런스 조정</strong>
                 <p>가아라와 시카마루의 HP와 SP를 조정했습니다. 시카마루의 그림자는 1초간 남고 그림자 바느질은 상대의 이동 방향을 고려해 발사합니다. 유타는 시카마루나 가아라가 참가한 전투에서 처음부터 그림자나 모래를 남길 수 있습니다.</p>
@@ -26391,6 +26394,7 @@ function updateSandShadowVisuals() {
 
 const DUEL_CARD_TIME = 1.5;
 const DUEL_CIRCLE_RADIUS = 5;
+const DUEL_MARK_VISUAL_RADIUS = 3;
 const DUEL_DRAGON_RADIUS = 4;
 const DUEL_SUMMONS = {
   DUEL_BLACK_MAGICIAN: { name: "블랙 매지션", color: 0x9d53fb, life: 1.6 },
@@ -26410,8 +26414,8 @@ function addDuelFighters() {
       maxHp: 1100, maxMp: 65, maxSp: 110, speed: 34, baseDamage: 43,
       skillType: "DUEL_YUUGI_CHOICE", specialType: "DUEL_OSIRIS",
       skill: "블랙 매지션 / 블랙 매지션걸", special: "오시리스의 천공룡",
-      desc: "1.5초간 제자리에서 무적 상태로 카드를 내고 두 일반 기술 중 하나를 소환합니다. 블랙 매지션의 무작위 마법진은 반경 5, 유지 5초이며 첫 상대에게 옮아 5초간 초당 20 피해를 줍니다. 블랙 매지션걸은 약하게 추적하는 화염구 4개를 0.3초 간격으로 발사합니다. 대상당 최대 3회 명중하며, 평소에는 40, 마법진이 붙은 상대에게는 80 피해를 줍니다.",
-      spDesc: "카드를 낸 뒤 반경 4의 천공룡을 4초간 소환합니다. 새로 접촉할 때마다 30 피해를 줍니다. 소환 2초 뒤 상대를 향해 폭 5의 빔을 발사해 160 피해를 줍니다.",
+      desc: "1.5초간 제자리에서 무적 상태로 카드를 내고 두 일반 기술 중 하나를 소환합니다. 블랙 매지션의 무작위 마법진은 반경 5, 유지 5초이며 첫 상대에게 옮아 반경 3으로 감싸며 따라가고, 5초간 초당 20 피해를 줍니다. 블랙 매지션걸은 약하게 추적하는 화염구 4개를 0.3초 간격으로 발사합니다. 대상당 최대 3회 명중하며, 평소에는 40, 마법진이 붙은 상대에게는 80 피해를 줍니다.",
+      spDesc: "카드를 낸 뒤 반경 4의 천공룡을 4초간 소환합니다. 새로 접촉할 때마다 40 피해를 줍니다. 소환 2초 뒤 상대를 향해 폭 5의 빔을 발사해 180 피해를 줍니다.",
     },
     {
       id: "kaiba", name: "카이바 세토", short: "카이바", color: 0x7fd7f9, radius: 1.2,
@@ -26419,8 +26423,8 @@ function addDuelFighters() {
       maxHp: 1080, maxMp: 60, maxSp: 117, speed: 35, baseDamage: 44,
       skillType: "DUEL_KAIBA_CHOICE", specialType: "DUEL_ULTIMATE",
       skill: "푸른 눈의 백룡 / XYZ 드래곤 캐논", special: "궁극의 푸른눈의 백룡",
-      desc: "1.5초간 제자리에서 무적 상태로 카드를 내고 두 일반 기술 중 하나를 소환합니다. 푸른 눈의 백룡은 약하게 추적하는 폭 6의 우레탄으로 90 피해를 줍니다. XYZ 드래곤 캐논은 25° 간격의 세 방향에 폭 4의 레이저를 발사하며, 상대마다 한 번만 80 피해를 줍니다.",
-      spDesc: "카드를 낸 뒤 궁극의 푸른눈의 백룡을 4초간 소환합니다. 새로 접촉할 때마다 30 피해를 줍니다. 소환 2초 뒤부터 폭 8의 약한 유도 우레탄을 0.4초 간격으로 세 발 발사합니다. 발당 80, 합계 최대 240 피해를 줍니다.",
+      desc: "1.5초간 제자리에서 무적 상태로 카드를 내고 두 일반 기술 중 하나를 소환합니다. 푸른 눈의 백룡은 약하게 추적하는 폭 6의 우레탄으로 90 피해를 줍니다. XYZ 드래곤 캐논은 25° 간격의 세 방향에 폭 4의 레이저를 발사하며, 상대마다 한 번만 75 피해를 줍니다.",
+      spDesc: "카드를 낸 뒤 궁극의 푸른눈의 백룡을 4초간 소환합니다. 새로 접촉할 때마다 30 피해를 줍니다. 소환 2초 뒤부터 폭 8의 약한 유도 우레탄을 0.4초 간격으로 세 발 발사합니다. 발당 70, 합계 최대 210 피해를 줍니다.",
     },
   ];
   for (const fighter of fighters) {
@@ -26509,7 +26513,7 @@ function addDuelMark(owner, target) {
   const mark = { owner, born: t, until: t + 5, next: t + 1 };
   (target.duelMarks ??= []).push(mark);
   if (!headless && world) {
-    mark.mesh = duelCircleVisual(1.24, true);
+    mark.mesh = duelCircleVisual(DUEL_MARK_VISUAL_RADIUS, true);
     fx("ring", target.x, target.z, 2.2, 0xd37bff, .38);
   }
 }
@@ -26601,11 +26605,11 @@ function fireDuelSummon(summon) {
   switch (summon.type) {
     case "DUEL_MAGICIAN_GIRL": spawnDuelShot(summon, target, 2.8, 38, 40); break;
     case "DUEL_BLUE_EYES": spawnDuelShot(summon, target, 6, 53, 90); break;
-    case "DUEL_ULTIMATE": spawnDuelShot(summon, target, 8, 47, 80); break;
-    case "DUEL_OSIRIS": duelLaser(summon, 5, 160, [0]); break;
+    case "DUEL_ULTIMATE": spawnDuelShot(summon, target, 8, 47, 70); break;
+    case "DUEL_OSIRIS": duelLaser(summon, 5, 180, [0]); break;
     case "DUEL_XYZ": {
       const spread = 25 * Math.PI / 180;
-      duelLaser(summon, 4, 80, [-spread, 0, spread]);
+      duelLaser(summon, 4, 75, [-spread, 0, spread]);
       break;
     }
   }
@@ -26623,7 +26627,7 @@ function updateDuelSummons() {
       for (const target of actors) {
         if (!duelTarget(owner, target) || Math.hypot(target.x - summon.x, target.z - summon.z) > radius + actorRadius(target)) continue;
         nextContacts.add(target);
-        if (!summon.contacts.has(target)) duelDamage(summon, target, 30, "melee");
+        if (!summon.contacts.has(target)) duelDamage(summon, target, summon.type === "DUEL_OSIRIS" ? 40 : 30, "melee");
       }
       summon.contacts = nextContacts;
     }
@@ -26910,8 +26914,8 @@ function updateDuelVisuals() {
     }
     for (const mark of actor.duelMarks || []) {
       if (!mark.mesh) continue;
-      mark.mesh.position.set(actor.x, 1 + .23 * Math.sin(6*t), actor.z);
-      mark.mesh.rotation.set(.38 * Math.sin(2*t), -1.7*t, .53);
+      mark.mesh.position.set(actor.x, 1.24 + .12 * Math.sin(6*t), actor.z);
+      mark.mesh.rotation.set(.16 * Math.sin(2*t), -1.7*t, .19);
     }
   }
   for (const field of duelCircles) {
@@ -28685,12 +28689,12 @@ const PRACTICE_VARIANTS={
 };
 const PRACTICE_LABELS={...AKI_GUN_NAMES,AKI_FOX:'여우의 악마',AKI_FUTURE:'미래의 악마',REZE_SHOT:'원거리 폭발',REZE_DASH:'폭발 돌진',WATER_SLASH:'물의 호흡',RASENGAN_AURA:'나선환',CHIDORI_AURA:'치도리',DIVINE_DOG:'옥견',HOLLOW_PURPLE:'허식 무라사키',SUSANOO:'스사노오',KILLER_QUEEN_RUSH:'킬러퀸 · 러시',FIRST_BOMB:'제1의 폭탄',SHADOW_SMASH:'다크 섀도',BLACK_ANKH:'블랙 앙크',LOTUS_ICE:'연잎 얼음',SCATTERING_LOTUSES:'흩날리는 연꽃',MORNING_PEACOCK:'아침공작',DAYTIME_TIGER:'점심 호랑이',EVENING_ELEPHANT:'저녁 코끼리',NIGHT_GUY:'밤 가이',SHINRA_TENSEI:'신라천정',BANSHO_TENIN:'만상천인',RAIKIRI:'뇌절',LIGHTNING_CLONE:'뇌둔 그림자 분신',ZIP_AMBUSH:'지퍼 기습',ARI_RUSH:'아리아리 러쉬',ARRIVEDERCI:'아리베데르치'};
 const PRACTICE_EXPLANATIONS={
- DUEL_BLACK_MAGICIAN:"카드를 내고 반경 5의 마법진을 5초간 생성합니다. 닿은 상대에게 옮아 5초간 초당 20 피해를 줍니다.",
+ DUEL_BLACK_MAGICIAN:"카드를 내고 반경 5의 마법진을 5초간 생성합니다. 닿은 상대에게 옮아 반경 3으로 감싸며 따라가고, 5초간 초당 20 피해를 줍니다.",
  DUEL_MAGICIAN_GIRL:"화염구 4개를 0.3초 간격으로 발사합니다. 대상당 최대 3회 명중하며, 한 번에 40 또는 마법진 대상에게 80 피해를 줍니다.",
- DUEL_OSIRIS:"반경 4의 천공룡이 4초간 나타나며 새 접촉에 30 피해를 줍니다. 소환 2초 뒤 폭 5의 빔으로 160 피해를 줍니다.",
+ DUEL_OSIRIS:"반경 4의 천공룡이 4초간 나타나며 새 접촉에 40 피해를 줍니다. 소환 2초 뒤 폭 5의 빔으로 180 피해를 줍니다.",
  DUEL_BLUE_EYES:"폭 6의 약한 유도 우레탄을 쏘아 90 피해를 줍니다.",
- DUEL_XYZ:"25° 간격의 폭 4 레이저 세 줄기로 대상당 한 번만 80 피해를 줍니다.",
- DUEL_ULTIMATE:"4초간 소환되며 새 접촉에 30 피해를 줍니다. 소환 2초 뒤부터 폭 8 우레탄 세 발을 0.4초 간격으로 쏘아 발당 80 피해를 줍니다.",
+ DUEL_XYZ:"25° 간격의 폭 4 레이저 세 줄기로 대상당 한 번만 75 피해를 줍니다.",
+ DUEL_ULTIMATE:"4초간 소환되며 새 접촉에 30 피해를 줍니다. 소환 2초 뒤부터 폭 8 우레탄 세 발을 0.4초 간격으로 쏘아 발당 70, 최대 210 피해를 줍니다.",
  NARA_IMITATION:"그림자 궤적은 1초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적은 3초간 이동을 따라합니다. 벽 충돌 50·최대 150.",
  NARA_GRASP:"그림자 궤적은 1초간 남습니다. 발동 후 4초 내에 그림자를 밟은 적을 0.8초 멈추고 거리 20만큼 던집니다. 벽 충돌 120.",
  NARA_STITCHING:"0.5초 뒤 상대의 이동 방향을 고려해 바늘 6개를 0.2초 간격으로 발사합니다. 바늘당 피해 50·판정 반경 0.65·사거리 25.",
