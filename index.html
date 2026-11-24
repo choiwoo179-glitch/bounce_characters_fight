@@ -2926,7 +2926,9 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 시작 MP와 전투 유형</strong>
+                <strong>최신 패치 · 캐릭터 3D 외형</strong>
+                <p>우류의 사각 안경, 버기의 둥근 빨간 코, 렌지의 금속 이마 장식을 다듬었습니다.</p>
+                <strong>이전 패치 · 시작 MP와 전투 유형</strong>
                 <p>대전 시작 시 캐릭터별로 최대 MP의 10~50%가 충전됩니다. 캐릭터 정보에서 시작 MP 비율을 확인할 수 있습니다.</p>
                 <p>캐릭터 선택의 유형별 목록에서 통제형과 변칙형을 각각 확인할 수 있습니다.</p>
                 <strong>이전 패치 · 버기·상디·우류 밸런스</strong>
@@ -28020,8 +28022,11 @@ function newcomerAvatar(actor, root, appearance, sphere) {
     brim.scale.z = .75;
     const crown = duelPart(avatar,new THREE.SphereGeometry(.91,24,12),0xa3213a,0,.98,-.16);
     crown.scale.set(1.18,.59,.71);
-    const nose = duelPart(avatar,new THREE.SphereGeometry(.235,14,10),0xf32b42,0,.02,.99);
-    nose.scale.z = .82;
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(.29,20,14),
+      new THREE.MeshPhongMaterial({ color:0xe51e32, specular:0xffd9d1, shininess:72 }));
+    nose.name = "buggy-clown-nose";
+    nose.position.set(0,.035,1.195);
+    avatar.add(nose);
     for (let i=0;i<7;i++) {
       const x=(i-3)*.24;
       duelPart(avatar,new THREE.BoxGeometry(.11,.39,.08),0xffe5ca,x,1.08-Math.abs(x)*.17,.43);
@@ -28043,12 +28048,41 @@ function newcomerAvatar(actor, root, appearance, sphere) {
     }
     duelPart(avatar,new THREE.OctahedronGeometry(.21),0xe6bb6a,0,-.75,.66);
   } else if (id === "uryu") {
+    const frame = celMaterial({ color:0xa5b7c9, metalness:.62, roughness:.35 });
+    const outline = new THREE.Shape();
+    outline.moveTo(-.30,-.13);
+    outline.lineTo(.30,-.13);
+    outline.lineTo(.30,.13);
+    outline.lineTo(-.30,.13);
+    outline.closePath();
+    const opening = new THREE.Path();
+    opening.moveTo(-.263,-.093);
+    opening.lineTo(-.263,.093);
+    opening.lineTo(.263,.093);
+    opening.lineTo(.263,-.093);
+    opening.closePath();
+    outline.holes.push(opening);
+    const rimGeometry = new THREE.ExtrudeGeometry(outline, {
+      depth:.027, bevelEnabled:true, bevelSize:.009, bevelThickness:.007, bevelSegments:1,
+    });
     for (const side of [-1,1]) {
-      const glasses = duelPart(avatar,new THREE.TorusGeometry(.22,.025,5,5),0xa7c6da,side*.26,.15,.95);
-      glasses.scale.set(1.12,.73,1);
+      const rim = new THREE.Mesh(rimGeometry,frame);
+      rim.name = "uryu-rectangular-frame";
+      rim.position.set(side*.342,.20,1.235);
+      const templePath = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side*.63,.22,1.25),
+        new THREE.Vector3(side*.91,.21,.98),
+        new THREE.Vector3(side*1.102,.18,.55),
+      ]);
+      const temple = new THREE.Mesh(new THREE.TubeGeometry(templePath,8,.024,6,false),frame);
+      temple.name = "uryu-glasses-temple";
+      avatar.add(rim,temple);
       duelPart(avatar,new THREE.BoxGeometry(.14,.26,.04),0xd6f3ff,side*.37,-.78,.64).rotation.z=side*.38;
     }
-    duelPart(avatar,new THREE.BoxGeometry(.16,.036,.034),0xcfefff,0,.17,.95);
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(.13,.039,.038),frame);
+    bridge.name = "uryu-glasses-bridge";
+    bridge.position.set(0,.22,1.25);
+    avatar.add(bridge);
     actor.uryuWings = new THREE.Group();
     root.add(actor.uryuWings);
     actor.uryuWings.visible = false;
@@ -28070,9 +28104,34 @@ function newcomerAvatar(actor, root, appearance, sphere) {
         (i-2)*.14,.66-i*.11,-.86-i*.095);
       strand.rotation.set(.94,0,(i-2)*.13);
     }
-    const headband = duelPart(avatar,new THREE.TorusGeometry(.79,.078,6,28),0xf1e5d8,0,.48,0);
-    headband.rotation.x=Math.PI/2;
+    const foreheadY = .59;
+    const headband = duelPart(avatar,new THREE.TorusGeometry(avatarSurface(0,foreheadY,R),.064,8,32),
+      0x373039,0,foreheadY,0);
+    headband.name = "renji-headband";
+    headband.rotation.x = Math.PI/2;
+    for (const [width,height,offset,color,name] of [
+      [1.26,.32,.042,0x302b38,"renji-plate-backing"],
+      [1.16,.245,.082,0xbbcad7,"renji-metal-forehead-plate"],
+    ]) {
+      const geometry = new THREE.BoxGeometry(width,height,.046,12,2,1);
+      const vertices = geometry.attributes.position;
+      for (let i=0;i<vertices.count;i++) {
+        const y = vertices.getY(i);
+        const x = vertices.getX(i) * (1 - .12*Math.abs(y)/(height/2));
+        vertices.setXYZ(i,x,y,vertices.getZ(i)+avatarSurface(x,foreheadY+y,R)+offset);
+      }
+      geometry.computeVertexNormals();
+      const plate = new THREE.Mesh(geometry,celMaterial({ color, metalness:.76, roughness:.31 }));
+      plate.name = name;
+      plate.position.y = foreheadY;
+      avatar.add(plate);
+    }
     for (const side of [-1,1]) {
+      const rivetX = side*.43;
+      const rivet = duelPart(avatar,new THREE.SphereGeometry(.037,10,8),0x45505e,
+        rivetX,foreheadY,avatarSurface(rivetX,foreheadY,R)+.106);
+      rivet.name = "renji-plate-rivet";
+      rivet.scale.z = .42;
       for (let i=0;i<3;i++)
         duelPart(avatar,new THREE.BoxGeometry(.21,.044,.045),0x271a2d,side*(.32+i*.10),.22-i*.09,.89).rotation.z=side*.48;
     }
