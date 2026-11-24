@@ -2927,6 +2927,7 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
               <div class="home-patch-notes">
                 <strong>최신 패치 · 버기·상디·우류 밸런스</strong>
                 <p>특제 버기탄은 시전당 대상에게 한 번만 최대 75 피해를 줍니다. 긴급 탈출의 회피 횟수는 2회입니다.</p>
+                <p>긴급 탈출과 페스티벌에서 날아가는 팔의 크기와 피격 판정 반경을 20% 늘렸습니다. 팔에 오라가 생기고 최대 비행 거리는 17입니다.</p>
                 <p>상디의 HP는 1,280, MP는 74, SP는 108입니다. 양고기 샷·디아블 잠브·이프리트 잠브의 돌진 거리는 매회 10입니다.</p>
                 <p>우류의 HP는 1,120, SP는 145입니다. 리히트 레겐의 판정 반경이 0.42로 넓어지고 상대의 이동을 예측해 조준합니다.</p>
                 <strong>이전 패치 · 신규 캐릭터 4명</strong>
@@ -27223,6 +27224,9 @@ addDuelFighters();
 
 const BUGGY_BALL_DAMAGE = 75;
 const BUGGY_ESCAPE_CHARGES = 2;
+const BUGGY_ARM_SCALE = 1.2;
+const BUGGY_ARM_RADIUS = .44 * BUGGY_ARM_SCALE;
+const BUGGY_ARM_RANGE = 17;
 const SANJI_RUSH_DISTANCE = 10;
 const SANJI_PARTY_DURATION = 4;
 const SANJI_PARTY_INTERVAL = .4;
@@ -27236,8 +27240,8 @@ const URYU_REGEN_MAX_HITS = 5;
 
 const NEWCOMER_SKILLS = {
   BUGGY_BALL: ["특제 버기탄", "buggy-ball", "8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 한 번 사용할 때 폭발이 겹쳐도 대상당 최대 1회, 75 피해를 줍니다."],
-  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 2회를 피합니다. 피할 때마다 거리 12까지 날아갔다 돌아오는 팔을 발사합니다. 팔은 첫 적에게 45 피해를 줍니다."],
-  BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", "0.5초 준비 후 거리 15까지 6방향에 팔을 날립니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 한 번 더 던집니다.", true],
+  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 2회를 피합니다. 피할 때마다 거리 17까지 날아갔다 돌아오는 팔을 발사합니다. 팔의 피격 판정 반경은 0.528입니다. 팔은 첫 적에게 45 피해를 줍니다."],
+  BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", "0.5초 준비 후 거리 17까지 6방향에 팔을 날립니다. 팔의 피격 판정 반경은 0.528입니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 다시 던지며 두 번째 발사도 거리 17입니다.", true],
   SANJI_MUTTON: ["양고기 샷", "sanji-mutton", "상대를 향해 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해."],
   SANJI_PARTY: ["파티 테이블 킥 코스", "sanji-party-table", "0.5초간 멈춘 뒤 4초 동안 물구나무로 회전하며 이동합니다. 반경 6 안의 상대에게 0.4초 간격으로 40 피해를 줍니다. 대상당 최대 4회(160 피해), 기술 사용 중 받는 피해 20% 감소."],
   SANJI_DIABLE: ["디아블 잠브", "sanji-diable", "붉은 불꽃으로 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.", true],
@@ -27308,7 +27312,7 @@ function launchBuggyWave(owner, count, second = false) {
   particleBurst(owner.x,1.35,owner.z,second ? 0xffae68 : 0xff4c65,13,1.3);
   for (let i = 0; i < count; i++) {
     const angle = offset + i * 2 * Math.PI / count;
-    spawnNewcomerMissile(owner, "BUGGY_FESTIVAL", {x:Math.cos(angle), z:Math.sin(angle)}, 15, 37, .44, 95, wave);
+    spawnNewcomerMissile(owner, "BUGGY_FESTIVAL", {x:Math.cos(angle), z:Math.sin(angle)}, BUGGY_ARM_RANGE, 37, BUGGY_ARM_RADIUS, 95, wave);
   }
 }
 
@@ -27339,7 +27343,7 @@ function buggyEvades(hit) {
       !escape?.charges || escape.until <= t) return false;
   escape.charges--;
   const heading = unit(hit.a.x - owner.x, hit.a.z - owner.z);
-  spawnNewcomerMissile(owner, "BUGGY_ESCAPE", heading, 12, 36, .44, 45);
+  spawnNewcomerMissile(owner, "BUGGY_ESCAPE", heading, BUGGY_ARM_RANGE, 36, BUGGY_ARM_RADIUS, 45);
   fx("ring", owner.x, owner.z, 2.1, 0x71c9ff, .25);
   particleBurst(owner.x,1,owner.z,0x7cd6ff,13,1.35);
   return true;
@@ -27392,6 +27396,12 @@ function advanceNewcomerMissile(missile, dt) {
     if (streak) {
       streak.material.opacity = (missile.returning ? .78 : .58) + .14*Math.sin(t*47);
       streak.material.color.setHex(missile.returning ? 0x8ee7ff : 0xff925c);
+      const aura = missile.mesh.userData.armAura;
+      aura.rotation.z = t * 11;
+      for (const mesh of aura.children) {
+        mesh.material.color.setHex(missile.returning ? mesh.userData.returnColor : mesh.userData.launchColor);
+        mesh.material.opacity = mesh.userData.glowOpacity * (.88 + .12 * Math.sin(t * 25));
+      }
     }
   }
   if (type === "BUGGY_BALL" && (stopped || contact)) {
@@ -27809,6 +27819,29 @@ function newcomerMissileVisual(type) {
     duelPart(group, new THREE.SphereGeometry(.27,12,8), 0xf5eeff, 0,0,.21).scale.set(.9,.8,1.2);
     duelPart(group, new THREE.BoxGeometry(.53,.09,.13), 0xe8b556, 0,.06,.47);
     duelPart(group, new THREE.ConeGeometry(.17,.83,4), 0xdaf5ff, 0,.06,.94).rotation.x = Math.PI/2;
+
+    group.scale.setScalar(BUGGY_ARM_SCALE);
+    const aura = new THREE.Group();
+    aura.position.z = .24;
+    group.userData.armAura = aura;
+    group.add(aura);
+
+    const haloGeometry = reuseEffectGeometry("buggy-arm-halo", () => new THREE.SphereGeometry(1, 16, 10));
+    const halo = duelPart(aura, haloGeometry, 0xff9a46, 0,0,0,.26);
+    halo.scale.set(.49,.43,1.12);
+    halo.userData = { launchColor:0xff9a46, returnColor:0x49bdff, glowOpacity:.26 };
+
+    const arcGeometry = reuseEffectGeometry("buggy-arm-halo-arc",
+      () => new THREE.TorusGeometry(.49,.033,6,20,Math.PI * 1.12));
+    for (const side of [-1,1]) {
+      const arc = duelPart(aura, arcGeometry, 0xffe4a6, 0,0,side*.30,.88);
+      arc.rotation.set(side*.61,side*.30,side * Math.PI/2);
+      arc.userData = { launchColor:0xffe4a6, returnColor:0xb4f3ff, glowOpacity:.88 };
+    }
+    for (const mesh of aura.children) {
+      mesh.material.blending = THREE.AdditiveBlending;
+      mesh.material.side = THREE.FrontSide;
+    }
   }
   return group;
 }
