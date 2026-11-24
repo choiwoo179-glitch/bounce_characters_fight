@@ -2920,12 +2920,16 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-24">2026.11.24</time></span>
+            <span>최종 수정 <time datetime="2026-11-25">2026.11.25</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 신규 캐릭터 4명</strong>
+                <strong>최신 패치 · 버기·상디·우류 밸런스</strong>
+                <p>특제 버기탄은 시전당 대상에게 한 번만 최대 75 피해를 줍니다. 긴급 탈출의 회피 횟수는 2회입니다.</p>
+                <p>상디의 HP는 1,280, MP는 74, SP는 108입니다. 양고기 샷·디아블 잠브·이프리트 잠브의 돌진 거리는 매회 10입니다.</p>
+                <p>우류의 HP는 1,120, SP는 145입니다. 리히트 레겐의 판정 반경이 0.42로 넓어지고 상대의 이동을 예측해 조준합니다.</p>
+                <strong>이전 패치 · 신규 캐릭터 4명</strong>
                 <p>원피스의 버기와 상디, 블리치의 이시다 우류와 이바라이 렌지가 참전합니다. 연습 모드에서 각 기술을 직접 선택할 수 있습니다.</p>
                 <strong>이전 패치 · 유우기·카이바 밸런스</strong>
                 <p>오시리스의 천공룡은 충돌 시 40, 빔 명중 시 180 피해를 줍니다. 블랙 매지션의 마법진은 옮은 상대를 반경 3으로 감싸며 따라갑니다.</p>
@@ -8529,7 +8533,8 @@ function applyQueuedDamage() {
   for (const e of damageQueue) {
 
     const guaranteed = e.damageKind === "uryuReturn";
-    if (e.uryuArrowHits?.get(e.b) >= URYU_REGEN_MAX_HITS) continue;
+    if (e.buggyBlastHits?.has(e.b) || e.uryuArrowHits?.get(e.b) >= URYU_REGEN_MAX_HITS) continue;
+    if (e.buggyBlastHits) e.n = Math.min(e.n, BUGGY_BALL_DAMAGE);
     if (!guaranteed && (duelCardActive(e.b) || e.b.guyInvulnerableUntil > t + 1e-8 || e.kenpachiForm?.hits >= 2)) continue;
     if (e.guyRecoil) e.n = Math.ceil(e.b.hp * 0.1);
     if (e.magmaCap && (e.magmaCap.get(e.b) || 0) >= 3) continue;
@@ -8543,6 +8548,7 @@ function applyQueuedDamage() {
     ((e.b.hp = Math.max(0, e.b.hp - e.n)),
       metalDamageTaken(e.b,o),
       recordAntithesisDamage(e, o),
+      o > 0 && e.buggyBlastHits?.add(e.b),
       o > 0 && e.uryuArrowHits && e.uryuArrowHits.set(e.b,(e.uryuArrowHits.get(e.b) || 0) + 1),
       e.lightCap && e.lightCap.set(e.b, (e.lightCap.get(e.b) || 0) + o),
       o > 0 && e.upgradeImpact && skillUpgradeImpact(e.upgradeImpact),
@@ -23626,7 +23632,7 @@ const MOVEMENT_SCALE = 1.6,
   RESOURCE_MAX_KEYS = Object.freeze({ mp: "maxMp", sp: "maxSp" }),
   SKILL_HANDLERS = Object.freeze({
     BUGGY_BALL: useBuggyBall,
-    BUGGY_ESCAPE: owner => { owner.buggyEscape = { charges:3, until:t+9 }; },
+    BUGGY_ESCAPE: owner => { owner.buggyEscape = { charges:BUGGY_ESCAPE_CHARGES, until:t+9 }; },
     BUGGY_FESTIVAL: owner => {
       newcomerPin(owner, .5);
       schedule(owner, .5, () => launchBuggyWave(owner, 6));
@@ -27215,22 +27221,29 @@ CHARACTER_DATABASE.push(higurumaCharacter);
 addSandShadowFighters();
 addDuelFighters();
 
+const BUGGY_BALL_DAMAGE = 75;
+const BUGGY_ESCAPE_CHARGES = 2;
+const SANJI_RUSH_DISTANCE = 10;
 const SANJI_PARTY_DURATION = 4;
 const SANJI_PARTY_INTERVAL = .4;
 const SANJI_PARTY_MAX_HITS = 4;
+const URYU_REGEN_RANGE = 20;
+const URYU_REGEN_SPEED = 50;
+const URYU_REGEN_RADIUS = .42;
+const URYU_REGEN_LEAD = .40;
 const URYU_REGEN_DAMAGE = 30;
 const URYU_REGEN_MAX_HITS = 5;
 
 const NEWCOMER_SKILLS = {
-  BUGGY_BALL: ["특제 버기탄", "buggy-ball", "8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 폭탄 하나당 대상에게 75 피해를 한 번 줍니다."],
-  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 3회를 피합니다. 피할 때마다 거리 12까지 날아갔다 돌아오는 팔을 발사합니다. 팔은 첫 적에게 45 피해를 줍니다."],
+  BUGGY_BALL: ["특제 버기탄", "buggy-ball", "8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 한 번 사용할 때 폭발이 겹쳐도 대상당 최대 1회, 75 피해를 줍니다."],
+  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 2회를 피합니다. 피할 때마다 거리 12까지 날아갔다 돌아오는 팔을 발사합니다. 팔은 첫 적에게 45 피해를 줍니다."],
   BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", "0.5초 준비 후 거리 15까지 6방향에 팔을 날립니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 한 번 더 던집니다.", true],
-  SANJI_MUTTON: ["양고기 샷", "sanji-mutton", "상대를 향해 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해."],
+  SANJI_MUTTON: ["양고기 샷", "sanji-mutton", "상대를 향해 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해."],
   SANJI_PARTY: ["파티 테이블 킥 코스", "sanji-party-table", "0.5초간 멈춘 뒤 4초 동안 물구나무로 회전하며 이동합니다. 반경 6 안의 상대에게 0.4초 간격으로 40 피해를 줍니다. 대상당 최대 4회(160 피해), 기술 사용 중 받는 피해 20% 감소."],
-  SANJI_DIABLE: ["디아블 잠브", "sanji-diable", "붉은 불꽃으로 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.", true],
-  SANJI_IFRIT: ["이프리트 잠브", "sanji-ifrit", "푸른 불꽃으로 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 260 피해와 거리 13 밀치기.", true],
+  SANJI_DIABLE: ["디아블 잠브", "sanji-diable", "붉은 불꽃으로 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.", true],
+  SANJI_IFRIT: ["이프리트 잠브", "sanji-ifrit", "푸른 불꽃으로 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 260 피해와 거리 13 밀치기.", true],
   URYU_SPRENGER: ["슈프렝거", "uryu-sprenger", "0.5초 뒤 무작위 위치에 반경 6의 푸른 오각형을 4초간 설치합니다. 처음 들어온 상대를 1초 정지시키고 관통 화살로 100 피해를 줍니다."],
-  URYU_REGEN: ["리히트 레겐", "uryu-regen", "추적 조준으로 0.1초마다 한 발씩 화살 15발을 쏩니다. 사거리 20, 속도 50, 발당 30 피해로 대상당 최대 5회(150 피해) 적중합니다."],
+  URYU_REGEN: ["리히트 레겐", "uryu-regen", "상대의 예상 이동량을 40% 선반영해 0.1초마다 화살을 한 발씩 총 15발 쏩니다. 사거리 20, 속도 50, 판정 반경 0.42이며, 발당 30 피해로 대상당 최대 5회(총 150 피해) 적중합니다."],
   URYU_ANTITHESIS: ["슈리프트 A-디 앤티서시스", "uryu-antithesis", "푸른 날개를 6초간 펼칩니다. 생존하면 그동안 받은 피해를 최대 300 회복하고, 가장 많은 피해를 준 생존 상대에게 같은 피해를 돌려줍니다. 날개가 있는 동안에도 기술을 사용할 수 있습니다.", true],
   RENJI_HIKOTSU: ["비골대포", "renji-hikotsu", "1초 정지 후 사미환에서 전방 빔을 발사해 85 피해를 줍니다."],
   RENJI_ZABIMARU: ["시해 사미환", "renji-zabimaru", "6초 동안 사미환을 휘둘러 기본 충돌 피해가 25 증가하고, 자신의 충돌 공격 범위가 반경 5로 넓어집니다."],
@@ -27263,10 +27276,11 @@ function newcomerHit(owner, target, type, damage, mode, onConfirmedHit) {
   const before = damageQueue.length;
   withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () =>
     hurt(owner, target, damage, special ? "special" : "skill")), name);
-  if (onConfirmedHit && damageQueue.length > before) {
-    const entry = damageQueue.at(-1);
-    if (entry.a === owner && entry.b === target) entry.onConfirmedHit = onConfirmedHit;
-  }
+  if (damageQueue.length <= before) return;
+  const entry = damageQueue.at(-1);
+  if (entry.a !== owner || entry.b !== target) return;
+  if (onConfirmedHit) entry.onConfirmedHit = onConfirmedHit;
+  return entry;
 }
 
 function newcomerPin(actor, duration) {
@@ -27284,6 +27298,7 @@ function spawnNewcomerMissile(owner, type, heading, remaining, speed, radius, da
     world.add(missile.mesh);
   }
   newcomerMissiles.push(missile);
+  return missile;
 }
 
 function launchBuggyWave(owner, count, second = false) {
@@ -27309,9 +27324,12 @@ function finishNewcomerMissile(missile, returned) {
 }
 
 function useBuggyBall(owner) {
+  const blastHits = new Set();
   for (let i = 0; i < 8; i++) {
     const angle = i * Math.PI / 4;
-    spawnNewcomerMissile(owner, "BUGGY_BALL", {x:Math.cos(angle), z:Math.sin(angle)}, 7, 29, .30, 75);
+    const missile = spawnNewcomerMissile(owner, "BUGGY_BALL", {x:Math.cos(angle), z:Math.sin(angle)},
+      7, 29, .30, BUGGY_BALL_DAMAGE);
+    missile.blastHits = blastHits;
   }
 }
 
@@ -27329,7 +27347,7 @@ function buggyEvades(hit) {
 
 function explodeBuggyBall(missile) {
   const { owner, x, z } = missile;
-  const field = {owner, x, z, type:"BUGGY_BALL", until:t + .5, hit:new Set()};
+  const field = {owner, x, z, type:"BUGGY_BALL", until:t + .5, hit:new Set(), blastHits:missile.blastHits};
   newcomerFields.push(field);
   if (!headless && world) makeBuggyBlast(field);
   particleBurst(x, .72, z, 0xff713b, 18, 1.95);
@@ -27428,9 +27446,11 @@ function updateNewcomerFields() {
     for (const target of actors) {
       if (!duelTarget(owner, target)) continue;
       if (type === "BUGGY_BALL") {
-        if (field.hit.has(target) || Math.hypot(target.x-field.x, target.z-field.z) > 3+actorRadius(target)) continue;
+        if (field.blastHits.has(target) || field.hit.has(target) ||
+            Math.hypot(target.x-field.x, target.z-field.z) > 3+actorRadius(target)) continue;
         field.hit.add(target);
-        newcomerHit(owner, target, type, 75, "ranged");
+        const hit = newcomerHit(owner, target, type, BUGGY_BALL_DAMAGE, "ranged");
+        if (hit) hit.buggyBlastHits = field.blastHits;
         continue;
       }
       const inside = field.vertices.every((start, i) => {
@@ -27456,7 +27476,14 @@ function useLichtRegen(owner) {
   owner.busy = t + 1.5;
   const fire = () => {
     const target = nearest(owner);
-    if (target) spawnNewcomerMissile(owner, "URYU_REGEN", unit(target.x-owner.x, target.z-owner.z), 20, 50, .29, URYU_REGEN_DAMAGE, null, hits);
+    if (!target) return;
+    const velocity = {x:target.dx, z:target.dz};
+    const distance = Math.hypot(target.x-owner.x, target.z-owner.z);
+    const flightTime = Math.min(distance, URYU_REGEN_RANGE) / URYU_REGEN_SPEED;
+    const travel = boundedTravel(target, velocity, speedOf(target) * flightTime * URYU_REGEN_LEAD);
+    const aim = unit(target.x + velocity.x*travel-owner.x, target.z + velocity.z*travel-owner.z);
+    spawnNewcomerMissile(owner, "URYU_REGEN", aim, URYU_REGEN_RANGE, URYU_REGEN_SPEED,
+      URYU_REGEN_RADIUS, URYU_REGEN_DAMAGE, null, hits);
   };
   fire();
   for (let i = 1; i < 15; i++) schedule(owner, .1 * i, fire);
@@ -27494,7 +27521,7 @@ function startSanjiRush(owner, target, type, damage) {
   owner.sanjiRushType = type;
   const start = opponent => {
     if (!opponent) { owner.sanjiRushType = null; owner.busy = t; return; }
-    dash(owner, opponent, 7, 43, 2*actorRadius(owner), 0, .2, false, () => {
+    dash(owner, opponent, SANJI_RUSH_DISTANCE, 43, 2*actorRadius(owner), 0, .2, false, () => {
       if (--sequence.count > 0) {
         owner.busy = Infinity;
         schedule(owner, .10, () => start(nearest(owner)));
@@ -28080,9 +28107,9 @@ function addNewcomerFighters() {
   const records = [
     ["buggy", "광대 버기", "버기", "원피스", "폭격형", "분리 · 폭탄 · 귀환", 0xc53954, 1130, 62, 120, 37, 46, "BUGGY_CHOICE",
       ["BUGGY_BALL","BUGGY_ESCAPE","BUGGY_FESTIVAL"]],
-    ["sanji", "빈스모크 상디", "상디", "원피스", "기동형", "연속 돌진 · 불꽃 발차기", 0xefb653, 1200, 85, 113, 38, 50, "SANJI_CHOICE",
+    ["sanji", "빈스모크 상디", "상디", "원피스", "기동형", "연속 돌진 · 불꽃 발차기", 0xefb653, 1280, 74, 108, 38, 50, "SANJI_CHOICE",
       ["SANJI_MUTTON","SANJI_PARTY","SANJI_DIABLE","SANJI_IFRIT"]],
-    ["uryu", "이시다 우류", "우류", "블리치", "원거리형", "함정 · 추적 사격 · 피해 반전", 0x6bb8fa, 1100, 70, 160, 38, 43, "URYU_CHOICE",
+    ["uryu", "이시다 우류", "우류", "블리치", "원거리형", "함정 · 추적 사격 · 피해 반전", 0x6bb8fa, 1120, 70, 145, 38, 43, "URYU_CHOICE",
       ["URYU_SPRENGER","URYU_REGEN","URYU_ANTITHESIS"]],
     ["renji", "이바라이 렌지", "렌지", "블리치", "밸런스형", "범위 충돌 · 연계 빔", 0xdb4764, 1250, 86, 126, 37, 49, "RENJI_CHOICE",
       ["RENJI_HIKOTSU","RENJI_ZABIMARU","RENJI_BANKAI"]],
