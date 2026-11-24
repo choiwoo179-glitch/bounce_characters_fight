@@ -2902,12 +2902,14 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-23">2026.11.23</time></span>
+            <span>최종 수정 <time datetime="2026-11-24">2026.11.24</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 유우기·카이바 밸런스</strong>
+                <strong>최신 패치 · 신규 캐릭터 4명</strong>
+                <p>원피스의 버기와 상디, 블리치의 이시다 우류와 이바라이 렌지가 참전합니다. 연습 모드에서 각 기술을 직접 선택할 수 있습니다.</p>
+                <strong>이전 패치 · 유우기·카이바 밸런스</strong>
                 <p>오시리스의 천공룡은 충돌 시 40, 빔 명중 시 180 피해를 줍니다. 블랙 매지션의 마법진은 옮은 상대를 반경 3으로 감싸며 따라갑니다.</p>
                 <p>궁극의 푸른눈의 백룡 우레탄은 발당 70, 최대 210 피해를 줍니다. XYZ 드래곤 캐논은 대상당 한 번 75 피해를 줍니다.</p>
                 <strong>이전 패치 · 유희왕</strong>
@@ -3155,6 +3157,19 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script><script type="application/json" id="voice-data">
 {
+  "BUGGY_BALL": "./assets/sfx/buggy-ball.mp3",
+  "BUGGY_ESCAPE": "./assets/sfx/buggy-escape.mp3",
+  "BUGGY_FESTIVAL": "./assets/sfx/buggy-festival.mp3",
+  "SANJI_MUTTON": "./assets/sfx/sanji-mutton.mp3",
+  "SANJI_PARTY": "./assets/sfx/sanji-party-table.mp3",
+  "SANJI_DIABLE": "./assets/sfx/sanji-diable.mp3",
+  "SANJI_IFRIT": "./assets/sfx/sanji-ifrit.mp3",
+  "URYU_SPRENGER": "./assets/sfx/uryu-sprenger.mp3",
+  "URYU_REGEN": "./assets/sfx/uryu-regen.mp3",
+  "URYU_ANTITHESIS": "./assets/sfx/uryu-antithesis.mp3",
+  "RENJI_HIKOTSU": "./assets/sfx/renji-hikotsu.mp3",
+  "RENJI_ZABIMARU": "./assets/sfx/renji-zabimaru.mp3",
+  "RENJI_BANKAI": "./assets/sfx/renji-bankai.mp3",
   "DUEL_BLACK_MAGICIAN": "./assets/sfx/yuugi-blackmagician.mp3",
   "DUEL_MAGICIAN_GIRL": "./assets/sfx/yuugi-blackmagiciangirl.mp3",
   "DUEL_OSIRIS": "./assets/sfx/yuugi-osiristenkuryu.mp3",
@@ -3368,6 +3383,19 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 }
 </script><script type="application/json" id="skill-image-data">
 {
+  "BUGGY_BALL": "./assets/skill-banners/buggy-ball.webp",
+  "BUGGY_ESCAPE": "./assets/skill-banners/buggy-escape.webp",
+  "BUGGY_FESTIVAL": "./assets/skill-banners/buggy-festival.webp",
+  "SANJI_MUTTON": "./assets/skill-banners/sanji-mutton.webp",
+  "SANJI_PARTY": "./assets/skill-banners/sanji-party-table.webp",
+  "SANJI_DIABLE": "./assets/skill-banners/sanji-diable.webp",
+  "SANJI_IFRIT": "./assets/skill-banners/sanji-ifrit.webp",
+  "URYU_SPRENGER": "./assets/skill-banners/uryu-sprenger.webp",
+  "URYU_REGEN": "./assets/skill-banners/uryu-regen.webp",
+  "URYU_ANTITHESIS": "./assets/skill-banners/uryu-antithesis.webp",
+  "RENJI_HIKOTSU": "./assets/skill-banners/renji-hikotsu.webp",
+  "RENJI_ZABIMARU": "./assets/skill-banners/renji-zabimaru.webp",
+  "RENJI_BANKAI": "./assets/skill-banners/renji-bankai.png",
   "DUEL_BLACK_MAGICIAN": "./assets/skill-banners/yuugi-blackmagician.webp",
   "DUEL_MAGICIAN_GIRL": "./assets/skill-banners/yuugi-blackmagiciangirl.webp",
   "DUEL_OSIRIS": "./assets/skill-banners/yuugi-osiristenkuryu.webp",
@@ -3570,6 +3598,10 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 }
 </script><script type="application/json" id="official-portrait-data">
 {
+  "renji": "./assets/portraits/renji.webp",
+  "uryu": "./assets/portraits/uryu.webp",
+  "buggy": "./assets/portraits/buggy.webp",
+  "sanji": "./assets/portraits/sanji.webp",
   "yuugi": "./assets/portraits/yuugi.webp",
   "kaiba": "./assets/portraits/kaiba.webp",
   "shikamaru": "./assets/portraits/shikamaru.webp",
@@ -4462,6 +4494,7 @@ function randomizeStartingCorners(e) {
 
 function clearBattleObjects() {
   clearDuelObjects();
+  clearNewcomerActions();
   for (const actor of actors) clearSandShadow(actor);
   for (const shot of shots) if (shot.sandShadowType) removeMesh(shot.mesh);
   clearHigurumaField();
@@ -4706,7 +4739,7 @@ function advanceStoneFlail(shot, dt) {
 function collisionDamagePreview(e) {
   if (kenpachiBankaiActive(e)) return 110;
   return (
-    faJinBonus(e) + higurumaCollisionBonus(e) +
+    faJinBonus(e) + higurumaCollisionBonus(e) + (e.renjiShikai?.until > t ? 25 : 0) +
     (e.doumaBuddhaUntil > t + 1e-8 ? 20 : 0) +
     (e.d.id === "guy" && e.guyGates ? 58 : e.d.baseDamage) +
     10 * (e.projectionStacks || 0)
@@ -8084,6 +8117,7 @@ function collisionDamage(e, a = null) {
   }
   o = Math.max(0, o - 3 * hawksDebuffs(e));
   o += (e.bankaiUntil>t?20:0);
+  if (e.renjiShikai?.until > t) o += 25;
   o += (e.hawksSwordUntil > t ? 25 : 0) + faJinBonus(e);
   if (e.faJinStart != null) {
     playVoiceAsset("DARK_DEKU_SMASH", e);
@@ -8475,17 +8509,22 @@ function airShot(e, a) {
 function applyQueuedDamage() {
   for (const e of damageQueue) {
 
-    if (duelCardActive(e.b) || e.b.guyInvulnerableUntil > t + 1e-8 || e.kenpachiForm?.hits >= 2) continue;
+    const guaranteed = e.damageKind === "uryuReturn";
+    if (e.uryuArrowHits?.get(e.b) >= 9) continue;
+    if (!guaranteed && (duelCardActive(e.b) || e.b.guyInvulnerableUntil > t + 1e-8 || e.kenpachiForm?.hits >= 2)) continue;
     if (e.guyRecoil) e.n = Math.ceil(e.b.hp * 0.1);
     if (e.magmaCap && (e.magmaCap.get(e.b) || 0) >= 3) continue;
     if (e.lightCap && ((e.n = Math.min(e.n, 120 - (e.lightCap.get(e.b) || 0))), e.n <= 0)) continue;
-    if (e.n > 0 && e.a !== e.b && "inosuke" === e.b.d.id && Math.random() < 0.15) continue;
+    if (!guaranteed && e.n > 0 && e.a !== e.b && "inosuke" === e.b.d.id && Math.random() < 0.15) continue;
+    if (!guaranteed && buggyEvades(e)) continue;
     e.calmMp && e.b.alive && mpGain(e.b, e.calmMp, true);
-    applyAlchemyGuard(e);
+    if (!guaranteed) applyAlchemyGuard(e);
     const a = e.b.hp,
       o = Math.min(e.b.hp, e.n);
     ((e.b.hp = Math.max(0, e.b.hp - e.n)),
       metalDamageTaken(e.b,o),
+      recordAntithesisDamage(e, o),
+      o > 0 && e.uryuArrowHits && e.uryuArrowHits.set(e.b,(e.uryuArrowHits.get(e.b) || 0) + 1),
       e.lightCap && e.lightCap.set(e.b, (e.lightCap.get(e.b) || 0) + o),
       o > 0 && e.upgradeImpact && skillUpgradeImpact(e.upgradeImpact),
       o > 0 && e.denjiSource && denjiApplyHit(e.a, e.b, e.denjiState),
@@ -8964,7 +9003,7 @@ function castSkill(e, a) {
         AKI_FOX: "여우의 악마",
         AKI_FUTURE: "미래의 악마",
       }[s] ||
-      DUEL_SUMMONS[s]?.name || SAND_SHADOW_NAMES[s] || AKI_GUN_NAMES[s] || OPM_NAMES[s] || BLEACH_NAMES[s] ||
+      NEWCOMER_SKILLS[s]?.[0] || DUEL_SUMMONS[s]?.name || SAND_SHADOW_NAMES[s] || AKI_GUN_NAMES[s] || OPM_NAMES[s] || BLEACH_NAMES[s] ||
       TENGEN_NAMES[s] ||
       GIYU_NAMES[s] ||
       RENGOKU_NAMES[s] ||
@@ -10075,13 +10114,13 @@ function useCopyTechnique(e, a, o) {
       skillEvent(e, n, "copied"));
     const i = "DIVINE_DOG" === n ? randomMegumiSummon()
       : OPM_CHOICES[n] && !Object.hasOwn(SKILL_HANDLERS,n) ? randomOpmSkill(n) : n;
-    const copiedVariant = DUEL_SUMMONS[i]?.name || SAND_SHADOW_NAMES[i] || (ALCHEMY_SKILLS.has(i) ? OPM_NAMES[i] : null);
+    const copiedVariant = NEWCOMER_SKILLS[i]?.[0] || DUEL_SUMMONS[i]?.name || SAND_SHADOW_NAMES[i] || (ALCHEMY_SKILLS.has(i) ? OPM_NAMES[i] : null);
     if (copiedVariant) e.castName = "술식 모방 · " + copiedVariant;
     return (
       "DIVINE_DOG" === n &&
         ((e.castName = "술식 모방 · " + MEGUMI_SUMMON_NAMES[i]), playVoiceAsset(i, e)),
       "copyThenOriginal" === JJK_CONFIG.copy.banner && "BLACK_FLASH" !== n && showBanner(e, i),
-      HEALTH_SKILL_NAMES[i] && playVoiceAsset(i, e),
+      (HEALTH_SKILL_NAMES[i] || NEWCOMER_SKILLS[i]) && playVoiceAsset(i, e),
       void executeSkill(e, i, a)
     );
   }
@@ -10661,8 +10700,8 @@ function resolveBallCollision(e, a) {
     if (t - n.last >= 0.25 - 1e-8) {
       if (e.higurumaGavelUntil > t + 1e-8 || a.higurumaGavelUntil > t + 1e-8)
         higurumaGavelFracture((e.x + a.x) / 2, (e.z + a.z) / 2, i);
-      if (!eBankai) hurt(e, a, collisionDamage(e, a), "collision");
-      if (!aBankai) hurt(a, e, collisionDamage(a, e), "collision");
+      if (!eBankai && !(e.renjiShikai?.until > t)) hurt(e, a, collisionDamage(e, a), "collision");
+      if (!aBankai && !(a.renjiShikai?.until > t)) hurt(a, e, collisionDamage(a, e), "collision");
       for (const o of [e, a]) (mpGain(o, 10), spGain(o, 8));
       n.last = t;
     }
@@ -10753,6 +10792,9 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   pinDuelCards();
   updateDuelMarks();
   updateDuelSummons();
+  newcomerMissiles = newcomerMissiles.filter(missile => advanceNewcomerMissile(missile, dt));
+  updateNewcomerFields();
+  updateNewcomerStances();
   updateAkiGunAttacks();
   withAlchemyHitMode("ranged",()=>{
     advanceAlchemyReflections(dt);
@@ -10773,6 +10815,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   withAlchemyHitMode("ranged",updateRezeZones);
   updatePowerObjects();
   settle();
+  resolveAntithesis();
   akiPinHeldTargets();
   pinHigurumaVerdicts();
   updateSandPrisons(false);
@@ -10933,6 +10976,10 @@ function advanceActors(e) {
       a.dash?.projection || a.dash?.boundman)
     ) {
       withDamageOrigin(a, a.dash.specialSource, () => advanceReflectingDash(a, e));
+      continue;
+    }
+    if (a.dash?.newcomerRush) {
+      advanceNewcomerRush(a, e);
       continue;
     }
     if (a.dash?.extraType) {
@@ -17416,6 +17463,7 @@ function renderFrame(e) {
     updateHigurumaCourtVisuals();
     updateSandShadowVisuals();
     updateDuelVisuals();
+    updateNewcomerVisuals();
     updateActorMeshes(timeStop ? 0 : e);
     updateStormMesh();
     updatePotionMeshes(timeStop ? 0 : e);
@@ -18098,7 +18146,10 @@ function model(e, a = !1) {
   if (o.id === "reze") {
     s.visible = false;
     n.add(rezeHeadModel());
-  } else addAvatarAppearance(e, n, s);
+  } else {
+    const appearance = addAvatarAppearance(e, n, s);
+    if (["buggy","sanji","uryu","renji"].includes(o.id)) newcomerAvatar(e, n, appearance, s);
+  }
   if (o.id === "higuruma") addHigurumaGear(e, n);
   if (o.id === "gaara" || o.id === "shikamaru") addSandShadowAvatar(o.id, n);
   if (o.id === "yuugi" || o.id === "kaiba") addDuelAvatar(o.id, n);
@@ -19405,6 +19456,9 @@ function renderSelectionPreviews(e) {
 }
 
 const HUD_STATUS_NAMES = Object.freeze({
+  BUGGY_ESCAPE: "동강동강 긴급 탈출",
+  URYU_ANTITHESIS: "슈리프트 A-디 앤티서시스",
+  RENJI_ZABIMARU: "시해 사미환",
   AMATERASU: "아마테라스",
   TEACH_BLACK_HOLE: "블랙홀",
   DAI_FUNKA: "대분화",
@@ -19498,6 +19552,9 @@ function fighterStatusEffects(actor) {
   if (actor.projectionStacks > 0) add("PROJECTION_SORCERY");
   if (metalStacks(actor) > 0) add("FIGHTING_SPIRIT");
   if (actor.guyGates) add("EIGHT_GATES");
+  if (actor.buggyEscape?.charges > 0) timed(actor.buggyEscape.until, "BUGGY_ESCAPE");
+  timed(actor.uryuAntithesis?.until, "URYU_ANTITHESIS");
+  timed(actor.renjiShikai?.until, "RENJI_ZABIMARU");
 
   for (const [key, recovery] of Object.entries(actor.hudRecoveries || {})) {
     if (actor[key] === recovery.token) add(recovery.banner);
@@ -19510,8 +19567,8 @@ function fighterStatusEffects(actor) {
 
 function statusCategory(id) {
   if (["AMATERASU","TEACH_BLACK_HOLE","DAI_FUNKA","MEIGO","RYUSEI_KAZAN","DENJI_BLEED","ROY_INFERNO","DUEL_BLACK_MAGICIAN"].includes(id)) return ["지속 피해","↓","#ff867a"];
-  if (["HAKARI_JACKPOT","MAHORAGA","CRESCENT_SLASH","DESTRUCTIVE_DEATH_AIR_TYPE","LOTUS_ICE","SCATTERING_LOTUSES"].includes(id)) return ["회복","＋","#72eab1"];
-  if (["ALPHONSE_GUARD","BANG_GUARD","SUSANOO","BLACK_ANKH","DEAD_CALM","STONE_WHIRLWIND"].includes(id)) return ["방어","◇","#8dcaff"];
+  if (["URYU_ANTITHESIS","HAKARI_JACKPOT","MAHORAGA","CRESCENT_SLASH","DESTRUCTIVE_DEATH_AIR_TYPE","LOTUS_ICE","SCATTERING_LOTUSES"].includes(id)) return ["회복","＋","#72eab1"];
+  if (["BUGGY_ESCAPE","ALPHONSE_GUARD","BANG_GUARD","SUSANOO","BLACK_ANKH","DEAD_CALM","STONE_WHIRLWIND"].includes(id)) return ["방어","◇","#8dcaff"];
   return ["강화","↑","#ffd883"];
 }
 function renderFighterStatuses(slot, statuses) {
@@ -23549,6 +23606,31 @@ const MOVEMENT_SCALE = 1.6,
   }),
   RESOURCE_MAX_KEYS = Object.freeze({ mp: "maxMp", sp: "maxSp" }),
   SKILL_HANDLERS = Object.freeze({
+    BUGGY_BALL: useBuggyBall,
+    BUGGY_ESCAPE: owner => { owner.buggyEscape = { charges:3, until:t+9 }; },
+    BUGGY_FESTIVAL: owner => {
+      newcomerPin(owner, .5);
+      schedule(owner, .5, () => launchBuggyWave(owner, 6));
+    },
+    SANJI_MUTTON: (owner, target) => startSanjiRush(owner, target, "SANJI_MUTTON", 105),
+    SANJI_PARTY: beginSanjiParty,
+    SANJI_DIABLE: (owner, target) => startSanjiRush(owner, target, "SANJI_DIABLE", 170),
+    SANJI_IFRIT: (owner, target) => startSanjiRush(owner, target, "SANJI_IFRIT", 260),
+    URYU_SPRENGER: owner => {
+      newcomerPin(owner, .5);
+      schedule(owner, .5, () => newPentagon(owner));
+    },
+    URYU_REGEN: useLichtRegen,
+    URYU_ANTITHESIS: owner => {
+      owner.uryuAntithesis = { until:t+6, total:0, sources:new Map() };
+    },
+    RENJI_HIKOTSU: owner => {
+      newcomerPin(owner, 1);
+      showRenjiCannon(owner);
+      schedule(owner, 1, () => renjiSnakeBeam(owner, nearest(owner), "RENJI_HIKOTSU", 85));
+    },
+    RENJI_ZABIMARU: owner => { owner.renjiShikai = { until:t+6, contacts:new Set(), last:new Map() }; },
+    RENJI_BANKAI: startRenjiBankai,
     NARA_IMITATION: actor => startNaraMode(actor, "follow"),
     NARA_GRASP: actor => startNaraMode(actor, "grasp"),
     NARA_STITCHING: startNaraStitching,
@@ -27111,11 +27193,665 @@ CHARACTER_DATABASE.push(higurumaCharacter);
 addSandShadowFighters();
 addDuelFighters();
 
+const NEWCOMER_SKILLS = {
+  BUGGY_BALL: ["특제 버기탄", "buggy-ball", "8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 폭탄 하나당 대상에게 75 피해를 한 번 줍니다."],
+  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 3회를 피합니다. 피할 때마다 거리 12까지 날아갔다 돌아오는 팔을 발사합니다. 팔은 첫 적에게 45 피해를 줍니다."],
+  BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", "0.5초 준비 후 거리 15까지 6방향에 팔을 날립니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 한 번 더 던집니다.", true],
+  SANJI_MUTTON: ["양고기 샷", "sanji-mutton", "상대를 향해 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해."],
+  SANJI_PARTY: ["파티 테이블 킥 코스", "sanji-party-table", "0.5초 준비 후 4초 동안 물구나무로 회전합니다. 반경 6 안의 상대에게 0.8초 간격으로 40 피해를 주며, 최대 5회 적중합니다."],
+  SANJI_DIABLE: ["디아블 잠브", "sanji-diable", "붉은 불꽃으로 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.", true],
+  SANJI_IFRIT: ["이프리트 잠브", "sanji-ifrit", "푸른 불꽃으로 거리 7씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 260 피해와 거리 13 밀치기.", true],
+  URYU_SPRENGER: ["슈프렝거", "uryu-sprenger", "0.5초 뒤 무작위 위치에 반경 6의 푸른 오각형을 4초간 설치합니다. 처음 들어온 상대를 1초 정지시키고 관통 화살로 100 피해를 줍니다."],
+  URYU_REGEN: ["리히트 레겐", "uryu-regen", "추적 조준으로 0.1초마다 한 발씩 화살 15발을 쏩니다. 사거리 20, 속도 50, 발당 15 피해로 대상당 최대 9발이 적중합니다."],
+  URYU_ANTITHESIS: ["슈리프트 A-디 앤티서시스", "uryu-antithesis", "푸른 날개를 6초간 펼칩니다. 생존하면 그동안 받은 피해를 최대 300 회복하고, 가장 많은 피해를 준 생존 상대에게 같은 피해를 돌려줍니다. 날개가 있는 동안에도 기술을 사용할 수 있습니다.", true],
+  RENJI_HIKOTSU: ["비골대포", "renji-hikotsu", "1초 정지 후 사미환에서 전방 빔을 발사해 85 피해를 줍니다."],
+  RENJI_ZABIMARU: ["시해 사미환", "renji-zabimaru", "6초 동안 사미환을 휘둘러 기본 충돌 피해가 25 증가하고, 자신의 충돌 공격 범위가 반경 5로 넓어집니다."],
+  RENJI_BANKAI: ["만해-쌍왕 사미환", "renji-bankai", "0.7초 준비 후 약하게 추적하며 거리 18을 돌진합니다. 첫 충돌에 60 피해를 주고 서로 1초 정지한 뒤 빔으로 140 피해를 줍니다.", true],
+};
+
+let newcomerMissiles = [];
+let newcomerFields = [];
+BATTLE_STATE_FIELDS.push(
+  ["newcomerMissiles", () => newcomerMissiles, value => { newcomerMissiles = value; }, () => []],
+  ["newcomerFields", () => newcomerFields, value => { newcomerFields = value; }, () => []],
+);
+
+function clearNewcomerActions() {
+  for (const item of [...newcomerMissiles, ...newcomerFields]) removeMesh(item.mesh);
+  newcomerMissiles = [];
+  newcomerFields = [];
+  for (const actor of actors) {
+    actor.buggyEscape = actor.sanjiParty = actor.uryuAntithesis = actor.renjiShikai = null;
+    actor.renjiFinisherUntil = 0;
+    actor.sanjiRushType = null;
+  }
+}
+
+function newcomerHit(owner, target, type, damage, mode, onConfirmedHit) {
+  const [name, , , special] = NEWCOMER_SKILLS[type];
+  const before = damageQueue.length;
+  withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () =>
+    hurt(owner, target, damage, special ? "special" : "skill")), name);
+  if (onConfirmedHit && damageQueue.length > before) {
+    const entry = damageQueue.at(-1);
+    if (entry.a === owner && entry.b === target) entry.onConfirmedHit = onConfirmedHit;
+  }
+}
+
+function newcomerPin(actor, duration) {
+  const until = Math.max(actor.bleachLockUntil || 0, t + duration);
+  actor.bleachLockUntil = until;
+  actor.bleachAnchor = { x: actor.x, z: actor.z, until };
+  actor.rootUntil = Math.max(actor.rootUntil || 0, until);
+}
+
+function spawnNewcomerMissile(owner, type, heading, remaining, speed, radius, damage, wave = null, hits = null) {
+  const missile = { owner, type, x: owner.x, z: owner.z, heading, remaining, speed, radius, damage, wave, hits };
+  if (!headless && world) {
+    missile.mesh = newcomerMissileVisual(type);
+    missile.mesh.position.set(owner.x, 1.3, owner.z);
+    world.add(missile.mesh);
+  }
+  newcomerMissiles.push(missile);
+}
+
+function launchBuggyWave(owner, count, second = false) {
+  const wave = { pending: count, returned: 0, second };
+  const offset = second ? Math.PI / count : 0;
+  for (let i = 0; i < count; i++) {
+    const angle = offset + i * 2 * Math.PI / count;
+    spawnNewcomerMissile(owner, "BUGGY_FESTIVAL", {x:Math.cos(angle), z:Math.sin(angle)}, 15, 37, .44, 95, wave);
+  }
+}
+
+function finishNewcomerMissile(missile, returned) {
+  removeMesh(missile.mesh);
+  const { wave, owner } = missile;
+  if (wave) {
+    if (returned) wave.returned++;
+    if (--wave.pending === 0 && !wave.second && wave.returned && owner.alive)
+      schedule(owner, .08, () => launchBuggyWave(owner, wave.returned, true));
+  }
+  return false;
+}
+
+function useBuggyBall(owner) {
+  for (let i = 0; i < 8; i++) {
+    const angle = i * Math.PI / 4;
+    spawnNewcomerMissile(owner, "BUGGY_BALL", {x:Math.cos(angle), z:Math.sin(angle)}, 7, 29, .30, 75);
+  }
+}
+
+function buggyEvades(hit) {
+  const owner = hit.b, escape = owner.buggyEscape;
+  if (hit.a === owner || !(hit.n > 0) || !owner.alive || owner.hp <= 0 ||
+      !escape?.charges || escape.until <= t) return false;
+  escape.charges--;
+  const heading = unit(hit.a.x - owner.x, hit.a.z - owner.z);
+  spawnNewcomerMissile(owner, "BUGGY_ESCAPE", heading, 12, 36, .44, 45);
+  fx("ring", owner.x, owner.z, 2.1, 0x71c9ff, .25);
+  return true;
+}
+
+function explodeBuggyBall(missile) {
+  const { owner, x, z } = missile;
+  const field = {owner, x, z, type:"BUGGY_BALL", until:t + .5, hit:new Set()};
+  newcomerFields.push(field);
+  fx("ring", x, z, 3, 0xff5b39, .5);
+  particleBurst(x, 1, z, 0xff713b, 14, 1.8);
+}
+
+function advanceNewcomerMissile(missile, dt) {
+  const { owner, type, radius } = missile;
+  if (!owner.alive) return finishNewcomerMissile(missile, false);
+  const from = {x:missile.x, z:missile.z};
+  let { heading } = missile, length, stopped, returned = false;
+  if (missile.returning) {
+    const arc = missile.returning;
+    const progress = Math.min(1, (t - arc.born) / arc.duration);
+    const curve = Math.sin(Math.PI * progress) * arc.bend;
+    const x = Math.max(-W/2, Math.min(W/2, arc.x*(1-progress) + owner.x*progress - arc.heading.z*curve));
+    const z = Math.max(-H/2, Math.min(H/2, arc.z*(1-progress) + owner.z*progress + arc.heading.x*curve));
+    length = Math.hypot(x-from.x, z-from.z);
+    if (length > 1e-8) heading = unit(x-from.x, z-from.z);
+    returned = progress >= 1;
+  } else {
+    const distance = Math.min(missile.remaining, missile.speed * dt);
+    length = duelReach(owner, missile, heading, distance);
+    stopped = length < distance - 1e-8 || missile.remaining - length <= 1e-8 ||
+      wallDistance(missile, heading, length + 1) <= length + 1e-8;
+    missile.remaining -= length;
+  }
+  let contact = null, entry = length + 1e-8;
+  for (const target of actors) {
+    if (!duelTarget(owner, target) || (missile.hits?.get(target) || 0) >= 9) continue;
+    const distance = alchemyShotEntry(target, from.x, from.z, heading, radius + actorRadius(target), length);
+    if (distance < entry) {
+      entry = distance;
+      contact = target;
+    }
+  }
+  missile.x += heading.x * (contact ? entry : length);
+  missile.z += heading.z * (contact ? entry : length);
+  if (missile.mesh) {
+    missile.mesh.position.set(missile.x, 1.3, missile.z);
+    missile.mesh.rotation.y = Math.atan2(heading.x, heading.z);
+  }
+  if (type === "BUGGY_BALL" && (stopped || contact)) {
+    explodeBuggyBall(missile);
+    return finishNewcomerMissile(missile, false);
+  }
+  if (contact) {
+    if (type === "URYU_REGEN" && reflectAlchemyShot(missile, contact, from.x, from.z, missile.damage, radius))
+      return finishNewcomerMissile(missile, false);
+    const before = damageQueue.length;
+    newcomerHit(owner, contact, type, missile.damage, "ranged");
+    if (missile.hits && damageQueue.length > before) {
+      const hit = damageQueue.at(-1);
+      if (hit.a === owner && hit.b === contact) hit.uryuArrowHits = missile.hits;
+    }
+    return finishNewcomerMissile(missile, false);
+  }
+  if (returned) return finishNewcomerMissile(missile, true);
+  if (stopped) {
+    if (type === "URYU_REGEN") return finishNewcomerMissile(missile, false);
+    const distance = Math.hypot(owner.x - missile.x, owner.z - missile.z);
+    missile.returning = { x: missile.x, z: missile.z, heading, born: t,
+      duration: Math.max(.22, Math.min(.9, distance / 32)), bend: Math.min(4.2, distance * .36) };
+  }
+  return true;
+}
+
+function newPentagon(owner) {
+  const radius = 6;
+  const x = (Math.random() - .5)*Math.max(0, W-2*radius);
+  const z = (Math.random() - .5)*Math.max(0, H-2*radius);
+  const vertices = Array.from({length:5}, (_, i) => {
+    const angle = i * Math.PI * 2 / 5 - Math.PI / 2;
+    return {x:x + radius*Math.cos(angle), z:z + radius*Math.sin(angle)};
+  });
+  const field = { owner, x, z, type:"URYU_SPRENGER", vertices, until:t+4 };
+  if (!headless && world) {
+    field.mesh = sprengerVisual(field);
+    world.add(field.mesh);
+  }
+  newcomerFields.push(field);
+}
+
+function updateNewcomerFields() {
+  newcomerFields = newcomerFields.filter(field => {
+    const { owner, type } = field;
+    if (!owner.alive || field.until <= t + 1e-8) {
+      removeMesh(field.mesh);
+      return false;
+    }
+    for (const target of actors) {
+      if (!duelTarget(owner, target)) continue;
+      if (type === "BUGGY_BALL") {
+        if (field.hit.has(target) || Math.hypot(target.x-field.x, target.z-field.z) > 3+actorRadius(target)) continue;
+        field.hit.add(target);
+        newcomerHit(owner, target, type, 75, "ranged");
+        continue;
+      }
+      const inside = field.vertices.every((start, i) => {
+        const end = field.vertices[(i + 1) % field.vertices.length];
+        return (end.x-start.x)*(target.z-start.z) - (end.z-start.z)*(target.x-start.x) >= -1e-8;
+      });
+      if (!inside) continue;
+      newcomerPin(target, 1);
+      const direction = unit(target.x-owner.x, target.z-owner.z);
+      const distance = Math.hypot(target.x-owner.x, target.z-owner.z) + 3;
+      beam(owner.x, owner.z, owner.x+direction.x*distance, owner.z+direction.z*distance, 0x6de3ff, .24, .38);
+      newcomerHit(owner, target, type, 100, "ranged");
+      removeMesh(field.mesh);
+      return false;
+    }
+    return true;
+  });
+}
+
+function useLichtRegen(owner) {
+  const hits = new Map();
+  owner.busy = t + 1.5;
+  const fire = () => {
+    const target = nearest(owner);
+    if (target) spawnNewcomerMissile(owner, "URYU_REGEN", unit(target.x-owner.x, target.z-owner.z), 20, 50, .29, 15, null, hits);
+  };
+  fire();
+  for (let i = 1; i < 15; i++) schedule(owner, .1 * i, fire);
+}
+
+function recordAntithesisDamage(hit, loss) {
+  const state = hit.b.uryuAntithesis;
+  if (!state || state.until < t - 1e-8 || loss <= 0) return;
+  state.total = Math.min(300, state.total + loss);
+  if (hit.a !== hit.b) state.sources.set(hit.a, (state.sources.get(hit.a) || 0) + loss);
+}
+
+function resolveAntithesis() {
+  let queued = false;
+  for (const actor of actors) {
+    const state = actor.uryuAntithesis;
+    if (!state || (actor.alive && t + 1e-8 < state.until)) continue;
+    actor.uryuAntithesis = null;
+    if (!actor.alive || state.total <= 0) continue;
+    restoreHealthNow(actor, state.total);
+    const target = [...state.sources].filter(([source]) => source.alive)
+      .sort((left,right) => right[1]-left[1])[0]?.[0] || nearest(actor);
+    if (target) {
+      antithesisVolleyVisual(actor, target);
+      damageQueue.push({ a:actor, b:target, n:state.total, damageKind:"uryuReturn",
+        damageLabel:NEWCOMER_SKILLS.URYU_ANTITHESIS[0], skillHit:true, specialHit:true });
+      queued = true;
+    }
+  }
+  if (queued) settle();
+}
+
+function startSanjiRush(owner, target, type, damage) {
+  const sequence = { type, damage, count:3, hit:false };
+  owner.sanjiRushType = type;
+  const start = opponent => {
+    if (!opponent) { owner.sanjiRushType = null; owner.busy = t; return; }
+    dash(owner, opponent, 7, 43, 2*actorRadius(owner), 0, .2, false, () => {
+      if (--sequence.count > 0) {
+        owner.busy = Infinity;
+        schedule(owner, .10, () => start(nearest(owner)));
+      } else owner.sanjiRushType = null;
+    });
+    owner.dash.newcomerRush = sequence;
+  };
+  start(target);
+}
+
+function renjiSnakeBeam(owner, target, type, damage) {
+  if (!target?.alive) return;
+  const heading = unit(target.x-owner.x,target.z-owner.z);
+  const offset = Math.min(2.3, Math.hypot(target.x-owner.x, target.z-owner.z)*.40);
+  const origin = {owner, x:owner.x+heading.x*offset, z:owner.z+heading.z*offset, heading,
+    special:type === "RENJI_BANKAI",
+    rules:{name:NEWCOMER_SKILLS[type][0], color:0xff455d}};
+  duelLaser(origin, type === "RENJI_BANKAI" ? 3.5 : 3, damage, [0]);
+  particleBurst(origin.x,1.6,origin.z,0xff546a,15,1.8);
+}
+
+function startRenjiBankai(owner) {
+  hold(owner, .7);
+  schedule(owner, .7, () => {
+    const target = nearest(owner);
+    if (!target) return;
+    dash(owner, target, 18, 46, 2*actorRadius(owner), 0);
+    owner.dash.newcomerRush = { type:"RENJI_BANKAI", target, damage:60, hit:false };
+  });
+}
+
+function advanceNewcomerRush(owner, dt) {
+  const dashState = owner.dash;
+  const rush = dashState.newcomerRush;
+  const target = rush.type === "RENJI_BANKAI" && (rush.target?.alive ? rush.target : nearest(owner));
+  if (target) {
+    const current = Math.atan2(owner.dz, owner.dx);
+    const desired = Math.atan2(target.z-owner.z, target.x-owner.x);
+    const diff = Math.atan2(Math.sin(desired-current), Math.cos(desired-current));
+    const angle = current + Math.max(-1.7*dt, Math.min(1.7*dt,diff));
+    owner.dx = Math.cos(angle);
+    owner.dz = Math.sin(angle);
+  }
+  const heading = {x:owner.dx,z:owner.dz};
+  const origin = {x:owner.x,z:owner.z};
+  const requested = Math.min(dashState.remaining, speedOf(owner)*dt);
+  let travel = boundedTravel(owner, heading, requested);
+  let victim, firstEntry = Infinity;
+  if (!rush.hit) {
+    for (const candidate of actors) {
+      if (!duelTarget(owner, candidate) || rush.pending?.has(candidate)) continue;
+      const entry = alchemyShotEntry(candidate, origin.x, origin.z, heading,
+        actorRadius(owner)+actorRadius(candidate), travel);
+      if (entry < firstEntry) {
+        victim = candidate;
+        firstEntry = entry;
+      }
+    }
+  }
+  if (victim && rush.type === "RENJI_BANKAI") travel = firstEntry;
+  owner.x += heading.x*travel;
+  owner.z += heading.z*travel;
+  dashState.remaining -= travel;
+  if (travel > 0) updateRushTrail(owner, origin, rush.type);
+  if (victim) {
+    (rush.pending ??= new Set()).add(victim);
+    newcomerHit(owner, victim, rush.type, rush.damage, "melee", () => {
+      rush.hit = true;
+      if (rush.type === "RENJI_BANKAI") {
+        if (owner.dash === dashState) endDash(owner);
+        owner.renjiFinisherUntil = t+1;
+        newcomerPin(owner, 1);
+        newcomerPin(victim, 1);
+        schedule(owner, 1, () => renjiSnakeBeam(owner, victim, "RENJI_BANKAI", 140));
+      } else if (rush.type !== "SANJI_MUTTON") pushActor(victim, heading, 13);
+    });
+  }
+  if (dashState.remaining <= 1e-8 || (!victim && travel < requested - 1e-8)) endDash(owner);
+}
+
+function updateNewcomerStances() {
+  for (const owner of actors) {
+    if (!owner.alive) continue;
+    const spin = owner.sanjiParty;
+    if (spin?.until > t && spin.pulses < 5 && spin.next <= t + 1e-8) {
+      spin.pulses++;
+      spin.next += .8;
+      for (const target of actors)
+        if (duelTarget(owner, target) && Math.hypot(owner.x-target.x, owner.z-target.z) <= 6+actorRadius(target))
+          newcomerHit(owner, target, "SANJI_PARTY", 40, "melee");
+    }
+    const shikai = owner.renjiShikai;
+    if (!(shikai?.until > t)) continue;
+    for (const target of actors) {
+      if (!duelTarget(owner, target) || Math.hypot(owner.x-target.x, owner.z-target.z) > 5+actorRadius(target)) {
+        shikai.contacts.delete(target);
+        continue;
+      }
+      if (shikai.contacts.has(target)) continue;
+      shikai.contacts.add(target);
+      if (t - (shikai.last.get(target) ?? -Infinity) < .25 - 1e-8) continue;
+      shikai.last.set(target, t);
+      withDamageOrigin(owner, false, () => hurt(owner, target, collisionDamage(owner,target), "collision"), NEWCOMER_SKILLS.RENJI_ZABIMARU[0]);
+    }
+  }
+}
+
+function beginSanjiParty(owner) {
+  newcomerPin(owner, .5);
+  schedule(owner, .5, () => {
+    newcomerPin(owner, 4);
+    owner.sanjiParty = {until:t+4, next:t, pulses:0};
+    if (!headless && world) sanjiPartyVisual(owner);
+  });
+}
+
+function newcomerMissileVisual(type) {
+  const group = new THREE.Group();
+  if (type === "BUGGY_BALL") {
+    duelPart(group, new THREE.SphereGeometry(.30, 12, 8), 0xee2544, 0,0,0);
+    duelPart(group, new THREE.CylinderGeometry(.04,.06,.21,6), 0xffcd69, 0,.31,0);
+  } else if (type === "URYU_REGEN") {
+    for (let i = -1; i <= 1; i++) {
+      const shaft = duelPart(group, new THREE.CylinderGeometry(.025,.065,1.52,6), i ? 0x378eff : 0xb2faff,
+        i*.24, Math.abs(i)*.16, -Math.abs(i)*.58, i ? .6 : 1);
+      shaft.rotation.x = Math.PI/2;
+      duelPart(group, new THREE.ConeGeometry(.12,.4,5), 0x83efff, i*.24, Math.abs(i)*.16, .91-Math.abs(i)*.58)
+        .rotation.x = Math.PI/2;
+    }
+  } else {
+    duelPart(group, new THREE.CylinderGeometry(.18,.28,.77,10), 0xbf2a43, 0,0,-.24).rotation.x = Math.PI/2;
+    duelPart(group, new THREE.SphereGeometry(.27,12,8), 0xf5eeff, 0,0,.21).scale.set(.9,.8,1.2);
+    duelPart(group, new THREE.BoxGeometry(.53,.09,.13), 0xe8b556, 0,.06,.47);
+    duelPart(group, new THREE.ConeGeometry(.17,.83,4), 0xdaf5ff, 0,.06,.94).rotation.x = Math.PI/2;
+  }
+  return group;
+}
+
+function sprengerVisual(field) {
+  const group = new THREE.Group();
+  const point = ({x,z}) => [x,.12,z];
+  const edge = field.vertices.map(point);
+  bleachLine(group, [...edge, edge[0]], 0x4be0ff, .09, .89);
+  for (const vertex of field.vertices) {
+    bleachLine(group, [[field.x,.11,field.z], point(vertex)], 0x538dff, .039, .65);
+    duelPart(group, new THREE.OctahedronGeometry(.37), 0xc1f9ff, vertex.x,.25,vertex.z);
+  }
+  return group;
+}
+
+function antithesisVolleyVisual(owner, target) {
+  if (headless || !world) return;
+  const group = new THREE.Group(), arrows = [];
+  for (let i = 0; i < 7; i++) {
+    const model = newcomerMissileVisual("URYU_REGEN");
+    model.scale.setScalar(.74);
+    group.add(model);
+    arrows.push(model);
+  }
+  const x = owner.x, z = owner.z;
+  bleachEffect(group, .48, progress => {
+    const heading = unit(target.x-x, target.z-z);
+    arrows.forEach((arrow, i) => {
+      const spread = (i-3)*.64*Math.sin(Math.PI*progress);
+      arrow.position.set(x+(target.x-x)*progress-heading.z*spread, 1.35+Math.abs(spread), z+(target.z-z)*progress+heading.x*spread);
+      arrow.rotation.y = Math.atan2(heading.x,heading.z);
+    });
+  });
+}
+
+function updateRushTrail(owner, origin, type) {
+  if (headless || !world || (owner.newcomerTrailAt ?? -Infinity) + .045 > t) return;
+  owner.newcomerTrailAt = t;
+  const color = type === "SANJI_IFRIT" ? 0x49c9ff : type === "SANJI_MUTTON" ? 0xffc577 : 0xff4835;
+  beam(origin.x, origin.z, owner.x, owner.z, color, .17, type === "SANJI_MUTTON" ? .55 : 1.14);
+  if (type !== "SANJI_MUTTON") particleBurst(owner.x,.55,owner.z,color,5,.95);
+}
+
+function sanjiPartyVisual(owner) {
+  const group = new THREE.Group(), legs = new THREE.Group();
+  const rim = duelPart(group, new THREE.RingGeometry(5.89,6,64), 0xfba846, 0,.1,0,.55);
+  rim.rotation.x = -Math.PI/2;
+  group.add(legs);
+  for (const side of [-1,1]) {
+    const leg = duelPart(legs, new THREE.CylinderGeometry(.23,.29,2.3,9), 0x184067, side*1.18,2.31,0);
+    leg.rotation.z = Math.PI/2;
+    duelPart(legs, new THREE.BoxGeometry(.64,.43,.62), 0x112334, side*2.38,2.31,.08);
+    const sweep = duelPart(legs, new THREE.TorusGeometry(4.6,.09,6,28,1.29), 0xffb246, 0,1.85,0,.74);
+    sweep.rotation.set(-Math.PI/2,0, side === 1 ? 0 : Math.PI);
+  }
+  bleachEffect(group, 4, () => {
+    group.visible = owner.alive && owner.sanjiParty?.until > t;
+    group.position.set(owner.x,0,owner.z);
+    legs.rotation.y = t*18;
+  });
+}
+
+function renjiSnakeRig(bone = true) {
+  const rig = new THREE.Group();
+  for (let i = 0; i < 7; i++) {
+    const joint = new THREE.Group();
+    const size = 1-i*.08;
+    duelPart(joint, new THREE.BoxGeometry(.54*size,.27*size,.56), bone ? 0xf4d4a6 : 0x818da0, 0,0,0);
+    for (const side of [-1,1]) {
+      duelPart(joint, new THREE.ConeGeometry(.12,.52*size,5), bone ? 0xffead0 : 0xd4e6ee,
+        side*.31*size,0,.06).rotation.z = -side*1.25;
+    }
+    rig.add(joint);
+  }
+  const jaw = new THREE.Group();
+  duelPart(jaw, new THREE.BoxGeometry(.85,.23,1.01), bone ? 0xffe0b7 : 0xb8c5cb, 0,.25,.34);
+  duelPart(jaw, new THREE.BoxGeometry(.75,.14,.83), 0xd7ae83, 0,-.08,.37);
+  for (const side of [-1,1]) {
+    duelPart(jaw, new THREE.ConeGeometry(.12,.48,6), 0xfff0d7, side*.29,.04,.64).rotation.x = Math.PI;
+    duelPart(jaw, new THREE.SphereGeometry(.11,8,6), 0xff2d43, side*.29,.35,.56);
+  }
+  rig.add(jaw);
+  return rig;
+}
+
+function poseRenjiSnake(rig, time, scale, curved) {
+  const points = rig.children.map((_, i) => {
+    const z = (i-2)*.60*scale;
+    const x = curved ? Math.sin(i*.68-time*4)*.59*scale : Math.sin(i*.65)*.13;
+    return new THREE.Vector3(x, 1.51 + .31*Math.sin(i*.57-time*5), z);
+  });
+  rig.children.forEach((part,i) => {
+    part.position.copy(points[i]);
+    const next = points[i+1], previous = points[i-1];
+    const tangent = next ? next.clone().sub(points[i]) : points[i].clone().sub(previous);
+    part.rotation.y = Math.atan2(tangent.x,tangent.z);
+  });
+}
+
+function showRenjiCannon(owner) {
+  if (headless || !world) return;
+  const rig = renjiSnakeRig();
+  bleachEffect(rig, 1.42, () => {
+    const target = nearest(owner);
+    const heading = target ? unit(target.x-owner.x,target.z-owner.z) : owner;
+    rig.position.set(owner.x,0,owner.z);
+    rig.rotation.y = Math.atan2(heading.x,heading.z);
+    poseRenjiSnake(rig,t, .78,true);
+    rig.visible = owner.alive;
+  });
+}
+
+function newcomerAvatar(actor, root, appearance, sphere) {
+  const { id } = actor.d;
+  const avatar = new THREE.Group();
+  root.remove(appearance,sphere);
+  avatar.add(appearance,sphere);
+  root.add(avatar);
+  actor.newcomerAvatar = avatar;
+
+  if (id === "buggy") {
+    const brim = duelPart(avatar,new THREE.CylinderGeometry(1.17,1.29,.22,20),0xd5a451,0,.87,.015);
+    brim.scale.z = .75;
+    const crown = duelPart(avatar,new THREE.SphereGeometry(.91,24,12),0xa3213a,0,.98,-.16);
+    crown.scale.set(1.18,.59,.71);
+    const nose = duelPart(avatar,new THREE.SphereGeometry(.235,14,10),0xf32b42,0,.02,.99);
+    nose.scale.z = .82;
+    for (let i=0;i<7;i++) {
+      const x=(i-3)*.24;
+      duelPart(avatar,new THREE.BoxGeometry(.11,.39,.08),0xffe5ca,x,1.08-Math.abs(x)*.17,.43);
+    }
+    for (const side of [-1,1]) {
+      for (let i=0;i<4;i++) {
+        const curl = duelPart(avatar,new THREE.SphereGeometry(.34,11,8),i%2 ? 0x2caee2 : 0x1e679f,
+          side*(.84+i*.13),.53-i*.27,-.23);
+        curl.scale.set(1.0,.88,.8);
+      }
+    }
+  } else if (id === "sanji") {
+    for (const side of [-1,1]) {
+      for (let i=0;i<3;i++) {
+        const scarf = duelPart(avatar,new THREE.SphereGeometry(.22,10,7),i%2?0x2f73ad:0x245180,side*(.31+i*.17),-.48+i*.08,.73);
+        scarf.scale.set(1.8,.68,1);
+        scarf.rotation.z = side*.42;
+      }
+    }
+    duelPart(avatar,new THREE.OctahedronGeometry(.21),0xe6bb6a,0,-.75,.66);
+  } else if (id === "uryu") {
+    for (const side of [-1,1]) {
+      const glasses = duelPart(avatar,new THREE.TorusGeometry(.22,.025,5,5),0xa7c6da,side*.26,.15,.95);
+      glasses.scale.set(1.12,.73,1);
+      duelPart(avatar,new THREE.BoxGeometry(.14,.26,.04),0xd6f3ff,side*.37,-.78,.64).rotation.z=side*.38;
+    }
+    duelPart(avatar,new THREE.BoxGeometry(.16,.036,.034),0xcfefff,0,.17,.95);
+    actor.uryuWings = new THREE.Group();
+    root.add(actor.uryuWings);
+    actor.uryuWings.visible = false;
+    for (const side of [-1,1]) {
+      for (let i=0;i<5;i++) {
+        const feather = duelPart(actor.uryuWings,new THREE.OctahedronGeometry(1),i%2?0x3ca5ff:0x70f1ff,
+          side*(1.13+i*.38),.48+i*.19,-.57,.82);
+        feather.scale.set(.28,1.17-i*.061,.085);
+        feather.rotation.z=-side*(.56+i*.09);
+      }
+    }
+  } else {
+    for (let i=0;i<5;i++) {
+      const strand = duelPart(avatar,new THREE.ConeGeometry(.17,.95+i*.2,5),i%2?0xe63460:0x9e163d,
+        (i-2)*.14,.66-i*.11,-.86-i*.095);
+      strand.rotation.set(.94,0,(i-2)*.13);
+    }
+    const headband = duelPart(avatar,new THREE.TorusGeometry(.79,.078,6,28),0xf1e5d8,0,.48,0);
+    headband.rotation.x=Math.PI/2;
+    for (const side of [-1,1]) {
+      for (let i=0;i<3;i++)
+        duelPart(avatar,new THREE.BoxGeometry(.21,.044,.045),0x271a2d,side*(.32+i*.10),.22-i*.09,.89).rotation.z=side*.48;
+    }
+  }
+}
+
+function updateNewcomerVisuals() {
+  for (const actor of actors) {
+    const spin = actor.alive && actor.sanjiParty?.until > t;
+    if (actor.d.id === "sanji" && actor.newcomerAvatar) {
+      actor.newcomerAvatar.rotation.z = spin ? Math.PI : 0;
+      actor.newcomerAvatar.rotation.y = spin ? 18 * t : 0;
+    }
+    const effect = actor.alive && actor.uryuAntithesis?.until > t;
+    if (actor.uryuWings) {
+      actor.uryuWings.visible = !!effect;
+      if (effect) actor.uryuWings.rotation.y = .15*Math.sin(t*7);
+    }
+    const rushType = actor.dash?.newcomerRush?.type || actor.sanjiRushType;
+    const flame = rushType === "SANJI_IFRIT" ? 0x37bdff : rushType === "SANJI_DIABLE" || rushType === "RENJI_BANKAI" ? 0xff493a : 0;
+    const auraColor = effect ? 0x43c5ff : flame || (actor.renjiFinisherUntil > t ? 0xcb2939 : 0);
+    if (auraColor && !actor.newcomerAura) {
+      actor.newcomerAura = new THREE.Group();
+      for (let i=0;i<8;i++) {
+        const angle = i*Math.PI/4;
+        const flame = duelPart(actor.newcomerAura,new THREE.ConeGeometry(.27,1.32,5),auraColor,
+          Math.cos(angle)*1.42,.78,Math.sin(angle)*1.42,.69);
+        flame.rotation.z = (i%2 ? 1 : -1)*.2;
+      }
+      world.add(actor.newcomerAura);
+    }
+    if (actor.newcomerAura) {
+      actor.newcomerAura.visible = actor.alive && !!auraColor;
+      actor.newcomerAura.position.set(actor.x,0,actor.z);
+      actor.newcomerAura.rotation.y = -t*2.8;
+      actor.newcomerAura.children.forEach((flame, i) => {
+        flame.material.color.setHex(auraColor);
+        flame.scale.y = 1 + .26*Math.sin(t*20+i*1.8);
+      });
+    }
+    const shikai = actor.renjiShikai?.until > t;
+    const bankai = rushType === "RENJI_BANKAI" || actor.renjiFinisherUntil > t;
+    if (actor.alive && (shikai || bankai) && !actor.newcomerSnake) {
+      actor.newcomerSnake = renjiSnakeRig();
+      world.add(actor.newcomerSnake);
+    }
+    if (actor.newcomerSnake) {
+      const snake = actor.newcomerSnake;
+      snake.visible = actor.alive && (shikai || bankai);
+      if (snake.visible) {
+        snake.position.set(actor.x,0,actor.z);
+        snake.rotation.y = bankai ? Math.atan2(actor.dx,actor.dz) : t*5.3;
+        poseRenjiSnake(snake,t,bankai ? .88 : 1.53,true);
+      }
+    }
+  }
+}
+
+function addNewcomerFighters() {
+  const records = [
+    ["buggy", "광대 버기", "버기", "원피스", "폭격형", "분리 · 폭탄 · 귀환", 0xc53954, 1130, 62, 120, 37, 46, "BUGGY_CHOICE",
+      ["BUGGY_BALL","BUGGY_ESCAPE","BUGGY_FESTIVAL"]],
+    ["sanji", "빈스모크 상디", "상디", "원피스", "기동형", "연속 돌진 · 불꽃 발차기", 0xefb653, 1200, 85, 113, 38, 50, "SANJI_CHOICE",
+      ["SANJI_MUTTON","SANJI_PARTY","SANJI_DIABLE","SANJI_IFRIT"]],
+    ["uryu", "이시다 우류", "우류", "블리치", "원거리형", "함정 · 추적 사격 · 피해 반전", 0x6bb8fa, 1100, 70, 160, 38, 43, "URYU_CHOICE",
+      ["URYU_SPRENGER","URYU_REGEN","URYU_ANTITHESIS"]],
+    ["renji", "이바라이 렌지", "렌지", "블리치", "밸런스형", "범위 충돌 · 연계 빔", 0xdb4764, 1250, 86, 126, 37, 49, "RENJI_CHOICE",
+      ["RENJI_HIKOTSU","RENJI_ZABIMARU","RENJI_BANKAI"]],
+  ];
+  for (const [id,name,short,anime,battleType,role,color,maxHp,maxMp,maxSp,speed,baseDamage,skillType,types] of records) {
+    const [first,second,...specials] = types.map(type=>NEWCOMER_SKILLS[type]);
+    const specialType = id === "sanji" ? "SANJI_SPECIAL_CHOICE" : types[2];
+    CHARACTER_DATABASE.push({id,name,short,anime,battleType,role,color,maxHp,maxMp,maxSp,speed,baseDamage,radius:1.2,
+      skillType,specialType,skill:first[0]+" / "+second[0],special:specials.map(entry=>entry[0]).join(" / "),
+      desc:"두 일반 기술을 각각 50% 확률로 사용합니다. "+first[0]+" · "+first[2]+" "+second[0]+" · "+second[2],
+      spDesc:specials.map((entry,i)=>(id==="sanji" ? entry[0]+(i ? " (30%) · " : " (70%) · ") : "")+entry[2]).join(" "),
+    });
+    OPM_CHOICES[skillType] = [types[0],types[1],.5];
+  }
+  OPM_CHOICES.SANJI_SPECIAL_CHOICE = ["SANJI_DIABLE","SANJI_IFRIT",.7];
+}
+
+addNewcomerFighters();
+
 // The default roster is organized for selection. New additions have their own release order.
-const RECENT_FIGHTER_IDS = ["yuugi", "kaiba", "gaara", "shikamaru", "higuruma", "kenpachi", "aki_gun_fiend", "scar", "roy", "alphonse", "edward",
+const RECENT_FIGHTER_IDS = ["renji", "uryu", "buggy", "sanji", "yuugi", "kaiba", "gaara", "shikamaru", "higuruma", "kenpachi", "aki_gun_fiend", "scar", "roy", "alphonse", "edward",
   "metal_bat", "child_emperor", "silver_fang", "tatsumaki", "genos", "saitama",
   "toshiro", "aizen", "byakuya", "ichigo", "bucciarati", "dio", "kakashi", "pain"];
-const NEW_FIGHTER_IDS = new Set(["yuugi", "kaiba", "gaara", "shikamaru"]);
+const NEW_FIGHTER_IDS = new Set(["renji", "uryu", "buggy", "sanji"]);
 for (const character of CHARACTER_DATABASE) Object.assign(character, character.id === "dio" ? CHARACTER_TAGS.jotaro : CHARACTER_TAGS[character.id]);
 
 let rosterGrouping = "default";
@@ -27124,6 +27860,10 @@ const sharedTextures = new WeakSet(),
   disposedResources = new WeakSet();
 
 const AVATAR_STYLES = {
+  buggy: {skin:0xecc097,hair:0x17699f,tip:0x35b7ea,cut:"wild",coat:0xa62037,pattern:"open",accent:0xffd28c,collar:0x902036},
+  sanji: {skin:0xeec397,hair:0xe6b44f,tip:0xffe491,cut:"swept",coat:0x173758,pattern:"suit",accent:0xe5b66b,collar:0x295f91},
+  uryu: {skin:0xecc9af,hair:0x192133,tip:0x465d78,cut:"parted",coat:0xf0f4ff,pattern:"zip",accent:0x579ceb,collar:0xffffff},
+  renji: {skin:0xe0ac8b,hair:0xa81740,tip:0xe83561,cut:"spiky",coat:0x1b1720,pattern:"wrap",accent:0xf0e5d6,collar:0xebe2d8},
   yuugi: { skin: 0xe5b78f, hair: 0x201729, tip: 0xe2b456, cut: "spiky",
     coat: 0x32244c, pattern: "zip", accent: 0xf2d08a, collar: 0x17132e },
   kaiba: { skin: 0xe6bb9d, hair: 0x684733, tip: 0x8c6141, cut: "parted",
@@ -28664,6 +29404,10 @@ function addAkiGunFiendDetails(group) {
 }
 
 const PRACTICE_VARIANTS={
+ buggy:["BUGGY_BALL","BUGGY_ESCAPE","BUGGY_FESTIVAL"],
+ sanji:["SANJI_MUTTON","SANJI_PARTY","SANJI_DIABLE","SANJI_IFRIT"],
+ uryu:["URYU_SPRENGER","URYU_REGEN","URYU_ANTITHESIS"],
+ renji:["RENJI_HIKOTSU","RENJI_ZABIMARU","RENJI_BANKAI"],
  yuugi:["DUEL_BLACK_MAGICIAN","DUEL_MAGICIAN_GIRL","DUEL_OSIRIS"],
  kaiba:["DUEL_BLUE_EYES","DUEL_XYZ","DUEL_ULTIMATE"],
  shikamaru:["NARA_IMITATION","NARA_GRASP","NARA_STITCHING"],
@@ -28689,6 +29433,7 @@ const PRACTICE_VARIANTS={
 };
 const PRACTICE_LABELS={...AKI_GUN_NAMES,AKI_FOX:'여우의 악마',AKI_FUTURE:'미래의 악마',REZE_SHOT:'원거리 폭발',REZE_DASH:'폭발 돌진',WATER_SLASH:'물의 호흡',RASENGAN_AURA:'나선환',CHIDORI_AURA:'치도리',DIVINE_DOG:'옥견',HOLLOW_PURPLE:'허식 무라사키',SUSANOO:'스사노오',KILLER_QUEEN_RUSH:'킬러퀸 · 러시',FIRST_BOMB:'제1의 폭탄',SHADOW_SMASH:'다크 섀도',BLACK_ANKH:'블랙 앙크',LOTUS_ICE:'연잎 얼음',SCATTERING_LOTUSES:'흩날리는 연꽃',MORNING_PEACOCK:'아침공작',DAYTIME_TIGER:'점심 호랑이',EVENING_ELEPHANT:'저녁 코끼리',NIGHT_GUY:'밤 가이',SHINRA_TENSEI:'신라천정',BANSHO_TENIN:'만상천인',RAIKIRI:'뇌절',LIGHTNING_CLONE:'뇌둔 그림자 분신',ZIP_AMBUSH:'지퍼 기습',ARI_RUSH:'아리아리 러쉬',ARRIVEDERCI:'아리베데르치'};
 const PRACTICE_EXPLANATIONS={
+ ...Object.fromEntries(Object.entries(NEWCOMER_SKILLS).map(([type,entry])=>[type,entry[2]])),
  DUEL_BLACK_MAGICIAN:"카드를 내고 반경 5의 마법진을 5초간 생성합니다. 닿은 상대에게 옮아 반경 3으로 감싸며 따라가고, 5초간 초당 20 피해를 줍니다.",
  DUEL_MAGICIAN_GIRL:"화염구 4개를 0.3초 간격으로 발사합니다. 대상당 최대 3회 명중하며, 한 번에 40 또는 마법진 대상에게 80 피해를 줍니다.",
  DUEL_OSIRIS:"반경 4의 천공룡이 4초간 나타나며 새 접촉에 40 피해를 줍니다. 소환 2초 뒤 폭 5의 빔으로 180 피해를 줍니다.",
@@ -28754,8 +29499,8 @@ Object.assign(PRACTICE_VARIANTS,{
     "SCAR_CHAIN"
   ]
 });
-function practiceName(type,character){return DUEL_SUMMONS[type]?.name||SAND_SHADOW_NAMES[type]||HIGURUMA_NAMES[type]||OPM_NAMES[type]||PRACTICE_LABELS[type]||BLEACH_NAMES[type]||TENGEN_NAMES[type]||GIYU_NAMES[type]||RENGOKU_NAMES[type]||TEACH_NAMES[type]||MAGMA_NAMES[type]||BORSALINO_NAMES[type]||KUZAN_NAMES[type]||KIRA_NAMES[type]||HEALTH_SKILL_NAMES[type]||MEGUMI_SUMMON_NAMES[type]||EMPEROR_NAMES[type]||(character.skillType===type?character.skill:character.specialType===type?character.special:type);}
-function practiceSkills(character){const list=PRACTICE_VARIANTS[character.id]||[character.skillType,character.specialType];return list.map(type=>({type,name:practiceName(type,character),special:type===character.specialType||['MILLENNIUM_EMPEROR_NOVA','HINOKAMI_ENBU','THUNDERCLAP_SIXFOLD','KURAMA_RASENGAN','AMATERASU','BLUE_SILVER_CHAOTIC_AFTERGLOW','MAHORAGA','HOLLOW_PURPLE','BOUND_MAN','GEAR_FIFTH','NIKA_GIGANT','SHEER_HEART_ATTACK','BITES_THE_DUST','ICE_BALL','AMA_NO_MURAKUMO','RYUSEI_KAZAN','GURASHI','RENGOKU','DEAD_CALM','STRING_PERFORMANCE','DAYTIME_TIGER','NIGHT_GUY','FROZEN_WATER_LILY_BODHISATTVA','BLACK_ANKH_BALDUR','DETROIT_120','FLASHFREEZE_HEATWAVE','FIERCE_WINGS_BARRAGE','AKI_CURSE','REZE_BOMB','CHIBAKU_TENSEI','KAMUI','TENSA_ZANGETSU','SENBONZAKURA_KAGEYOSHI','KUROHITSUGI','RYUSENKA','ARRIVEDERCI'].includes(type)}));}
+function practiceName(type,character){return NEWCOMER_SKILLS[type]?.[0]||DUEL_SUMMONS[type]?.name||SAND_SHADOW_NAMES[type]||HIGURUMA_NAMES[type]||OPM_NAMES[type]||PRACTICE_LABELS[type]||BLEACH_NAMES[type]||TENGEN_NAMES[type]||GIYU_NAMES[type]||RENGOKU_NAMES[type]||TEACH_NAMES[type]||MAGMA_NAMES[type]||BORSALINO_NAMES[type]||KUZAN_NAMES[type]||KIRA_NAMES[type]||HEALTH_SKILL_NAMES[type]||MEGUMI_SUMMON_NAMES[type]||EMPEROR_NAMES[type]||(character.skillType===type?character.skill:character.specialType===type?character.special:type);}
+function practiceSkills(character){const list=PRACTICE_VARIANTS[character.id]||[character.skillType,character.specialType];return list.map(type=>({type,name:practiceName(type,character),special:NEWCOMER_SKILLS[type]?.[3]===true||type===character.specialType||['MILLENNIUM_EMPEROR_NOVA','HINOKAMI_ENBU','THUNDERCLAP_SIXFOLD','KURAMA_RASENGAN','AMATERASU','BLUE_SILVER_CHAOTIC_AFTERGLOW','MAHORAGA','HOLLOW_PURPLE','BOUND_MAN','GEAR_FIFTH','NIKA_GIGANT','SHEER_HEART_ATTACK','BITES_THE_DUST','ICE_BALL','AMA_NO_MURAKUMO','RYUSEI_KAZAN','GURASHI','RENGOKU','DEAD_CALM','STRING_PERFORMANCE','DAYTIME_TIGER','NIGHT_GUY','FROZEN_WATER_LILY_BODHISATTVA','BLACK_ANKH_BALDUR','DETROIT_120','FLASHFREEZE_HEATWAVE','FIERCE_WINGS_BARRAGE','AKI_CURSE','REZE_BOMB','CHIBAKU_TENSEI','KAMUI','TENSA_ZANGETSU','SENBONZAKURA_KAGEYOSHI','KUROHITSUGI','RYUSENKA','ARRIVEDERCI'].includes(type)}));}
 function practiceSetup(index,preserve=false){
  const old=actors[0],previous=preserve&&old?.d===CHARACTER_DATABASE[index]?{bankai:Math.max(0,(old.bankaiUntil||0)-t),nika:old.nika,gates:old.guyGates,buff:old.buff?.until>t?{...old.buff,until:old.buff.until-t}:null}:null;
  clearWorld();practiceIndex=index;practiceUiSignature='';
