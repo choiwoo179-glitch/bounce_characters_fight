@@ -2984,7 +2984,10 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 애니메이션 그래픽 3차</strong>
+                <strong>최신 패치 · 애니메이션 그래픽 4·5차</strong>
+                <p>타격 스파크의 짙은 외곽선과 명암 대비를 완화하고 반투명도를 조정했습니다. 확정된 스페셜 적중 시 연출 강도에 따라 0.05초 / 0.075초 / 0.10초의 히트스톱을 적용합니다. 연속 공격은 마지막 단계의 적중에만 적용하며 동시에 명중한 경우 가장 강한 정지를 한 번 적용합니다.</p>
+                <p>캐릭터 69명의 고유 색상과 효과 강도를 반영했습니다. 돌진 잔상, 충격파, 투사체 트레일, 타격 효과를 조정했으며 화면 전체 CSS 집중선은 추가하지 않았습니다. 데미지·속도·실제 충돌 범위는 유지됩니다.</p>
+                <strong>이전 패치 · 애니메이션 그래픽 3차</strong>
                 <p>속성별 검은 먹선과 붓터치 궤적, 날카로운 스파크, 방사형 집중선을 추가했습니다. 일반 기술은 0.15초, 스페셜 기술은 0.25초 동안 타격 연출이 남으며 스페셜의 검은 외곽선을 강화합니다. 투사체·돌진·근접 타격의 속성 표현을 구분하고 모바일에서는 이펙트 수를 조절합니다. 실제 전투 판정·히트스톱·이동 속도는 바꾸지 않습니다.</p>
                 <strong>이전 패치 · 애니메이션 그래픽 2차</strong>
                 <p>초고속 돌진은 진행 방향으로 1.6배, 직각 방향으로 0.7배 늘이고, 일반 돌진은 각각 1.25배와 0.85배로 변형합니다. 돌진 종료 시 순간적으로 눌린 뒤 0.12초 동안 원래 형태로 복구됩니다. 순간이동, 실제 충돌 범위, 피해량, 이동 거리 및 속도는 변경되지 않습니다.</p>
@@ -4476,7 +4479,7 @@ function ninjaWallHit(b){const f=b.ninjaWall;if(f&&t<=f.until&&f.owner.alive){b.
 function updateNinja(dt){for(const a of actors){if(!a.alive){a.ninjaFields=[];continue;}const stab=a.ninjaStab;if(stab){if(t>stab.until||!stab.target.alive)a.ninjaStab=null;else if(Math.hypot(stab.target.x-a.x,stab.target.z-a.z)<=8){hurt(a,stab.target,144);ninjaRod(a,stab.target);stab.target.ninjaForce=null;a.ninjaStab=null;}}
  a.ninjaFields=(a.ninjaFields||[]).filter(f=>{
  if(f.kind==='clone'){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=actorRadius(b)+R){hurt(a,b,120);b.rootUntil=Math.max(b.rootUntil||0,t+.3);ninjaFx('lightning',f.x,f.z,3,.25);if(f.visual)f.visual.visible=false;if(f.clone)f.clone.visible=false;return false;}return t<f.until;}
- if(t>=f.until){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=5.5){b.rootUntil=Math.max(b.rootUntil||0,t+1);if(b.dash)endDash(b);b.ninjaForce=null;b.ninjaLiftUntil=t+1;hurt(a,b,240);}ninjaFx('push',f.x,f.z,5.5,.5);return false;}
+ if(t>=f.until){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=5.5){b.rootUntil=Math.max(b.rootUntil||0,t+1);if(b.dash)endDash(b);b.ninjaForce=null;b.ninjaLiftUntil=t+1;hurt(a,b,240,"skill",0,{type:"CHIBAKU_TENSEI",visualSpecial:true});}ninjaFx('push',f.x,f.z,5.5,.5);return false;}
  for(const b of actors)if(b!==a&&b.alive)gravityHolePull(b,f,10,dt);return true;
  });}}
 
@@ -4923,6 +4926,7 @@ function useProjectionSorcery(e) {
 }
 
 function useProjectionBarrage(e) {
+  const cinemaSeries={};
   ((e.projectionStacks = 0), (e.busy = 1 / 0), (e.projectionSequence = !0));
   for (let a = 0; a < 8; a++) {
     const start = () => {
@@ -4933,6 +4937,7 @@ function useProjectionBarrage(e) {
         (e.dash = {
           projection: !0,
           specialSource: !0,
+          cinemaStage:{rush:true,final:a===7,series:cinemaSeries},
           speed: 150,
           remaining: 40,
           hit: new Set(),
@@ -5223,7 +5228,7 @@ function useCursedRed(e) {
       (addZone(e, e.x, e.z, e.x + o.x * n, e.z + o.z * n, 2.4 * R, 130, 1, 16717630, "special", new Set(), 0, "gojoRed"),
         skillEvent(e, "CURSED_RED", "fire"));
       animeSonicBoom(e.x,e.z,o,0xff4b59,1.6);
-      animeTrailSegment({x:e.x,y:1.3,z:e.z},{x:e.x+o.x*n,y:1.3,z:e.z+o.z*n},ANIME_FLIGHT_STYLES.CURSED_RED);
+      animeTrailSegment({x:e.x,y:1.3,z:e.z},{x:e.x+o.x*n,y:1.3,z:e.z+o.z*n},ANIME_FLIGHT_STYLES.CURSED_RED,false,animeVfxAppearance(e,"CURSED_RED"));
     }));
 }
 
@@ -5695,6 +5700,7 @@ function useNikaLightning(e, a, o) {
 function useNikaGigant(e) {
   e.nika &&
     ((e.nikaGigantUntil = t + EMPEROR_CONFIG.gigantDuration),
+    (e.cinemaGigantSeries={}),
     (e.busy = t + 0.35),
     checkWallBounce(e),
     fx("ring", e.x, e.z, actorRadius(e) + 1, 16777215, 0.5),
@@ -7418,7 +7424,7 @@ function updateRengokuObjects() {
           const n = a.hits.get(o) || { count: 0, next: 0 };
           if (n.count >= 2 || t < n.next - 1e-8) continue;
           const s = damageQueue.length;
-          (withDamageOrigin(e, a.specialSource, () => hurt(e, o, 30)),
+          (withDamageOrigin(e, a.specialSource, () => hurt(e,o,30,"skill",0,{type:"RENGOKU",noStop:true})),
             damageQueue.length > s && (n.count++, (n.next = t + 1), a.hits.set(o, n)));
         }
       if (a.mesh)
@@ -8458,11 +8464,14 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
       b: a,
       damageKind: n,
       damageLabel: damageOrigin?.a === e ? damageOrigin.label : undefined,
-      animeSkill: headless ? undefined : animeInkSourceOf(e) || animeDashType(e,animeMovementState(e)) || (i ? e.animeContactSkill : undefined),
+      animeSkill: cinematic?.type || animeInkSourceOf(e) || animeDashType(e,animeMovementState(e)) || (i ? e.animeContactSkill : undefined),
       animeContact: headless ? undefined : {x:a.x,z:a.z,dx:a.x-e.x,dz:a.z-e.z},
       hitMode: alchemyHitMode || (e.dash ? "melee" : null),
-      cinemaRush: !!cinematic?.rush,
-      cinemaFinal: !!cinematic?.final,
+      cinemaVisualSpecial: !!cinematic?.visualSpecial,
+      cinemaNoStop: !!cinematic?.noStop,
+      cinemaRush: !!(cinematic?.rush ?? e.cinemaHitStage?.rush ?? e.dash?.cinemaStage?.rush),
+      cinemaFinal: !!(cinematic?.final ?? e.cinemaHitStage?.final ?? e.dash?.cinemaStage?.final),
+      cinemaSeries: cinematic?.series ?? e.cinemaHitStage?.series ?? e.dash?.cinemaStage?.series ?? ("collision"===n&&nikaGigantActive(e)?e.cinemaGigantSeries:undefined),
       gunHeadshot: !!cinematic?.gunHeadshot,
       kenpachiForm: cinematic?.kenpachiForm,
       skillHit: "collision" !== n || i,
@@ -9662,6 +9671,7 @@ function rezeZone(a, x, z, r, damage, life) {
     until: t + life,
     hit: new Set(),
     special: specialSourceOf(a),
+    inkSkill:animeInkSourceOf(a),
   });
   rezeExplosion(x, z, r, life);
 }
@@ -9677,7 +9687,7 @@ function updateRezeZones() {
         Math.hypot(b.x - p.x, b.z - p.z) <= p.r + actorRadius(b)
       ) {
         p.hit.add(b);
-        withDamageOrigin(p.a, p.special, () => hurt(p.a, b, p.damage));
+        withDamageOrigin(p.a,p.special,()=>hurt(p.a,b,p.damage),undefined,undefined,p.inkSkill);
       }
     return true;
   });
@@ -10282,12 +10292,15 @@ function useWaterSlash(e, a, o) {
 }
 
 function useHinokamiEnbu(e, a, o) {
-  ((e.busy = t + 0.35),
-    schedule(e, 0.35, () =>
-      dash(e, nearest(e) || o, 24, 44, 10.8, 200, 0, !1, () => {
-        (waterSlash(e, !0), withAlchemyHitMode("melee",()=>area(e,e.x,e.z,11,100,16724024)));
-      }),
-    ));
+  const series={};
+  e.busy=t+.35;
+  schedule(e,.35,()=>{
+    dash(e,nearest(e)||o,24,44,10.8,200,0,!1,()=>{
+      waterSlash(e,!0);
+      cinemaHitStage(e,{rush:true,final:true,series},()=>withAlchemyHitMode("melee",()=>area(e,e.x,e.z,11,100,16724024)));
+    });
+    e.dash.cinemaStage={rush:true,final:false,series};
+  });
 }
 
 function startThunderclapDash(actor, target, length, speed, damage, firstLeap, onEnd = null) {
@@ -10312,6 +10325,7 @@ function useThunderclapFlash(actor, target) {
 function useThunderclapSixfold(actor) {
   actor.busy = Infinity;
   let remaining = 6;
+  const cinemaSeries={};
   const next = () => {
     const target = nearest(actor);
     if (!target) { actor.busy = t; return; }
@@ -10321,6 +10335,7 @@ function useThunderclapSixfold(actor) {
         schedule(actor, .12, next);
       }
     });
+    actor.dash.cinemaStage={rush:true,final:remaining===1,series:cinemaSeries};
   };
   schedule(actor, .2, next);
 }
@@ -11123,7 +11138,7 @@ function advanceActors(e) {
       t < stormUntil && !a.dash?.projection && !a.dash?.boundman && steerStorm(a, e),
       a.dash?.projection || a.dash?.boundman)
     ) {
-      withDamageOrigin(a, a.dash.specialSource, () => advanceReflectingDash(a, e));
+      withDamageOrigin(a,a.dash.specialSource,()=>advanceReflectingDash(a,e),undefined,undefined,animeDashType(a,a.dash));
       continue;
     }
     if (a.dash?.newcomerRush) {
@@ -11131,7 +11146,7 @@ function advanceActors(e) {
       continue;
     }
     if (a.dash?.extraType) {
-      withDamageOrigin(a, a.dash.specialSource, () => advanceExtraDash(a, e));
+      withDamageOrigin(a,a.dash.specialSource,()=>advanceExtraDash(a,e),undefined,undefined,animeDashType(a,a.dash));
       continue;
     }
     const o = a.x,
@@ -11154,7 +11169,9 @@ function advanceActors(e) {
           segmentDistance(e.x, e.z, o, n, a.x, a.z) <= s.width / 2 + actorRadius(e) &&
           (s.damage > 0 &&
             withDamageOrigin(a, s.specialSource, () =>
-              hurt(a, e, s.damage, s.powerWeapon ? "powerWeapon" : "skill"),
+              hurt(a, e, s.damage, s.powerWeapon ? "powerWeapon" : "skill",0,{
+                ...s.cinemaStage,type:s.animeSkill||animeDashType(a,s)
+              }),
             ),
           s.rezeDash && rezeExplosion(e.x, e.z, 6, 0.5),
           s.hit.add(e),
@@ -11253,7 +11270,7 @@ function updateAutomaticCasts(e) {
 function addZone(e, a, o, n, s, i, r, l, c, h = "special", d = new Set(), u = 0, m = !1) {
   const f = {
     a: e,
-    animeSkill: animeSkillOf(e),
+    animeSkill: animeInkSourceOf(e),
     specialSource: specialSourceOf(e),
     damageLabel: damageOrigin?.a === e ? damageOrigin.label : undefined,
     x: a,
@@ -11882,7 +11899,7 @@ function clearWorld() {
 }
 
 function fx(e, a, o, n, s, i) {
-  if(e==="hit"){particleBurst(a,1.4,o,s,10,n);return;}
+  if(e==="hit"){if(!headless)particleBurst(a,1.4,o,animeMixColor(s,0xd6dce7,.22),8,n*.92);return;}
   if (headless || !world) return;
   let r, l;
   ((r =
@@ -15164,7 +15181,7 @@ function useHawksSword(a) {
 }
 
 function useHawksBarrage(a) {
-  const hits = new Map();
+  const hits = new Map(),cinemaSeries={};
   hold(a, 1);
   for (let volley = 0; volley < 2; volley++)
     schedule(a, 0.7 + volley * 0.3, () => {
@@ -15181,7 +15198,7 @@ function useHawksBarrage(a) {
           dz: d.z,
           kind: "barrage",
           distance: 0,
-          hits,
+          hits,cinemaLastVolley:volley===1,cinemaSeries,
         });
       }
     });
@@ -15232,7 +15249,8 @@ function updateHawks(dt) {
           const n = f.hits.get(b) || 0;
           if (n < 8) {
             f.hits.set(b, n + 1);
-            hurt(a, b, 35, "special");
+            hurt(a,b,35,"special",0,{type:"FIERCE_WINGS_BARRAGE",rush:true,
+              final:!!f.cinemaLastVolley||n===7,series:f.cinemaSeries});
             b.hawksDebuffs = (b.hawksDebuffs || []).filter((v) => v > t);
             if (b.hawksDebuffs.length >= 6) b.hawksDebuffs.shift();
             b.hawksDebuffs.push(t + 5);
@@ -17642,7 +17660,7 @@ function frame(timestamp) {
   }
   let visualDt = 0;
   if (running && !paused) {
-    visualDt = tickCinemaBattle(cinema.ending ? elapsedDt : realDt);
+    visualDt = tickCinemaBattle(cinema.ending ? elapsedDt : realDt,elapsedDt);
     hudTick += realDt;
     if (hudTick > .1) { updateHud(); hudTick=0; }
   } else accumulator=0;
@@ -17655,7 +17673,7 @@ function frame(timestamp) {
     renderSelectionPreviews(timestamp);requestAnimationFrame(frame);return;
   }
 
-  updateCinemaCamera(running&&!paused ? realDt : 0);
+  updateCinemaCamera(running&&!paused ? cinema.animationDt : 0);
   renderFrame(visualDt);
   publishOnlineScene(timestamp);
   requestAnimationFrame(frame);
@@ -25456,7 +25474,7 @@ function bleachSnowTicks(a,f){while(f.ticks<5&&t+1e-8>=f.next){for(const b of ac
 function bleachSnowVisual(f){if(headless)return;const g=new THREE.Group();g.position.set(f.x,0,f.z);const ring=bleachPart(g,new THREE.RingGeometry(8.92,9,64),0xc8f5ff,0,.06,0,.6);ring.rotation.x=-Math.PI/2;const frost=bleachPart(g,new THREE.CircleGeometry(9,48),0xafe9fc,0,.045,0,.13);frost.rotation.x=-Math.PI/2;for(let i=0;i<5;i++){const m=bleachPart(g,new THREE.SphereGeometry(2.8,10,6),0x6c8199,(i-2)*3,6.6,Math.sin(i)*1.3,.12);m.scale.y=.2;}const snow=new THREE.Group();for(let i=0;i<70;i++){const m=bleachPart(snow,new THREE.OctahedronGeometry(i%3?.055:.1),0xe1faff,0,0,0,.5);m.userData.seed=i*2.39996;}g.add(snow);bleachEffect(g,5,p=>{g.position.set(f.x,0,f.z);snow.children.forEach((m,i)=>{const q=m.userData.seed,rr=8.8*Math.sqrt((i+.5)/70);m.position.set(Math.cos(q+p*2)*rr,6*(1-((p*4+i*.071)%1)),Math.sin(q+p*2)*rr);m.rotation.z=p*9;});});}
 function bleachIcePrison(a,until){if(headless)return;const g=new THREE.Group();const v=bleachPart(g,new THREE.BoxGeometry(1.4,4.8,1.6),0xb5f2ff,0,2,0,.5),h=bleachPart(g,new THREE.BoxGeometry(4.3,1.25,1.6),0x9ce7ff,0,2.7,0,.45);bleachEffect(g,Math.max(.01,until-t),()=>g.position.set(a.x,0,a.z));}
 function useRyusenka(a){bleachPrepare(a,.4,()=>{const b=nearest(a);if(!b)return;const d=unit(b.x-a.x,b.z-a.z);a.dx=d.x;a.dz=d.z;a.bleachDash={remaining:27,speed:75,reduce:.25};a.busy=Infinity;});if(!headless){const g=new THREE.Group();for(const side of[-1,1]){for(let i=0;i<5;i++){const m=bleachPart(g,new THREE.ConeGeometry(.25,2.5-i*.25,4),0x9ee9ff,side*(1.4+i*.45),1.8-i*.1,-.7,.65);m.rotation.z=-side*(.8+i*.08);}bleachLine(g,[[side*1,0,0],[side*2,2,-.5],[side*4,2.8,-1]],0xdafaff,.14,.7);}for(let i=0;i<10;i++){const q=i*.7;bleachPart(g,new THREE.OctahedronGeometry(.3),0x8fdfff,Math.cos(q)*1.7,.3+i*.25,Math.sin(q)*1.7,.55);}const body=[];for(let j=0;j<18;j++){const q=j*.45;body.push([Math.cos(q)*1.7,.2+j*.13,Math.sin(q)*1.7]);}bleachLine(g,body,0x8fdbf7,.28,.65);for(const side of[-1,1]){const horn=bleachPart(g,new THREE.ConeGeometry(.12,.85,4),0xe9ffff,side*.32,1.65,1.8,.85);horn.rotation.z=side*.35;bleachPart(g,new THREE.SphereGeometry(.08,6,4),0x1d6b9a,side*.24,1.3,2.65);}const head=bleachPart(g,new THREE.ConeGeometry(.55,1.7,5),0xc6f7ff,0,1.1,2,.8);head.rotation.x=Math.PI/2;bleachEffect(g,1,p=>{g.position.set(a.x,.2,a.z);g.rotation.y=Math.atan2(a.dx,a.dz);if(p>.4&&!a.bleachDash)g.visible=false;});}}
-function advanceBleachDash(a,dt){const s=a.bleachDash;if(!s)return false;const target=nearest(a);if(target){const current=Math.atan2(a.dz,a.dx),desired=Math.atan2(target.z-a.z,target.x-a.x),delta=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),q=current+Math.max(-.8*dt,Math.min(.8*dt,delta));a.dx=Math.cos(q);a.dz=Math.sin(q);}const ox=a.x,oz=a.z,n=Math.min(s.remaining,speedOf(a)*dt);a.x+=a.dx*n;a.z+=a.dz*n;bleachClamp(a);resolveBleachWalls(a,{x:ox,z:oz});s.remaining-=n;const b=actors.filter(b=>b!==a&&bleachLive(b)&&!opmPhasing(b)&&segmentDistance(b.x,b.z,ox,oz,a.x,a.z)<=3+actorRadius(b)).sort((b,c)=>Math.hypot(b.x-ox,b.z-oz)-Math.hypot(c.x-ox,c.z-oz))[0];if(b){const frozenBonus=actors.some(owner=>(owner.bleachFields||[]).some(f=>owner.alive&&f.kind==='snow'&&t<f.until&&f.counts.has(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9));hurt(a,b,60,'special');a.noContactUntil=t+.2;b.noContactUntil=Math.max(b.noContactUntil||0,t+1);b.rootUntil=Math.max(b.rootUntil||0,t+1);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+1);b.bleachAnchor={x:b.x,z:b.z,until:t+1};bleachIcePrison(b,t+1);const anchor={x:b.x,z:b.z};schedule(a,1,()=>{if(b.alive){hurt(a,b,frozenBonus?240:180,'special');bleachShards(anchor.x,anchor.z,0xb1f1ff);}});}if(b||s.remaining<=1e-8||Math.hypot(a.x-ox,a.z-oz)<n*.5){a.bleachDash=null;a.busy=t;}if(!headless)beam(ox,oz,a.x,a.z,0xb2f0ff,.2,.45);mpGain(a,6*dt);return true;}
+function advanceBleachDash(a,dt){const s=a.bleachDash;if(!s)return false;const target=nearest(a);if(target){const current=Math.atan2(a.dz,a.dx),desired=Math.atan2(target.z-a.z,target.x-a.x),delta=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),q=current+Math.max(-.8*dt,Math.min(.8*dt,delta));a.dx=Math.cos(q);a.dz=Math.sin(q);}const ox=a.x,oz=a.z,n=Math.min(s.remaining,speedOf(a)*dt);a.x+=a.dx*n;a.z+=a.dz*n;bleachClamp(a);resolveBleachWalls(a,{x:ox,z:oz});s.remaining-=n;const b=actors.filter(b=>b!==a&&bleachLive(b)&&!opmPhasing(b)&&segmentDistance(b.x,b.z,ox,oz,a.x,a.z)<=3+actorRadius(b)).sort((b,c)=>Math.hypot(b.x-ox,b.z-oz)-Math.hypot(c.x-ox,c.z-oz))[0];if(b){const frozenBonus=actors.some(owner=>(owner.bleachFields||[]).some(f=>owner.alive&&f.kind==='snow'&&t<f.until&&f.counts.has(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9));hurt(a,b,60,'special',0,{type:'RYUSENKA',rush:true,final:false});a.noContactUntil=t+.2;b.noContactUntil=Math.max(b.noContactUntil||0,t+1);b.rootUntil=Math.max(b.rootUntil||0,t+1);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+1);b.bleachAnchor={x:b.x,z:b.z,until:t+1};bleachIcePrison(b,t+1);const anchor={x:b.x,z:b.z};schedule(a,1,()=>{if(b.alive){hurt(a,b,frozenBonus?240:180,'special',0,{type:'RYUSENKA',rush:true,final:true});bleachShards(anchor.x,anchor.z,0xb1f1ff);}});}if(b||s.remaining<=1e-8||Math.hypot(a.x-ox,a.z-oz)<n*.5){a.bleachDash=null;a.busy=t;}if(!headless)beam(ox,oz,a.x,a.z,0xb2f0ff,.2,.45);mpGain(a,6*dt);return true;}
 function bleachSegmentRect(x,z,ex,ez,f,pad=0){const ux=f.nz,uz=-f.nx;let ax=(x-f.x)*ux+(z-f.z)*uz,az=(x-f.x)*f.nx+(z-f.z)*f.nz,bx=(ex-f.x)*ux+(ez-f.z)*uz,bz=(ex-f.x)*f.nx+(ez-f.z)*f.nz;let lo=0,hi=1;for(const [v,d,r]of[[ax,bx-ax,6.5+pad],[az,bz-az,.75+pad]]){if(Math.abs(d)<1e-9){if(Math.abs(v)>r)return false;}else{let n=(-r-v)/d,m=(r-v)/d;if(n>m)[n,m]=[m,n];lo=Math.max(lo,n);hi=Math.min(hi,m);if(lo>hi)return false;}}return true;}
 function bleachWalls(){return actors.flatMap(a=>(a.bleachFields||[]).filter(f=>a.alive&&f.kind==='wall'&&t<f.until).map(f=>({a,f})));}
 function resolveBleachWalls(b,old={x:b.x,z:b.z}){for(const {a,f}of bleachWalls()){if(b===a||!bleachLive(b)||!bleachSegmentRect(old.x,old.z,b.x,b.z,f,actorRadius(b)))continue;const normal=(old.x-f.x)*f.nx+(old.z-f.z)*f.nz,side=Math.sign(normal)||-1,lat=(b.x-f.x)*f.nz-(b.z-f.z)*f.nx,r=actorRadius(b);b.x=f.x+Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nz+f.nx*side*(.75+r+.025);b.z=f.z-Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nx+f.nz*side*(.75+r+.025);const dot=b.dx*f.nx+b.dz*f.nz;if(dot*side<0){b.dx-=2*dot*f.nx;b.dz-=2*dot*f.nz;}const last=f.contacts?.get(b)??-99;if(t-last>=.3-1e-8){const first=!f.hits.has(b),stun=first?.3:.2;f.hits.add(b);(f.contacts??=new Map()).set(b,t);hurt(a,b,first?80:15);b.rootUntil=Math.max(b.rootUntil||0,t+stun);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+stun);}bleachClamp(b);}}
@@ -25471,7 +25489,7 @@ const expired=s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2;
 if(s.bleachKind==='sokatsui'&&(impact||expired)){area(s.a,s.x,s.z,4,125,0x408fff);bleachShards(s.x,s.z,0x3eaaff,14);bleachRing(s.x,s.z,4,0x6cd5ff,.4);}
 if(impact||expired){removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.4,s.z);if(s.bleachKind!=='getsuga')s.mesh.rotation.y+=dt*8;}return true;}
 function bleachSnowSlow(a){return actors.some(owner=>owner!==a&&owner.alive&&(owner.bleachFields||[]).some(f=>f.kind==='snow'&&t<f.until&&Math.hypot(a.x-f.x,a.z-f.z)<=9));}
-function updateBleach(dt){for(const a of actors){if(a.bleachIllusion&&!a.alive){if(a.bleachIllusion.mesh)a.bleachIllusion.mesh.visible=false;a.bleachIllusion=null;}if(bleachLocked(a)&&a.bleachAnchor?.until>t){a.x=a.bleachAnchor.x;a.z=a.bleachAnchor.z;}a.bleachFields=(a.bleachFields||[]).filter(f=>{if(!a.alive){f.active=false;return false;}if(f.kind==='coffin'){if(!f.captured&&t<f.capture){if(f.target?.alive){const d=unit(f.target.x-f.x,f.target.z-f.z),n=Math.min(50*dt,Math.hypot(f.target.x-f.x,f.target.z-f.z));f.x+=d.x*n;f.z+=d.z*n;}}else if(!f.captured){f.captured=true;f.targets=actors.filter(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=4+actorRadius(b));for(const b of f.targets){b.rootUntil=Math.max(b.rootUntil||0,f.until);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,f.until);b.bleachAnchor={x:b.x,z:b.z,until:f.until};}}for(const b of f.targets)if(b.alive&&t<f.until){const d=unit(f.x-b.x,f.z-b.z),n=Math.min(30*dt,Math.hypot(f.x-b.x,f.z-b.z));b.x+=d.x*n;b.z+=d.z*n;b.bleachAnchor={x:b.x,z:b.z,until:f.until};}if(t>=f.until-1e-8&&!f.hit){f.hit=true;for(const b of f.targets)if(b.alive)hurt(a,b,240,'special');}}if(t>=f.until-1e-8){f.active=false;return false;}if(f.kind==='snow'){const target=f.follow?.alive?f.follow:a;f.x=target.x;f.z=target.z;if(f.follow===a){const b=actors.find(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9+actorRadius(b));if(b)f.follow=b;}bleachSnowTicks(a,f);}return true;});}}
+function updateBleach(dt){for(const a of actors){if(a.bleachIllusion&&!a.alive){if(a.bleachIllusion.mesh)a.bleachIllusion.mesh.visible=false;a.bleachIllusion=null;}if(bleachLocked(a)&&a.bleachAnchor?.until>t){a.x=a.bleachAnchor.x;a.z=a.bleachAnchor.z;}a.bleachFields=(a.bleachFields||[]).filter(f=>{if(!a.alive){f.active=false;return false;}if(f.kind==='coffin'){if(!f.captured&&t<f.capture){if(f.target?.alive){const d=unit(f.target.x-f.x,f.target.z-f.z),n=Math.min(50*dt,Math.hypot(f.target.x-f.x,f.target.z-f.z));f.x+=d.x*n;f.z+=d.z*n;}}else if(!f.captured){f.captured=true;f.targets=actors.filter(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=4+actorRadius(b));for(const b of f.targets){b.rootUntil=Math.max(b.rootUntil||0,f.until);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,f.until);b.bleachAnchor={x:b.x,z:b.z,until:f.until};}}for(const b of f.targets)if(b.alive&&t<f.until){const d=unit(f.x-b.x,f.z-b.z),n=Math.min(30*dt,Math.hypot(f.x-b.x,f.z-b.z));b.x+=d.x*n;b.z+=d.z*n;b.bleachAnchor={x:b.x,z:b.z,until:f.until};}if(t>=f.until-1e-8&&!f.hit){f.hit=true;for(const b of f.targets)if(b.alive)hurt(a,b,240,'special',0,{type:'KUROHITSUGI',final:true});}}if(t>=f.until-1e-8){f.active=false;return false;}if(f.kind==='snow'){const target=f.follow?.alive?f.follow:a;f.x=target.x;f.z=target.z;if(f.follow===a){const b=actors.find(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9+actorRadius(b));if(b)f.follow=b;}bleachSnowTicks(a,f);}return true;});}}
 
 function addBleachDetails(a,g){if(!BLEACH_IDS.includes(a.d.id))return;const id=a.d.id,parts=new THREE.Group();parts.name='bleach-reference-details';g.add(parts);const box=(w,h,d,c,x,y,z,op=1)=>bleachPart(parts,new THREE.BoxGeometry(w,h,d),c,x,y,z,op);
  // Shihakusho: white crossed collar, black robe, sash. Captain haori leaves the black center exposed.
@@ -26801,7 +26819,7 @@ function updateDuelMarks() {
 function duelDamage(summon, target, damage, mode) {
   const { owner, special, rules } = summon;
   const before = damageQueue.length;
-  withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () => hurt(owner, target, damage, special ? "special" : "skill")), rules.name,undefined,summon.type);
+  withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () => hurt(owner,target,damage,special?"special":"skill",0,summon.cinemaStage)), rules.name,undefined,summon.type);
   return damageQueue.length > before && damageQueue.at(-1).b === target;
 }
 
@@ -27423,6 +27441,7 @@ function newcomerHit(owner, target, type, damage, mode, onConfirmedHit) {
   if (damageQueue.length <= before) return;
   const entry = damageQueue.at(-1);
   if (entry.a !== owner || entry.b !== target) return;
+  if(type==="RENJI_BANKAI"){entry.cinemaRush=true;entry.cinemaFinal=false;}
   if (onConfirmedHit) entry.onConfirmedHit = onConfirmedHit;
   return entry;
 }
@@ -27445,8 +27464,8 @@ function spawnNewcomerMissile(owner, type, heading, remaining, speed, radius, da
   return missile;
 }
 
-function launchBuggyWave(owner, count, second = false) {
-  const wave = { pending: count, returned: 0, second };
+function launchBuggyWave(owner, count, second = false, cinemaSeries={}) {
+  const wave = { pending: count, returned: 0, second, cinemaSeries };
   const offset = second ? Math.PI / count : 0;
   fx("ring", owner.x, owner.z, second ? 2.7 : 2.2, second ? 0xffdb89 : 0x7ac8ff, .34);
   particleBurst(owner.x,1.35,owner.z,second ? 0xffae68 : 0xff4c65,13,1.3);
@@ -27462,7 +27481,7 @@ function finishNewcomerMissile(missile, returned) {
   if (wave) {
     if (returned) wave.returned++;
     if (--wave.pending === 0 && !wave.second && wave.returned && owner.alive)
-      schedule(owner, .08, () => launchBuggyWave(owner, wave.returned, true));
+      schedule(owner, .08, () => launchBuggyWave(owner, wave.returned, true,wave.cinemaSeries));
   }
   return false;
 }
@@ -27552,7 +27571,13 @@ function advanceNewcomerMissile(missile, dt) {
     if (type === "URYU_REGEN" && reflectAlchemyShot(missile, contact, from.x, from.z, missile.damage, radius))
       return finishNewcomerMissile(missile, false);
     const before = damageQueue.length;
-    newcomerHit(owner, contact, type, missile.damage, "ranged");
+    const confirmedEntry=newcomerHit(owner, contact, type, missile.damage, "ranged");
+    if(confirmedEntry&&type==="BUGGY_FESTIVAL"&&missile.wave){
+      const wave=missile.wave;
+      confirmedEntry.cinemaRush=true;
+      confirmedEntry.cinemaFinal=wave.second || (wave.pending===1&&wave.returned===0);
+      confirmedEntry.cinemaSeries=wave.cinemaSeries;
+    }
     if (missile.hits && damageQueue.length > before) {
       const hit = damageQueue.at(-1);
       if (hit.a === owner && hit.b === contact) hit.uryuArrowHits = missile.hits;
@@ -27612,7 +27637,7 @@ function updateNewcomerFields() {
       const direction = unit(target.x-owner.x, target.z-owner.z);
       const distance = Math.hypot(target.x-owner.x, target.z-owner.z) + 3;
       newcomerBolt(owner.x, owner.z, direction, distance, .64, 0x43bcff, .29);
-      animeTrailSegment({x:owner.x,y:1.36,z:owner.z},{x:owner.x+direction.x*distance,y:1.36,z:owner.z+direction.z*distance},ANIME_FLIGHT_STYLES.URYU_SPRENGER);
+      animeTrailSegment({x:owner.x,y:1.36,z:owner.z},{x:owner.x+direction.x*distance,y:1.36,z:owner.z+direction.z*distance},ANIME_FLIGHT_STYLES.URYU_SPRENGER,false,animeVfxAppearance(owner,"URYU_SPRENGER"));
       particleBurst(target.x,1.2,target.z,0x6de3ff,17,1.35);
       newcomerHit(owner, target, type, 100, "ranged");
       removeMesh(field.mesh);
@@ -27687,7 +27712,8 @@ function renjiSnakeBeam(owner, target, type, damage) {
   if (!target?.alive) return;
   const heading = unit(target.x-owner.x,target.z-owner.z);
   const offset = Math.min(2.3, Math.hypot(target.x-owner.x, target.z-owner.z)*.40);
-  const origin = {owner, x:owner.x+heading.x*offset, z:owner.z+heading.z*offset, heading,
+  const origin = {owner, x:owner.x+heading.x*offset, z:owner.z+heading.z*offset, heading,type,
+    cinemaStage:type==="RENJI_BANKAI"?{rush:true,final:true}:undefined,
     special:type === "RENJI_BANKAI",
     rules:{name:NEWCOMER_SKILLS[type][0], color:0xff455d},
     renderBeam:(x,z,direction,length,width) => newcomerBolt(x,z,direction,length,width,0xf92e47,.40)};
@@ -29690,10 +29716,11 @@ function akiGunTracer(actor, attack, direction, range, width, life) {
     actor.z + direction.z * center);
   tracer.rotation.y = Math.atan2(direction.x, direction.z);
   akiEffect(tracer, life);
-  const style=ANIME_FLIGHT_STYLES[attack.weapon==="SRS99"?"AKI_AIMED_SHOT":attack.weapon==="AK47"?"AKI_BARRAGE":"AKI_RAPID_FIRE"];
+  const type=attack.weapon==="SRS99"?"AKI_AIMED_SHOT":attack.weapon==="AK47"?"AKI_BARRAGE":"AKI_RAPID_FIRE";
+  const style=ANIME_FLIGHT_STYLES[type];
   const y=tracer.position.y;
   animeTrailSegment({x:actor.x+direction.x*start,y,z:actor.z+direction.z*start},
-    {x:actor.x+direction.x*range,y,z:actor.z+direction.z*range},style);
+    {x:actor.x+direction.x*range,y,z:actor.z+direction.z*range},style,false,animeVfxAppearance(actor,type,style[0]));
 }
 
 function fireAkiGun(actor, attack, range, aimed = false) {
@@ -30099,6 +30126,7 @@ function practiceArtwork(type,c){preloadSkillBanner(type);if(bannerAssets[type]?
 function renderPracticePanel(){if(!practiceActive||headless)return;const c=CHARACTER_DATABASE[practiceIndex],a=actors[0];$('practicePortrait').src=fighterPortrait(c);$('practicePortrait').alt=c.name;$('practiceName').textContent=c.name;$('practiceRole').textContent=c.role||c.battleType;const skills=practiceSkills(c);$('practiceSkills').innerHTML=skills.map(s=>{const url=practiceArtwork(s.type,c);return `<button type="button" class="practice-skill${s.type===practiceSelectedType?' active':''}" data-practice-skill="${s.type}" aria-label="${s.name} 사용" aria-pressed="${s.type===practiceSelectedType}" title="${s.name}">${url?`<img src="${url}" alt="${s.name}" draggable="false">`:`<strong>${s.name}</strong>`}<span>${s.special?'스페셜':'일반 기술'}</span></button>`;}).join('');$('practiceSkills').querySelectorAll('button').forEach(button=>button.onclick=()=>practiceCast(button.dataset.practiceSkill));renderPracticeDamageInfo();}
 function practiceCast(type){
  if(!practiceActive||!running)return false;const c=CHARACTER_DATABASE[practiceIndex],entry=practiceSkills(c).find(s=>s.type===type);if(!entry)return false;
+ if(cinema.stop>0&&!paused){cinema.practiceBuffered=type;return true;}
  let a=actors[0];if(a.busy>t+1e-8||a.dash||a.bleachDash||timeStop||pendingTimeStop||bitesMovement||ballFrozen(a)||teachLocked(a)||kamuiHidden(a)||bleachLocked(a)||kenpachiBankaiActive(a))a=practiceSetup(practiceIndex,true);
  paused=false;practiceSelectedType=type;
  if(['DELTA_SCALE_SABER','MILLENNIUM_EMPEROR_NOVA'].includes(type))a.braveUntil=t+10;
@@ -30920,7 +30948,7 @@ function animeEffect(mesh, life, family, animate) {
   effects.at(-1).animeFamily = family;
 }
 
-function animeSonicBoom(x, z, direction, color, radius=1.35, y=1.3) {
+function animeSonicBoom(x, z, direction, color, radius=1.35, y=1.3, intensity=1) {
   if (headless || !world || !Number.isFinite(x+z+y)) return;
   const heading = unit(direction.x, direction.z);
   const group = new THREE.Group();
@@ -30928,8 +30956,8 @@ function animeSonicBoom(x, z, direction, color, radius=1.35, y=1.3) {
   group.position.set(x,y,z);
   group.rotation.y = Math.atan2(heading.x,heading.z);
   const layers = [
-    [0xffffff,.055,.82],
-    [color,.115,.36],
+    [animeMixColor(0xffffff,color,.12),.055,.72*Math.sqrt(intensity)],
+    [color,.115,.34*Math.sqrt(intensity)],
   ].map(([ink, thickness, opacity])=>{
     const geometry = animeSharedGeometry("anime-sonic-ring:"+thickness,
       ()=>new THREE.TorusGeometry(1,thickness,5,32));
@@ -30952,12 +30980,15 @@ function animeSonicBoom(x, z, direction, color, radius=1.35, y=1.3) {
 }
 
 // A single tapered mesh joins successive samples of a real flight path.
-function animeTrailSegment(from, to, style, returning=false) {
+function animeTrailSegment(from, to, style, returning=false, appearance=null) {
   if (headless || !world) return;
   const dx=to.x-from.x, dy=to.y-from.y, dz=to.z-from.z;
   const length=Math.hypot(dx,dy,dz);
   if (length<.06 || !Number.isFinite(length)) return;
-  const [color,width,life] = style;
+  const [baseColor,baseWidth,life] = style;
+  const color=appearance?.color??baseColor;
+  const intensity=appearance?.strength??1;
+  const width=baseWidth*(.84+.16*intensity);
   const form=ANIME_TRAIL_FORMS.get(style)||"beam";
   const geometry = animeSharedGeometry("anime-tapered-flight-ribbon:"+form,()=>{
     const g = new THREE.BufferGeometry(), positions=[], colors=[];
@@ -30992,10 +31023,10 @@ function animeTrailSegment(from, to, style, returning=false) {
     g.setAttribute("color",new THREE.Float32BufferAttribute(colors,3));
     return g;
   });
-  const dark = color === 0x231d36;
+  const dark = baseColor === 0x231d36;
   const material = new THREE.MeshBasicMaterial({
-    color:returning?0x9eeaff:color,vertexColors:true,transparent:true,
-    opacity:dark?.70:.68,depthWrite:false,side:THREE.DoubleSide,
+    color:returning?(appearance?.accent??0x9eeaff):color,vertexColors:true,transparent:true,
+    opacity:(dark?.62:.60)*Math.sqrt(intensity),depthWrite:false,side:THREE.DoubleSide,
     blending:dark?THREE.NormalBlending:THREE.AdditiveBlending,
   });
   const mesh = new THREE.Mesh(geometry,material);
@@ -31005,7 +31036,7 @@ function animeTrailSegment(from, to, style, returning=false) {
   mesh.scale.set(width,width,length);
   const animate = progress => {
     const fade=(1-progress)**1.2;
-    mesh.userData.akiCustomOpacity=(dark?.7:.68)*fade;
+    mesh.userData.akiCustomOpacity=(dark?.62:.60)*Math.sqrt(intensity)*fade;
     mesh.scale.x=mesh.scale.y=width*(1-.50*progress);
   };
   animeEffect(mesh,life,"trail",animate);
@@ -31019,14 +31050,15 @@ function animeFlightSample(shot, type, point=animeFlightPoint(shot), force=false
   const style=ANIME_FLIGHT_STYLES[type];
   if (!style || headless || !world || !Number.isFinite(point.x+point.y+point.z)) return;
   point={x:point.x,y:point.y,z:point.z};
+  const vfx=animeVfxAppearance(shot.a||shot.owner,type,style[0]);
   let trail=shot.animePath;
   if (!trail) {
     trail=shot.animePath={point,at:t,type};
-    if (style[3]) animeSonicBoom(point.x,point.z,shot.heading || shot.direction || {x:shot.dx??1,z:shot.dz??0},style[0],style[3],point.y);
+    if (style[3]) animeSonicBoom(point.x,point.z,shot.heading || shot.direction || {x:shot.dx??1,z:shot.dz??0},vfx.color,style[3]*Math.sqrt(vfx.strength),point.y,vfx.strength);
     return;
   }
   if (!force && t-trail.at<.045-1e-8) return;
-  animeTrailSegment(trail.point,point,style,!!shot.returning);
+  animeTrailSegment(trail.point,point,style,!!shot.returning,vfx);
   if (ANIME_TRAIL_FORMS.get(style)==="flame" && t-(trail.smokeAt??-Infinity)>=.12 &&
       Math.hypot(point.x-trail.point.x,point.z-trail.point.z)>.2) {
     trail.smokeAt=t;
@@ -31118,14 +31150,14 @@ function animeSilhouetteVertices(actor) {
   return result;
 }
 
-function animeGhost(actor,x,z,color,life=.32) {
+function animeGhost(actor,x,z,color,life=.32,opacity=.45) {
   if (headless || !world || !actor.mesh) return;
   const vertices=animeSilhouetteVertices(actor);
   if (!vertices) return;
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute("position",new THREE.BufferAttribute(vertices,3));
   const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({
-    color,transparent:true,opacity:.45,depthWrite:false,side:THREE.FrontSide,
+    color,transparent:true,opacity,depthWrite:false,side:THREE.FrontSide,
   }));
   mesh.name="anime-dash-silhouette";
   mesh.position.set(x,Math.max(1.0,actor.mesh.position.y),z);
@@ -31135,7 +31167,7 @@ function animeGhost(actor,x,z,color,life=.32) {
   if (actor.mesh.scale.x < .8 || actor.mesh.scale.y < .8)
     mesh.scale.setScalar(1.25*opmScale(actor)*emperorSize(actor));
   animeEffect(mesh,life,"ghost",progress=>{
-    mesh.userData.akiCustomOpacity=.45*(1-progress)**1.35;
+    mesh.userData.akiCustomOpacity=opacity*(1-progress)**1.35;
   });
 }
 function animeTeleport(actor,type,x,z,arrival=true) {
@@ -31143,8 +31175,9 @@ function animeTeleport(actor,type,x,z,arrival=true) {
   if (color==null) return;
   // A discontinuous move is not a physical dash.
   actor.animeStretch=null;
-  animeGhost(actor,x,z,color,.30);
-  if (arrival && Math.hypot(actor.x-x,actor.z-z)>.2) animeGhost(actor,actor.x,actor.z,color,.20);
+  const vfx=animeVfxAppearance(actor,type,color);
+  animeGhost(actor,x,z,vfx.color,.30,.38*Math.sqrt(vfx.strength));
+  if (arrival && Math.hypot(actor.x-x,actor.z-z)>.2) animeGhost(actor,actor.x,actor.z,vfx.accent,.20,.33*Math.sqrt(vfx.strength));
 }
 function animeDashType(actor,state) {
   if (!state) return;
@@ -31209,13 +31242,16 @@ function animeActorMotionFinish(samples) {
     const type=beforeType||animeDashType(actor,state),style=ANIME_DASH_STYLES[type];
     animeUpdateStretch(actor,type,state,dx,dz);
     if(!state||!style||Math.hypot(dx,dz)<1e-6)continue;
-    const [color,fast,sonic]=style;
+    const [color,fast,sonic]=style,vfx=animeVfxAppearance(actor,type,color);
     const first=state.animeGhostAt==null;
     if(first||t-state.animeGhostAt>=.1-1e-8){
-      animeGhost(actor,x,z,color,fast?.32:.24);
+      const index=actor.animeGhostColorIndex??0;
+      actor.animeGhostColorIndex=index+1;
+      const ink=index%3===2?vfx.accent:vfx.color;
+      animeGhost(actor,x,z,ink,(fast?.32:.24)*(.92+.08*vfx.strength),.39*Math.sqrt(vfx.strength));
       state.animeGhostAt=t;
     }
-    if(first&&sonic)animeSonicBoom(x,z,unit(dx,dz),color,actorRadius(actor)*1.12);
+    if(first&&sonic)animeSonicBoom(x,z,unit(dx,dz),vfx.color,actorRadius(actor)*1.12*Math.sqrt(vfx.strength),1.3,vfx.strength);
     animeInkDashSample(actor,state,type,x,z,dx,dz);
   }
 }
@@ -31308,6 +31344,103 @@ function animeBlendRemoteStretch(actor,blend) {
 }
 
 
+// Stage 5: character visual identity. No profile value is used by combat physics.
+const ANIME_VFX_PROFILES = Object.freeze({
+  tanjiro:[0xef5938,0xa5eaff,1.00], zenitsu:[0xffd243,0xd8f8ff,1.08],
+  inosuke:[0x859de5,0xe5eaff,.95], naruto:[0xff983d,0xffedb5,1.00],
+  sasuke:[0x8879e7,0xd3efff,1.03], luffy:[0xe45d57,0xffe2a3,1.05],
+  akaza:[0x4caafa,0xe1f2ff,1.04], denji:[0xffa343,0xf2d9af,1.02],
+  izuku:[0x59d9b2,0xe1fff0,1.00], yuji:[0xe75164,0xe5b1bd,1.02],
+  todo:[0xf0be70,0xffe8c8,1.02], megumi:[0x77749b,0xe2d9f4,.84],
+  yuta:[0x9378d2,0xf0e5ff,1.05], hakari:[0xb5db69,0xffe2a0,.91],
+  zoro:[0x81ce9a,0xb2a0fc,1.12], bakugo:[0xff9b39,0xffe5a0,1.12],
+  jotaro:[0x9c80e6,0xf5e9ff,1.01], kokushibo:[0xb17fec,0xffd790,1.10],
+  gyomei:[0xa9b2b4,0xf0e4cd,1.04], naoya:[0xe8eaff,0xb9a1ec,1.03],
+  gojo:[0xa27bef,0xe6d7ff,1.15], law:[0x57beed,0xe1f4ff,.80],
+  emperor_luffy:[0xece6de,0xffd07a,1.14], kira:[0xe795bb,0xf5d2e6,1.01],
+  kuzan:[0x85cdf0,0xe8f7ff,1.06], borsalino:[0xffdf64,0xfff7da,1.09],
+  sakazuki:[0xe65b37,0xffcc80,1.14], teach:[0x65507e,0xc0a4cf,1.11],
+  rengoku:[0xf26036,0xffc65e,1.14], giyu:[0x389edc,0xb4ebff,.96],
+  tengen:[0xffae57,0xffd9ee,1.09], guy:[0xe84953,0xffaa9a,1.17],
+  douma:[0x94dbe9,0xd9f7fc,1.00], tokoyami:[0x75618f,0xc5aedf,1.04],
+  dark_deku:[0x55d19a,0x313d43,1.10], shoto:[0x9bd9f7,0xf4a06c,1.02],
+  hawks:[0xe66d77,0xffc6bd,.94], aki:[0x879cac,0xe8d9c0,.89],
+  aki_gun_fiend:[0xb7ae9e,0xffdfad,.81], power:[0xe45c77,0xfdb3bb,.96],
+  reze:[0xef6348,0xffb16c,1.15], pain:[0x9b87c7,0xd6cede,1.10],
+  kakashi:[0x68b7f2,0xd9f6ff,1.00], ichigo:[0x66799e,0xe8f2ff,1.07],
+  byakuya:[0xe77fb7,0xffd6e8,.96], aizen:[0x8467bc,0xdbc9f0,1.11],
+  toshiro:[0x8bdcf4,0xe6faff,1.04], saitama:[0xe5aa58,0xffe8c6,1.18],
+  genos:[0xffaa53,0xffe7ac,1.10], tatsumaki:[0x69daa6,0xd8f9e5,1.12],
+  silver_fang:[0x7ed4e5,0xd7eff4,.93], child_emperor:[0x5cbf99,0xffeaad,.99],
+  metal_bat:[0xdd7183,0xffd3cf,1.06], edward:[0xdcbaa0,0xe8f5fa,1.02],
+  alphonse:[0x96aec7,0xe4effa,1.00], roy:[0xf07344,0xffd592,1.12],
+  scar:[0xb8ad9c,0xdaf2e8,1.10], dio:[0xe9bc4f,0xfae5a9,1.08],
+  bucciarati:[0x8bc9ec,0xe1f2ff,.90], kenpachi:[0xf0c759,0xffecb8,1.14],
+  higuruma:[0xc9ae72,0xffe9b0,.91], shikamaru:[0x655d7f,0xb1aac0,.75],
+  gaara:[0xcaa26c,0xf3d8aa,.96], yuugi:[0x987ad8,0xf0d599,.99],
+  kaiba:[0x9edbf5,0xe6f4ff,1.07], buggy:[0xf1725e,0x90dbfc,.90],
+  sanji:[0xef6841,0xffc68c,1.05], uryu:[0x74c6f0,0xeafaff,.88],
+  renji:[0xe45b64,0xf7e2c8,1.08],
+});
+const ANIME_VFX_SKILLS = new Map();
+for(const [color,accent,strength,skills] of [
+  [0xffd648,0xd9f8ff,1.08,"THUNDERCLAP_FLASH THUNDERCLAP_SIXFOLD"],
+  [0x81caff,0xffe09b,1.10,"THUNDER_GOD"],
+  [0xeaf0ff,0xb6a0f2,1.04,"PROJECTION_BARRAGE PROJECTION_SORCERY"],
+  [0xffdf62,0xfff4c8,1.10,"AMA_NO_MURAKUMO YASAKANI_MAGATAMA YATA_MIRROR"],
+  [0xe94953,0xff9f95,1.17,"NIGHT_GUY"],
+  [0xef5834,0xffbd56,1.15,"RENGOKU UNKNOWING_FIRE RISING_SCORCHING_SUN"],
+  [0xef6841,0xffc786,1.08,"SANJI_DIABLE"],
+  [0x42b8f9,0xc3f7ff,1.16,"SANJI_IFRIT"],
+  [0xf3bc78,0xffedd1,.94,"SANJI_MUTTON SANJI_PARTY"],
+  [0x59d59e,0x303942,1.13,"DETROIT_120 BLACK_WHIP"],
+  [0xff963a,0xffdfa0,1.13,"EXPLOSION_DRIVE HOWITZER_IMPACT"],
+  [0xef6744,0xffb46c,1.13,"REZE_SHOT REZE_DASH REZE_BOMB"],
+  [0x6dbbf6,0xe0f9ff,1.02,"RAIKIRI LIGHTNING_CLONE CHIDORI_AURA"],
+  [0x429fdf,0xc8f2ff,.96,"WATER_SLASH STRIKING_TIDE RIPPLE_THRUST DEAD_CALM"],
+  [0xef613b,0xffc870,1.05,"BURNING_BONES HINOKAMI_ENBU"],
+  [0xa690ec,0xe5d9ff,1.10,"ASURA"],
+  [0x78cb9c,0xe0f1d2,1.00,"PURGATORY_ONIGIRI"],
+  [0x687ca4,0xe3efff,1.04,"GETSUGA ICHIGO_SHUNPO"],
+  [0xdd4966,0x786478,1.09,"BLACK_GETSUGA"],
+  [0xe4aa63,0xffecd0,1.17,"SERIOUS_PUNCH"],
+  [0x74bff1,0xe4faff,1.02,"CURSED_BLUE"],
+  [0xf05d72,0xffc6c9,1.08,"CURSED_RED"],
+  [0xac79e9,0xe8d5ff,1.18,"HOLLOW_PURPLE"],
+  [0x77709e,0xc1b1dc,.93,"AMATERASU KUROHITSUGI TEACH_BLACK_HOLE KUROUZU"],
+  [0x7895ec,0xe4f8ff,.96,"SAGE_RASENSHURIKEN RASENGAN_AURA"],
+  [0xffa347,0xffecc0,1.08,"KURAMA_RASENGAN"],
+  [0x91d8f5,0xe8fbff,1.04,"ICE_AGE PHEASANT_BEAK ICE_BALL RYUSENKA HEAVEN_ICE_WALL LOTUS_ICE SCATTERING_LOTUSES"],
+  [0xf17440,0xffca85,1.08,"FLASHFIRE_FIST DAI_FUNKA MEIGO RYUSEI_KAZAN"],
+  [0x7ed0ed,0xf6b98d,1.02,"FLASHFREEZE_HEATWAVE"],
+  [0x79d6ef,0xe3faff,.87,"URYU_REGEN URYU_SPRENGER URYU_ANTITHESIS"],
+  [0xe685c7,0xf9def4,.92,"DUEL_MAGICIAN_GIRL SENBONZAKURA SENBONZAKURA_KAGEYOSHI BYAKUYA_SHUNPO"],
+  [0xee736a,0xffe7d7,1.05,"DUEL_OSIRIS"],
+  [0xafdfff,0xeefaff,1.06,"DUEL_BLUE_EYES DUEL_XYZ DUEL_ULTIMATE"],
+  [0xe66f60,0xa4dcff,.91,"BUGGY_BALL BUGGY_ESCAPE BUGGY_FESTIVAL"],
+  [0xef5c67,0xf8e5cc,1.09,"RENJI_HIKOTSU RENJI_ZABIMARU RENJI_BANKAI"],
+  [0xd4b99b,0xe1f2df,1.08,"SCAR_ARM SCAR_GROUND SCAR_CHAIN"],
+  [0xffa556,0xffe6b3,1.10,"INCINERATION INCINERATION_UPGRADE ROY_INFERNO EDWARD_CANNON"],
+  [0x71d4a4,0xe0f9e9,1.13,"PSYCHOKINESIS"],
+])for(const type of skills.split(" "))ANIME_VFX_SKILLS.set(type,[color,accent,strength]);
+
+function animeMixColor(a,b,weight) {
+  return new THREE.Color(a).lerp(new THREE.Color(b),weight).getHex();
+}
+function animeVfxAppearance(actor,type,baseColor,baseAccent) {
+  const profile=ANIME_VFX_PROFILES[actor?.d?.id];
+  const skill=ANIME_VFX_SKILLS.get(type);
+  if(skill)return {color:skill[0],accent:skill[1],strength:skill[2]};
+  const base=baseColor??profile?.[0]??0xd2dce7,accent=baseAccent??profile?.[1]??0xf2f6ff;
+  return {color:profile?animeMixColor(base,profile[0],.28):base,
+    accent:profile?animeMixColor(accent,profile[1],.35):accent,strength:profile?.[2]??1};
+}
+function animeVfxInkAppearance(actor,type,style) {
+  const p=ANIME_INK_PALETTES[style];
+  return animeVfxAppearance(actor,type,p.color,p.accent);
+}
+
+//
 // Stage 3: hand-drawn impact silhouettes and directional ink strokes.
 // Palette/shape IDs are stable because the compact online scene uses their indices.
 const ANIME_INK_PALETTES = Object.freeze([
@@ -31428,9 +31561,9 @@ function animeInkStrip(buffer,points,widths,factor=1,lift=0) {
   }
 }
 function animeInkStroke(layers,points,widths,special,highlight=true) {
-  animeInkStrip(layers[0],points,widths,special?1.67:1.39,0);
-  animeInkStrip(layers[1],points,widths,1,.034);
-  if(highlight)animeInkStrip(layers[2],points,widths,.28,.068);
+  animeInkStrip(layers[0],points,widths,special?1.34:1.22,0);
+  animeInkStrip(layers[1],points,widths,1,.018);
+  if(highlight)animeInkStrip(layers[2],points,widths,.24,.036);
 }
 function animeInkLayer(group,vertices,color,name,opacity,order) {
   if(!vertices.length)return null;
@@ -31446,17 +31579,23 @@ function animeInkLayer(group,vertices,color,name,opacity,order) {
   return {mesh,opacity};
 }
 let animeInkBuildSerial=0;
-function animeInkBuild(row) {
+function animeInkBuild(row,appearance=null) {
   // Three.js constructors also generate random object UUIDs. Isolate that synchronous
   // work, so adding a presentation effect cannot consume a combat random number.
   const combatRandom=Math.random;
   Math.random=animeInkRandom((row[11]^Math.imul(++animeInkBuildSerial,2246822519))>>>0);
-  try{return animeInkConstruct(row);}
+  try{return animeInkConstruct(row,appearance);}
   finally{Math.random=combatRandom;}
 }
-function animeInkConstruct(row) {
+function animeInkConstruct(row,appearance) {
   const [id,kind,styleIndex,special,x,y,z,dx,dz,length,width,seed,detail]=row;
   const palette=ANIME_INK_PALETTES[styleIndex],rand=animeInkRandom(seed);
+  const vfx=appearance??{color:palette.color,accent:palette.accent,strength:1};
+  const intensity=Math.max(.70,Math.min(1.20,vfx.strength));
+  const fadeScale=Math.sqrt(intensity);
+  const mainColor=animeMixColor(vfx.color,0xc9ced8,.08);
+  const edgeColor=animeMixColor(0x39404d,vfx.color,.13);
+  const coreColor=animeMixColor(vfx.accent,mainColor,.24);
   const group=new THREE.Group(),layers=[[],[],[]];
   const isSpecial=!!special;
   const shape=palette.shape;
@@ -31473,7 +31612,7 @@ function animeInkConstruct(row) {
       const c=Math.cos(q),s=Math.sin(q),span=(1.4+rand()*2.05)*(isSpecial?1.27:1);
       const near=.14+rand()*.52,edge=.08+rand()*.18;
       const bend=(rand()-.5)*(shape==="moon"||shape==="wave"||shape==="flame"?1.05:.52);
-      const rise=(rand()-.3)*.43;
+      const rise=(rand()-.3)*.25;
       const at=(r,side,h)=>[c*r-s*side,h,s*r+c*side];
       let points,widths;
       if(shape==="bolt"||shape==="crack"){
@@ -31495,11 +31634,11 @@ function animeInkConstruct(row) {
     for(let i=0;i<lines;i++){
       const q=(i+.22+rand()*.56)*2*Math.PI/lines;
       const c=Math.cos(q),s=Math.sin(q),start=2.0+rand()*.85,end=start+1.2+rand()*1.25;
-      const y=.12+(rand()-.4)*.24;
-      const points=[[c*start,y,s*start],[c*(start+.35),y,s*(start+.35)],[c*end,y+.10,s*end]];
-      const w=(.038+rand()*.04)*(isSpecial?1.4:1);
+      const y=.08+(rand()-.4)*.14;
+      const points=[[c*start,y,s*start],[c*(start+.35),y,s*(start+.35)],[c*end,y+.055,s*end]];
+      const w=(.038+rand()*.04)*(isSpecial?1.2:1);
       animeInkStrip(layers[0],points,[.002,w,.006],1,0);
-      if(i%2===0)animeInkStrip(layers[2],points,[.002,w*.31,.003],1,.068);
+      if(i%2===0)animeInkStrip(layers[2],points,[.002,w*.25,.003],1,.036);
     }
   } else {
     // Long, irregular brush strips laid along the real travelled segment.
@@ -31513,7 +31652,7 @@ function animeInkConstruct(row) {
         if(shape==="bolt"||shape==="crack")ripple+=(i%2?1:-1)*.15*curve;
         if(["moon","wave","flame","ink"].includes(shape))ripple+=(side||1)*.19*curve;
         const r=(k===0?.32:.13)*(isSpecial?1.12:1);
-        points.push([offset+ripple,.035*k+Math.sin(u*Math.PI)*.12,u]);
+        points.push([offset+ripple,.020*k+Math.sin(u*Math.PI)*.075,u]);
         widths.push(i===0?.008:i===5?.025:r*(.62+.38*rand())*Math.sin(Math.PI*u)**.5);
       }
       animeInkStroke(layers,points,widths,isSpecial,k!==2);
@@ -31521,21 +31660,22 @@ function animeInkConstruct(row) {
     for(let i=0;i<(isSpecial?5:3);i++){
       const s=i%2?1:-1,u=.12+rand()*.60,v=Math.min(1,u+.17+rand()*.18);
       const points=[[s*(.48+rand()*.10),.05,u],[s*(.69+rand()*.10),.07,(u+v)/2],[s*.57,.10,v]];
-      animeInkStrip(layers[0],points,[.008,.073,.004],isSpecial?1.3:1);
-      animeInkStrip(layers[1],points,[.004,.042,.003],1,.034);
+      animeInkStrip(layers[0],points,[.008,.060,.004],isSpecial?1.16:1);
+      animeInkStrip(layers[1],points,[.004,.040,.003],1,.018);
     }
   }
-  const ink=animeInkLayer(group,layers[0],0x120d19,"anime-ink-outline",isSpecial?.96:.78,15);
-  const paint=animeInkLayer(group,layers[1],palette.color,"anime-ink-color",.98,16);
-  const core=animeInkLayer(group,layers[2],palette.accent,"anime-ink-highlight",.96,17);
+  // Lower dark/bright contrast and opacity without changing the arena-wide grade.
+  const ink=animeInkLayer(group,layers[0],edgeColor,"anime-ink-outline",(isSpecial?.59:.46)*fadeScale,15);
+  const paint=animeInkLayer(group,layers[1],mainColor,"anime-ink-color",.79*fadeScale,16);
+  const core=animeInkLayer(group,layers[2],coreColor,"anime-ink-highlight",.67*fadeScale,17);
   const meshes=[ink,paint,core].filter(Boolean);
   const animate=progress=>{
     const p=THREE.MathUtils.clamp(progress,0,1),fade=(1-p)**1.35;
     if(kind===0){
-      const scale=width*(.87+.40*(1-(1-p)**2));
+      const scale=width*(.84+.28*(1-(1-p)**2))*(.82+.18*intensity);
       group.scale.set(scale,scale,scale);
     }else{
-      const narrow=width*(1-.44*p);
+      const narrow=width*(1-.44*p)*(.80+.20*intensity);
       group.scale.set(narrow,narrow,length);
     }
     for(const {mesh,opacity} of meshes){
@@ -31547,21 +31687,22 @@ function animeInkConstruct(row) {
   return {mesh:group,animate};
 }
 function animeInkLife(special){return special?.25:.15;}
-function animeInkEmit(kind,style,special,x,y,z,dx,dz,length,width) {
+function animeInkEmit(kind,style,special,x,y,z,dx,dz,length,width,appearance=null) {
   if(headless||!world||!ANIME_INK_PALETTES[style]||!Number.isFinite(x+y+z+dx+dz+length+width))return;
   const id=++animeInkSerial,seed=(Math.imul(id,2654435761)^Math.round(t*120))>>>0;
   const detail=mobileGraphics()||gfx.level===0||reducedGraphics()?0:gfx.level===2?2:1;
   const heading=unit(dx,dz);
   const row=[id,kind,style,+!!special,x,y,z,heading.x,heading.z,length,width,seed,detail,0];
-  const visual=animeInkBuild(row);
+  const visual=animeInkBuild(row,appearance);
   animeEffect(visual.mesh,animeInkLife(special),kind===0?"ink-impact":"ink-dash",visual.animate);
   effects.at(-1).animeInkRow=row;
+  effects.at(-1).animeInkAppearance=appearance;
 }
 function animeInkHit(hit,damage) {
   if(headless||!world||damage<=0)return;
   const style=animeInkImpactStyle(hit);
   if(style==null)return;
-  const special=!!hit.specialHit || hit.damageKind==="rare";
+  const special=!!hit.specialHit || hit.cinemaVisualSpecial || hit.damageKind==="rare";
   let perTarget=animeInkRecentHits.get(hit.b);
   if(!perTarget)animeInkRecentHits.set(hit.b,perTarget=new WeakMap());
   const previous=perTarget.get(hit.a);
@@ -31573,7 +31714,7 @@ function animeInkHit(hit,damage) {
   const radius=actorRadius(hit.b);
   const scale=Math.max(.86,Math.min(1.65,.75+radius*.18+damage/500));
   animeInkEmit(0,style,special,point.x-d.x*radius*.35,Math.max(1.2,hit.b.mesh?.position.y??1.25)+.3,
-    point.z-d.z*radius*.35,d.x,d.z,1,scale);
+    point.z-d.z*radius*.35,d.x,d.z,1,scale,animeVfxInkAppearance(hit.a,cinemaHitSkill(hit),style));
 }
 function animeInkDashSample(actor,state,type,x,z,dx,dz) {
   if(headless||!world||!state||type==="KAMUI")return;
@@ -31592,7 +31733,7 @@ function animeInkDashSample(actor,state,type,x,z,dx,dz) {
   const vx=ex-origin.x,vz=ez-origin.z,len=Math.hypot(vx,vz);
   if(len<.24)return;
   const width=Math.max(.85,Math.min(2.4,actorRadius(actor)*(special?1.13:.94)));
-  animeInkEmit(1,style,special,origin.x,1.15,origin.z,vx,vz,len,width);
+  animeInkEmit(1,style,special,origin.x,1.15,origin.z,vx,vz,len,width,animeVfxInkAppearance(actor,type,style));
   state.animeInkPath={x:ex,z:ez,at:t};
 }
 
@@ -31605,6 +31746,22 @@ function animeOnlineInkRows() {
   return selected.map(e=>[...e.animeInkRow.slice(0,13).map((v,i)=>i===11||i===0?v:onlineRound(v)),
     onlineRound(Math.max(0,e.total-e.life))]);
 }
+function animeOnlineInkVfx(rows) {
+  const ids=new Set(rows.map(row=>row[0]));
+  return effects.flatMap(effect=>{
+    const v=effect.animeInkAppearance,id=effect.animeInkRow?.[0];
+    return v&&ids.has(id)?[[id,v.color,v.accent,onlineRound(v.strength)]]:[];
+  });
+}
+function animeDecodeInkVfx(rows) {
+  const values=new Map();
+  for(const row of (Array.isArray(rows)?rows:[]).slice(0,20)){
+    if(!Array.isArray(row)||row.length!==4||!row.every(Number.isFinite)||!Number.isSafeInteger(row[0])||row[0]<=0||
+       ![row[1],row[2]].every(v=>Number.isInteger(v)&&v>=0&&v<=0xffffff)||row[3]<.70||row[3]>1.20)continue;
+    values.set(row[0],{color:row[1],accent:row[2],strength:row[3]});
+  }
+  return values;
+}
 function animeValidInkRow(row) {
   return Array.isArray(row)&&row.length===14&&row.every(Number.isFinite)&&
     Number.isSafeInteger(row[0])&&row[0]>0&&(row[1]===0||row[1]===1)&&
@@ -31614,15 +31771,15 @@ function animeValidInkRow(row) {
     Number.isInteger(row[11])&&row[11]>=0&&row[11]<=0xffffffff&&[0,1,2].includes(row[12])&&
     row[13]>=0&&row[13]<=animeInkLife(row[3])+.001;
 }
-function animeApplyOnlineInk(arena,rows,interpolate) {
-  const entries=arena.ink??=new Map(),present=new Set();
+function animeApplyOnlineInk(arena,rows,interpolate,styles=null) {
+  const entries=arena.ink??=new Map(),present=new Set(),appearance=animeDecodeInkVfx(styles);
   for(const row of (Array.isArray(rows)?rows:[]).slice(0,20)){
     if(!animeValidInkRow(row)||present.has(row[0]))continue;
     const id=row[0],age=Math.min(1,row[13]/animeInkLife(row[3]));
     present.add(id);
     let entry=entries.get(id);
     if(!entry){
-      const visual=animeInkBuild(row);
+      const visual=animeInkBuild(row,appearance.get(id));
       world.add(visual.mesh);
       entry={...visual,progress:age,from:age,to:age};
       entries.set(id,entry);
@@ -31645,14 +31802,100 @@ function animeRenderOnlineInk(arena,blend) {
 }
 
 
+// Stage 4: confirmed-hit timing, separated from damage and movement.
+const CINEMA_HEAVY_SKILLS=new Set("SERIOUS_PUNCH HOLLOW_PURPLE NIGHT_GUY RENGOKU HOWITZER_IMPACT SANJI_IFRIT REZE_BOMB PSYCHOKINESIS KUROHITSUGI".split(" "));
+const CINEMA_STRONG_SKILLS=new Set("ASURA HINOKAMI_ENBU INCINERATION_UPGRADE MILLENNIUM_EMPEROR_NOVA RYUSENKA RENJI_BANKAI EDWARD_CANNON SCAR_CHAIN NIKA_GIGANT DETROIT_120 AMA_NO_MURAKUMO SANJI_DIABLE CHIBAKU_TENSEI GURASHI URYU_ANTITHESIS".split(" "));
+const CINEMA_LIGHT_FINISHERS=new Set("THUNDERCLAP_SIXFOLD PROJECTION_BARRAGE BUGGY_FESTIVAL FIERCE_WINGS_BARRAGE".split(" "));
+const CINEMA_FINISH_ONLY=new Set([...CINEMA_LIGHT_FINISHERS,"HINOKAMI_ENBU","RYUSENKA","RENJI_BANKAI"]);
+const CINEMA_PASSIVE_KINDS=new Set(["royBurn","magmaBurn","teachBurn","bleachDot","duelDot","burn","roomWall"]);
+const CINEMA_DIRECT_KINDS=new Set(["skill","special","rikaBeam","powerWeapon","curse","akiCounter","illusionCounter","collision","rare","uryuReturn","summon"]);
+function cinemaHitSkill(hit) {
+  if(hit.damageKind==="rare")return "HOLLOW_PURPLE";
+  if(hit.damageKind==="uryuReturn")return "URYU_ANTITHESIS";
+  if(hit.animeSkill)return hit.animeSkill;
+  const named=animeInkLabelType(hit.a,hit.damageLabel);
+  if(named)return named;
+  if(hit.damageKind==="collision"&&nikaGigantActive(hit.a))return "NIKA_GIGANT";
+  const active=animeDashType(hit.a,animeMovementState(hit.a));
+  if(active)return active;
+  return animeInkLabelType(hit.a,hit.a.castName) ||
+    (hit.specialHit?({aizen:"KUROHITSUGI",tatsumaki:"PSYCHOKINESIS",teach:"GURASHI",
+      toshiro:"RYUSENKA",renji:"RENJI_BANKAI",saitama:"SERIOUS_PUNCH"})[hit.a.d.id]:undefined);
+}
+function cinemaHitDuration(hit, damage, type=cinemaHitSkill(hit)) {
+  if (damage<=0||hit.a===hit.b||hit.cinemaNoStop||CINEMA_PASSIVE_KINDS.has(hit.damageKind)||
+      !CINEMA_DIRECT_KINDS.has(hit.damageKind)) return 0;
+  if (hit.cinemaRush && !hit.cinemaFinal) return 0;
+  if (CINEMA_FINISH_ONLY.has(type) && !hit.cinemaFinal) return 0;
+  const special=hit.specialHit||hit.cinemaVisualSpecial||hit.damageKind==="rare"||hit.damageKind==="uryuReturn";
+  if (special) {
+    if(hit.damageKind==="collision"&&!hit.cinemaFinal&&!hit.cinemaSeries&&type!=="NIKA_GIGANT")return 0;
+    if (hit.cinemaFinal&&CINEMA_LIGHT_FINISHERS.has(type)) return .05;
+    if (CINEMA_HEAVY_SKILLS.has(type)) return .10;
+    if (CINEMA_STRONG_SKILLS.has(type)) return .075;
+    // Other special hits: one accent on a meaningful direct hit, not damage-over-time.
+    if (hit.damageKind==="collision" && !hit.cinemaFinal && !hit.cinemaSeries) return 0;
+    if (hit.cinemaFinal || damage>=100) return damage>=220?.075:.05;
+    return 0;
+  }
+  // Preserve the existing ordinary powerful-hit and rush-finisher behavior.
+  if (hit.damageKind==="collision"||hit.damageKind==="summon"||
+      (!hit.cinemaFinal&&damage<120))return 0;
+  return Math.min(.07,.04+Math.min(1,damage/240)*.03);
+}
+function cinemaHitStage(actor,stage,run) {
+  const previous=actor.cinemaHitStage;
+  actor.cinemaHitStage=stage;
+  try{return run();}finally{actor.cinemaHitStage=previous;}
+}
+function cinemaOfferHitstop(hit,damage,point,type) {
+  const duration=cinemaHitDuration(hit,damage,type);
+  if(!duration||cinema.ending)return;
+  const series=hit.cinemaSeries;
+  if(series?.hitstopUsed)return;
+  const isSpecial=!!hit.specialHit||hit.cinemaVisualSpecial||hit.damageKind==="rare"||hit.damageKind==="uryuReturn";
+  const before=cinema.hitstopEvent;
+  // Multiple confirmed hits in the same simulation step share the strongest freeze.
+  const sameTick=cinema.stop>0&&before&&Math.abs(before.at-t)<1e-8;
+  if(sameTick){
+    if(series)series.hitstopUsed=true;
+    if(duration<=before.duration)return;
+    cinema.stop=duration;
+    before.duration=duration;
+    before.special=before.special||isSpecial;
+  }else{
+    // Keep the established anti-stutter cooldown, except a higher tier or a new
+    // special may replace a weaker recent hit. Durations never accumulate.
+    if(cinema.real<cinema.nextImpact&&before&&
+        duration<=before.duration&&(!isSpecial||before.special))return;
+    if(series)series.hitstopUsed=true;
+    cinema.stop=duration;
+    cinema.nextImpact=cinema.real+CINEMA_CONFIG.hitCooldown;
+    cinema.hitstopEvent={id:++cinema.hitstopSerial,duration,at:t,real:cinema.real,special:isSpecial};
+  }
+  const strength=animeVfxAppearance(hit.a,type).strength;
+  cinema.impact={...point,age:0,life:.24,strength:Math.min(1,damage/220)*Math.min(1.12,strength),special:isSpecial};
+  cinema.animationDt=0;
+}
+function cinemaVisualNow(now=performance.now()) {return now-cinema.freezeMs;}
+function cinemaOnlineHitstop() {
+  const e=cinema.hitstopEvent;
+  return e?[e.id,onlineRound(e.duration),onlineRound(cinema.stop),onlineRound(Math.max(0,cinema.real-e.real))]:null;
+}
+function cinemaValidOnlineStop(row) {
+  return Array.isArray(row)&&row.length===4&&row.every(Number.isFinite)&&
+    Number.isSafeInteger(row[0])&&row[0]>0&&row[1]>=.039&&row[1]<=.101&&row[2]>=0&&row[2]<=row[1]+.001&&row[3]>=0;
+}
+
 // Presentation uses real time; authoritative combat continues to use t / STEP only.
 const CINEMA_CONFIG = Object.freeze({
-  closeZoom: 1.07, centerFollow: .55, centerLimit: .18, followSpeed: 3, endSoundGain: .90, endMusicFade: .18, endMusicLevel: .10, hitstopMin: .04, hitstopMax: .07, hitCooldown: .5,
+  closeZoom: 1.07, centerFollow: .55, centerLimit: .18, followSpeed: 3, endSoundGain: .90, endMusicFade: .18, endMusicLevel: .10, hitstopMin: .04, hitstopMax: .10, hitstopLight:.05, hitstopStrong:.075, hitstopHeavy:.10, hitCooldown: .5,
   idleDelay: 2.5, idleSpeed: 1.15, finishDuration: 1, finishSpeed: .2,
   openingDuration: .6, skillShakeDuration: .12, skillShakeInterval: .06,
 });
 function freshCinemaState() {
   return { real: 0, lastDamage: 0, pace: 1, stop: 0, nextImpact: 0,
+    freezeMs:0,animationDt:0,hitstopSerial:0,hitstopEvent:null,practiceBuffered:null,
     zoom: 1, centerX: 0, centerZ: 0, distance: 0, ready: false,
     cue: null, impact: null, skillShake: null, nextSkillShake: 0, lethalHits: [], ending: null, finished: false,
     buffered: [], dim: 0 };
@@ -31688,12 +31931,12 @@ function finalHitLabel(hit) {
 }
 
 function cinemaDamage(hit, damage) {
-  if (practiceActive || !running || damage <= 0) return;
+  if (!running || damage <= 0) return;
   const dx = hit.b.x-hit.a.x, dz = hit.b.z-hit.a.z, len = Math.hypot(dx,dz);
   const direction = len>1e-8 ? {x:dx/len,z:dz/len} : unit(hit.a.dx||1,hit.a.dz||0);
   const point = { x: hit.b.x, z: hit.b.z, dx: direction.x, dz: direction.z };
   // Record lethal damage, but confirm the outcome after all simultaneous damage resolves.
-  if (hit.b.hp <= 0) {
+  if (!practiceActive && hit.b.hp <= 0) {
     cinema.lethalHits = cinema.lethalHits.filter(previous=>
       previous.victim!==hit.b && Math.abs(previous.at-t)<=STEP*1.01);
     cinema.lethalHits.push({ ...point, at:t, attacker:hit.a, victim:hit.b,
@@ -31708,18 +31951,11 @@ function cinemaDamage(hit, damage) {
   // A shared short interval merges simultaneous targets without stacking screen motion.
   if ((hit.skillHit || hit.specialHit) && !cinema.ending && cinema.real>=cinema.nextSkillShake) {
     cinema.skillShake={...point,age:0,life:CINEMA_CONFIG.skillShakeDuration,
-      strength:(hit.specialHit?.30:.22)+.48*Math.min(1,damage/150)};
+      strength:((hit.specialHit?.30:.22)+.48*Math.min(1,damage/150))*
+        Math.min(1.10,animeVfxAppearance(hit.a,cinemaHitSkill(hit)).strength)};
     cinema.nextSkillShake=cinema.real+CINEMA_CONFIG.skillShakeInterval;
   }
-  const direct = ['skill','special','rikaBeam','powerWeapon','curse','akiCounter','illusionCounter'].includes(hit.damageKind);
-  const rush = hit.cinemaRush;
-  const strong = direct && (rush ? hit.cinemaFinal : damage >= (hit.specialHit ? 100 : 120));
-  if (!strong || cinema.real < cinema.nextImpact || cinema.ending) return;
-  cinema.stop = Math.min(CINEMA_CONFIG.hitstopMax,
-    CINEMA_CONFIG.hitstopMin + Math.min(1,damage/240)*.03);
-  cinema.nextImpact = cinema.real + CINEMA_CONFIG.hitCooldown;
-  cinema.impact = { ...point, age: 0, life: .24,
-    strength: Math.min(1,damage/220), special: !!hit.specialHit };
+  cinemaOfferHitstop(hit,damage,point,cinemaHitSkill(hit));
 }
 function beginCinemaFinish() {
   if (practiceActive || cinema.finished || cinema.ending || hasMultipleSurvivors()) return false;
@@ -31731,8 +31967,9 @@ function beginCinemaFinish() {
   cinema.ending = { age: 0, visualTime: 0, winner, hit,
     ghost: victim?.mesh ? { actor:victim, position:victim.mesh.position.clone(),
       scale:victim.mesh.scale.clone(), rotation:victim.mesh.quaternion.clone() } : null };
-  cinema.stop = 0;
+  // A lethal special retains its short hitstop before the existing slow-motion outro.
   cinema.buffered = [];
+  cinema.practiceBuffered=null;
   accumulator = 0;
   for (const hit of lethalHits) knockoutSparks(hit,cinema.ending);
   playBattleEndSound();
@@ -31752,38 +31989,41 @@ function playBattleEndSound() {
   if(clip){clip.cinemaEnd=true;clip.volume=sfxVolume*CINEMA_CONFIG.endSoundGain;}
   return clip;
 }
-function tickCinemaClock(realDt) {
-  cinema.real += realDt;
+function tickCinemaClock(realDt,wallDt=realDt) {
+  // Consume hitstop in actual elapsed time, even if a slow device caps simulation steps.
+  const stopped=Math.min(wallDt,cinema.stop);
+  cinema.stop=Math.max(0,cinema.stop-wallDt);
+  cinema.freezeMs+=stopped*1000;
+  const activeDt=Math.min(realDt,Math.max(0,wallDt-stopped));
+  cinema.real+=stopped+activeDt;
+  cinema.animationDt=activeDt;
   if (cinema.impact) {
-    cinema.impact.age += realDt;
+    cinema.impact.age += activeDt;
     if (cinema.impact.age >= cinema.impact.life) cinema.impact = null;
   }
   if (cinema.skillShake) {
-    cinema.skillShake.age += realDt;
+    cinema.skillShake.age += activeDt;
     if (cinema.skillShake.age>=cinema.skillShake.life) cinema.skillShake=null;
   }
   if (cinema.ending) {
-    cinema.ending.age += realDt;
+    cinema.ending.age += activeDt;
     if (!headless) {
       const fade = Math.min(1, cinema.ending.age / CINEMA_CONFIG.endMusicFade);
       // Fade in decibels, preserving the user's volume slider and mute state.
       bgm.mixGain = CINEMA_CONFIG.endMusicLevel ** fade;
     }
-    const visualDt = realDt * CINEMA_CONFIG.finishSpeed;
+    const visualDt = activeDt * CINEMA_CONFIG.finishSpeed;
     cinema.ending.visualTime += visualDt;
     return { dt:0, visualDt, finish:cinema.ending.age >= CINEMA_CONFIG.finishDuration };
   }
-  const stopped = Math.min(realDt,cinema.stop);
-  cinema.stop = Math.max(0,cinema.stop-realDt);
-  const activeDt = realDt-stopped;
   // A shared combat clock preserves the relation between movement, projectiles, resources and timers.
   const target = !manual && !practiceActive && !timeStop && !bitesMovement && t-cinema.lastDamage >= CINEMA_CONFIG.idleDelay
     ? CINEMA_CONFIG.idleSpeed : 1;
   cinema.pace += (target-cinema.pace)*(1-Math.exp(-activeDt*(target===1?12:4)));
   return { dt: activeDt*cinema.pace, visualDt:0, finish:false };
 }
-function tickCinemaBattle(realDt) {
-  const clock = tickCinemaClock(realDt);
+function tickCinemaBattle(realDt,wallDt=realDt) {
+  const clock = tickCinemaClock(realDt,wallDt);
   if (clock.finish) {
     cinema.finished = true;
     if (cinema.ending?.ghost) cinema.ending.ghost.actor.mesh.visible = false;
@@ -31794,6 +32034,10 @@ function tickCinemaBattle(realDt) {
   if (cinema.stop <= 0 && cinema.buffered.length) {
     const buffered = cinema.buffered.splice(0);
     for (const [slot,special] of buffered) applyLocalCast(slot,special);
+  }
+  if(cinema.stop<=0&&cinema.practiceBuffered){
+    const type=cinema.practiceBuffered;cinema.practiceBuffered=null;
+    if(practiceActive)practiceCast(type);
   }
   let elapsed = 0;
   accumulator += clock.dt;
@@ -31897,7 +32141,7 @@ function updateCinemaCamera(realDt, viewOnly = false) {
   const close=Math.max(0,Math.min(1,(24-span)/17));
   const desired=1+(CINEMA_CONFIG.closeZoom-1)*close+.008*prep+(end?.012:0);
   cinema.zoom+=(desired-cinema.zoom)*(1-Math.exp(-realDt*(desired<cinema.zoom?8:2)));
-  const opening=Math.max(0,1-cinema.real/CINEMA_CONFIG.openingDuration);
+  const opening=Math.max(0,1-(cinema.real-cinema.freezeMs/1000)/CINEMA_CONFIG.openingDuration);
   const impact=cinema.impact;
   const tilt=Math.PI/3-opening*3*Math.PI/180+(impact?.special?Math.sin(Math.PI*impact.age/impact.life)*3.5*Math.PI/180:0);
   const zoom=arenaZoom*cinema.zoom;
@@ -32530,7 +32774,7 @@ function updateEdwardCannons(dt) {
     if(Number.isFinite(entry)){
       if(!reflectAlchemyShot(shot,target,x,z,damage,radius,shot.speed,"special")) {
         const queued=damageQueue.length;
-        withDamageOrigin(actor,true,()=>withAlchemyHitMode("ranged",()=>hurt(actor,target,damage,"special")));
+        withDamageOrigin(actor,true,()=>withAlchemyHitMode("ranged",()=>hurt(actor,target,damage,"special",0,{type:"EDWARD_CANNON"})));
         const hit=damageQueue[queued];
         if(hit?.a===actor && hit.b===target)
           hit.onConfirmedHit=()=>edwardCannonImpact(target.x,target.z,d);
@@ -32936,7 +33180,7 @@ function advanceScarCarry(actor,dt) {
     alchemyGroundCracks(x,z,inward,7.5,5.3,1.6);
   }
   alchemyDebris(x,z,6.5,44,0xa47e5b);
-  withAlchemyHitMode("ranged",()=>hurt(actor,victim,90,"special"));
+  withAlchemyHitMode("ranged",()=>hurt(actor,victim,90,"special",0,{type:"SCAR_CHAIN"}));
   return true;
 }
 
@@ -34753,19 +34997,22 @@ function collectOnlineScene(session) {
   const now = performance.now();
   const view = {
     bursts:gfx.events||[],seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
-    combatFeedback: actors.map(actor => encodeCombatFeedback(actor, now)),
+    combatFeedback: actors.map(actor => encodeCombatFeedback(actor, cinemaVisualNow(now))),
     fighters: arena.models.map(onlineFighterState),
     stretch: actors.map(actor => animeStretchPose(actor)?.map(value => onlineRound(value)) ?? null),
     ink: animeOnlineInkRows(),
+    hitstop: cinemaOnlineHitstop(),
     motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
     storm: stormMesh ? [stormX, stormZ, stormUntil].map(value => onlineRound(value)) : null,
     banners: activeBanners.slice(-8).map(({x, z, key, slot, born, image}) =>
       [onlineRound(x), onlineRound(z), key, slot, onlineRound(born), image.alt.slice(0, 80)]),
     stopped: !!timeStop,
   };
+  view.inkVfx=animeOnlineInkVfx(view.ink);
   let size = JSON.stringify(view).length;
   while(view.ink.length && size>ONLINE_SCENE_LIMIT-512){
-    view.ink.pop();
+    const id=view.ink.pop()[0];
+    view.inkVfx=view.inkVfx.filter(row=>row[0]!==id);
     size=JSON.stringify(view).length;
   }
   [view.effects, view.geometry] = onlineSceneEffects(arena, Math.max(0, ONLINE_SCENE_LIMIT - size - 64));
@@ -35002,12 +35249,29 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
       !Number.isFinite(view.time) || !Number.isFinite(view.cameraTime) ||
       !Array.isArray(view.fighters) || view.fighters.length !== 2 || !view.fighters.every(Array.isArray) ||
       !Array.isArray(view.motion) || view.motion.length !== 2 || !view.motion.every(row => onlineVector(row, 5))) return;
+  // The guest briefly holds its displayed impact pose, then catches up to the newest snapshot.
+  // No authoritative gameplay or remote command is delayed by this rendering buffer.
+  if(!final&&arena.hitstopUntil>now){
+    if(!arena.pendingHitstopScene||view.seq>arena.pendingHitstopScene.seq)
+      arena.pendingHitstopScene={seq:view.seq,encoded};
+    return;
+  }
+  if(final){arena.hitstopUntil=0;arena.pendingHitstopScene=null;}
+  const stop=view.hitstop;
+  let snapHit=false;
+  if(cinemaValidOnlineStop(stop)&&stop[0]>(arena.hitstopSeen||0)){
+    arena.hitstopSeen=stop[0];
+    if(!final&&(stop[2]>0||stop[3]<.19)){
+      arena.hitstopUntil=now+Math.min(.10,stop[2]>0?stop[2]:stop[1])*1000;
+      snapHit=true;
+    }
+  }
   for(const row of (Array.isArray(view.bursts)?view.bursts:[]).slice(-16)){
     if(!(Array.isArray(row)&&row.length===7&&row.every(Number.isFinite)&&row[4]>=0&&row[4]<=0xffffff&&row[5]>=0&&row[6]>0)||row[0]<=(arena.lastBurst||0))continue;
     arena.lastBurst=row[0];particleBurst(row[1],row[2],row[3],row[4],Math.min(40,row[5]),Math.min(4,row[6]));
   }
   arena.blendStarted = now;
-  arena.blendDuration = final || !arena.seq ? 1 :
+  arena.blendDuration = final || snapHit || !arena.seq ? 1 :
     Math.max(30, Math.min(125, now - (arena.receivedAt ?? now - ONLINE_SCENE_INTERVAL)));
   arena.receivedAt = now;
   arena.moves.clear();
@@ -35019,7 +35283,7 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
     [actor.x, actor.z, actor.dx, actor.dz, actor.alive] = view.motion[slot];
     actor.alive = !!actor.alive;
     onlineApplyFighter(arena, arena.models[slot], view.fighters[slot], !final && arena.blendDuration > 1);
-    applyRemoteCombatFeedback(actor, view.combatFeedback?.[slot], now);
+    applyRemoteCombatFeedback(actor, view.combatFeedback?.[slot], cinemaVisualNow(now));
     animeSetRemoteStretch(actor,Array.isArray(view.stretch)?view.stretch[slot]:null,!final&&arena.blendDuration>1);
   }
   if (onlineVector(view.storm, 3)) {
@@ -35031,7 +35295,7 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
   } else if (stormMesh) clearStormVisual();
   onlineUpdateEffects(arena, Array.isArray(view.effects) ? view.effects : [],
     Array.isArray(view.geometry) ? view.geometry : [], !final && arena.blendDuration > 1);
-  animeApplyOnlineInk(arena,view.ink,!final&&arena.blendDuration>1);
+  animeApplyOnlineInk(arena,view.ink,!final&&arena.blendDuration>1,view.inkVfx);
   if (Array.isArray(view.banners)) onlineUpdateBanners(arena, view.banners);
   document.body.classList.toggle("time-stopped", view.stopped === true);
 }
@@ -35040,6 +35304,13 @@ const onlineFromRotation = new THREE.Quaternion(), onlineToRotation = new THREE.
 
 function renderOnlineArena(session, timestamp, dt) {
   const {arena} = session;
+  const frozen=Math.min(dt,Math.max(0,((arena.hitstopUntil??0)-(timestamp-dt*1000))/1000));
+  cinema.freezeMs+=frozen*1000;
+  cinema.animationDt=dt-frozen;
+  if(arena.pendingHitstopScene&&timestamp>=(arena.hitstopUntil??0)){
+    const pending=arena.pendingHitstopScene;arena.pendingHitstopScene=null;
+    applyOnlineScene(session,pending.encoded,timestamp);
+  }
   const blend = Math.min(1, Math.max(0, (timestamp - (arena.blendStarted ?? timestamp)) / (arena.blendDuration || 1)));
   for (const [node, {from, to}] of arena.moves) {
     node.position.set(...[0, 1, 2].map(i => THREE.MathUtils.lerp(from[i], to[i], blend)));
@@ -35051,7 +35322,7 @@ function renderOnlineArena(session, timestamp, dt) {
   if (blend >= 1) arena.moves.clear();
   for (const actor of actors) animeBlendRemoteStretch(actor,blend);
   animeRenderOnlineInk(arena,blend);
-  updateCinemaCamera(dt, true);
+  updateCinemaCamera(cinema.animationDt, true);
   updateStormMesh();
   updateBanners();
   renderCombatFeedback(timestamp);
@@ -35065,7 +35336,7 @@ const recoveryPlusGroups = new Map();
 const combatTintMaterials = new Map();
 let recoveryPlusTexture;
 
-function markCombatFeedback(actor, type, now = performance.now()) {
+function markCombatFeedback(actor, type, now = cinemaVisualNow()) {
   if (headless) return;
   const feedback = actor.combatFeedback ??= {};
   if (type !== "hit" && now - (feedback[type]?.start ?? -Infinity) < RECOVERY_PLUS_MS) return;
@@ -35254,15 +35525,15 @@ function newPostPass(){
   quad.frustumCulled=false;scene.add(quad);
   return {scene,camera,target,glow,uniforms,bright,grade,quad,size:new THREE.Vector2()};
 }
-function renderArenaGrade(now){
+function renderArenaGrade(now,visualNow=cinemaVisualNow(now)){
   const dt=(now-gfx.last)/1000;gfx.last=now;
   if(dt>0 && dt<.25 && !document.hidden){
     gfx.samples++;if(dt>.030)gfx.slow++;
     if(gfx.samples>=100){if(gfx.level && gfx.slow>55)graphicsLevel(gfx.level-1,true);gfx.samples=gfx.slow=0;}
   }
   for(const wall of iceWalls)wall.mesh?.userData.animateIce?.();
-  updateParticlePool(now);
-  const offset=updateArenaShake(Math.min(.05,Math.max(0,dt)));
+  updateParticlePool(visualNow);
+  const offset=updateArenaShake(Math.min(.05,Math.max(0,running&&!paused||onlineSession?.slot===1?cinema.animationDt:0)));
   camera.position.x+=offset;
   const old=renderer.getRenderTarget();
   try{
@@ -35295,7 +35566,7 @@ function particleBurst(x,y,z,color,count=9,radius=1){
     const queue=gfx.events||(gfx.events=[]);gfx.serial=(gfx.serial||0)+1;
     queue.push([gfx.serial,x,y,z,color,count,radius]);if(queue.length>16)queue.shift();
   }
-  const born=performance.now();
+  const born=cinemaVisualNow();
   for(let i=0;i<count;i++){
     const angle=i*2.39996+born*.009, dust=i%4===0, speed=(1.8+(i%7)*.65)*Math.min(3,radius);
     pool.slots[pool.next]={x,y,z,vx:Math.cos(angle)*speed,vz:Math.sin(angle)*speed,vy:2+i%5,
@@ -35337,12 +35608,13 @@ function wallDeflection(s,length){
 }
 
 function renderCombatFeedback(now = performance.now()) {
+  const visualNow=cinemaVisualNow(now);
   const swapped = [], stretched = [];
   try {
     for (const actor of actors) {
       animeApplyStretch(actor,stretched);
-      if (actor.combatFeedback || recoveryPlusGroups.has(actor)) updateRecoveryPluses(actor, now);
-      const amount = combatHitOpacity(actor, now);
+      if (actor.combatFeedback || recoveryPlusGroups.has(actor)) updateRecoveryPluses(actor, visualNow);
+      const amount = combatHitOpacity(actor, visualNow);
       if (amount === 0 || !actor.mesh?.visible) continue;
       let cache = combatTintMaterials.get(actor);
       if (!cache) combatTintMaterials.set(actor, cache = new Map());
@@ -35362,7 +35634,7 @@ function renderCombatFeedback(now = performance.now()) {
         part.material = tinted;
       });
     }
-    renderArenaGrade(now);
+    renderArenaGrade(now,visualNow);
   } finally {
     for (const [part, source] of swapped) part.material = source;
     animeRestoreStretch(stretched);
