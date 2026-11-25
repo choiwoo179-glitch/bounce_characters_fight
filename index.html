@@ -2984,7 +2984,9 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 애니메이션 그래픽 1차</strong>
+                <strong>최신 패치 · 애니메이션 그래픽 2차</strong>
+                <p>초고속 돌진은 진행 방향으로 1.6배, 직각 방향으로 0.7배 늘이고, 일반 돌진은 각각 1.25배와 0.85배로 변형합니다. 돌진 종료 시 순간적으로 눌린 뒤 0.12초 동안 원래 형태로 복구됩니다. 순간이동, 실제 충돌 범위, 피해량, 이동 거리 및 속도는 변경되지 않습니다.</p>
+                <strong>이전 패치 · 애니메이션 그래픽 1차</strong>
                 <p>고속 돌진·강한 발사에 팽창하는 소닉붐 고리를, 투사체의 실제 이동 경로에는 속성별 메시 트레일을 적용했습니다. 연속 돌진에는 0.1초 간격으로 캐릭터의 단색 실루엣 잔상을 생성하고 서서히 사라지도록 합니다.</p>
                 <strong>이전 패치 · 아레나 배치와 젠이츠</strong>
                 <p>2·3인전은 상태창을 아레나 아래에 배치합니다. 직접 사용 모드 버튼에는 실제 기술명을 표시합니다.</p>
@@ -6264,9 +6266,16 @@ function updateHealthDashEffect(e) {
   if(e.healthType === "BURNING_BONES") animateTanjiroRibbon(e.mesh,e.total-e.life,1);
 
   const a = e.owner;
-  a.alive && a.dash?.healthType === e.healthType
-    ? (e.mesh.position.set(a.x, 1.25, a.z), (e.mesh.rotation.y = -Math.atan2(a.dz, a.dx)))
-    : (e.life = 0);
+  if (a.alive && a.dash?.healthType === e.healthType) {
+    e.mesh.position.set(a.x, 1.25, a.z);
+    e.mesh.rotation.y = -Math.atan2(a.dz, a.dx);
+    if (e.healthType === "THUNDER_GOD") {
+      const pose = animeStretchPose(a);
+      // This dragon's length is local X (unlike the generic Z-facing body).
+      e.mesh.scale.set(1.5 * (pose?.[0] ?? 1), 1.5, 1.5 * (pose?.[1] ?? 1));
+      if (pose) e.mesh.rotation.y = -Math.atan2(pose[3], pose[2]);
+    }
+  } else e.life = 0;
 }
 
 function withDamageOrigin(e, a, o, label, skillType) {
@@ -18379,7 +18388,7 @@ function model(e, a = !1) {
     new THREE.CircleGeometry(1.75, 28),
     new THREE.MeshBasicMaterial({ color: CEL_STYLE.shadowColor, map: celShadowTexture(), transparent: !0, opacity: CEL_STYLE.shadowOpacity, depthWrite: !1 }),
   );
-  if (((h.rotation.x = -Math.PI / 2), (h.position.y = -1.15), n.add(h), celAddSlotRing(h, celSlotColor), "teach" === o.id)) {
+  if (((h.name = "actor-ground-shadow"), (h.rotation.x = -Math.PI / 2), (h.position.y = -1.15), n.add(h), celAddSlotRing(h, celSlotColor), "teach" === o.id)) {
     e.groundShadow = h;
     const a = new THREE.Group(),
       o = new THREE.Mesh(
@@ -31121,6 +31130,8 @@ function animeGhost(actor,x,z,color,life=.32) {
 function animeTeleport(actor,type,x,z,arrival=true) {
   const color=ANIME_TELEPORT_COLORS[type];
   if (color==null) return;
+  // A discontinuous move is not a physical dash.
+  actor.animeStretch=null;
   animeGhost(actor,x,z,color,.30);
   if (arrival && Math.hypot(actor.x-x,actor.z-z)>.2) animeGhost(actor,actor.x,actor.z,color,.20);
 }
@@ -31133,25 +31144,155 @@ function animeDashType(actor,state) {
       state===actor.bleachDash?"RYUSENKA":state.extraType==="kamui"?"KAMUI":
       state.extraType==="raikiri"?"RAIKIRI":actor.higurumaExecution?.activeDash===state?"HIGURUMA_DEATH_PENALTY":null);
 }
+// Stage 2: squash & stretch is a presentation pose, never a collision scale.
+const ANIME_STRETCH_FAST = Object.freeze({long:1.6,side:.7,stopLong:.8,stopSide:1.15});
+const ANIME_STRETCH_NORMAL = Object.freeze({long:1.25,side:.85,stopLong:.9,stopSide:1.08});
+const ANIME_STRETCH_RELEASE = .12;
+
+function animeMovementState(actor) {
+  return actor.dash || actor.bleachDash ||
+    (actor.denjiAttack?.kind === "triangle" ? actor.denjiAttack : null);
+}
+function animeStretchProfile(type) {
+  const style=ANIME_DASH_STYLES[type];
+  // Kamui is classified as teleportation; keep its Stage 1 residue only.
+  return style && type !== "KAMUI" ? (style[1] ? ANIME_STRETCH_FAST : ANIME_STRETCH_NORMAL) : null;
+}
+function animeUpdateStretch(actor,type,state,dx,dz) {
+  const profile=animeStretchProfile(type),distance=Math.hypot(dx,dz);
+  const current=animeMovementState(actor);
+  if (actor.alive && profile && distance>1e-6) {
+    const continues=!!animeStretchProfile(animeDashType(actor,current));
+    actor.animeStretch={profile,dx:dx/distance,dz:dz/distance,lastAt:t,
+      stopAt:continues?null:t};
+  } else if (actor.animeStretch && actor.animeStretch.stopAt==null) {
+    // If a later contact already cancelled the dash, keep its original stop time.
+    actor.animeStretch.stopAt=animeStretchProfile(animeDashType(actor,current))?t:actor.animeStretch.lastAt;
+  }
+}
+function animeStretchPose(actor, now=t) {
+  const motion=actor.animeStretch;
+  if (!actor.alive || !motion) return null;
+  const {profile,dx,dz}=motion;
+  // A collision or status effect can cancel a dash later in the same tick.
+  const currentProfile=animeStretchProfile(animeDashType(actor,animeMovementState(actor)));
+  const stop=motion.stopAt ?? (currentProfile?null:motion.lastAt);
+  if (stop==null) return [profile.long,profile.side,dx,dz];
+  const elapsed=Math.max(0,now-stop);
+  if (elapsed>=ANIME_STRETCH_RELEASE-1e-8) return null;
+  const weight=(1-elapsed/ANIME_STRETCH_RELEASE)**2;
+  return [1+(profile.stopLong-1)*weight,1+(profile.stopSide-1)*weight,dx,dz];
+}
 function animeActorMotionStart() {
   if(headless||!world)return null;
-  return actors.filter(actor=>actor.alive).map(actor=>({actor,x:actor.x,z:actor.z,state:actor.dash||actor.bleachDash||(actor.denjiAttack?.kind==="triangle"?actor.denjiAttack:null)}));
+  return actors.filter(actor=>actor.alive).map(actor=>{
+    const state=animeMovementState(actor);
+    return {actor,x:actor.x,z:actor.z,state,type:animeDashType(actor,state)};
+  });
 }
 function animeActorMotionFinish(samples) {
   if(!samples)return;
-  for(const {actor,x,z,state:before} of samples) {
-    const state=before||actor.dash||actor.bleachDash;
-    if(!state||Math.hypot(actor.x-x,actor.z-z)<1e-6)continue;
-    const type=animeDashType(actor,state),style=ANIME_DASH_STYLES[type];
-    if(!style)continue;
+  for(const {actor,x,z,state:before,type:beforeType} of samples) {
+    const state=before||animeMovementState(actor);
+    const dx=actor.x-x,dz=actor.z-z;
+    const type=beforeType||animeDashType(actor,state),style=ANIME_DASH_STYLES[type];
+    animeUpdateStretch(actor,type,state,dx,dz);
+    if(!state||!style||Math.hypot(dx,dz)<1e-6)continue;
     const [color,fast,sonic]=style;
     const first=state.animeGhostAt==null;
     if(first||t-state.animeGhostAt>=.1-1e-8){
       animeGhost(actor,x,z,color,fast?.32:.24);
       state.animeGhostAt=t;
     }
-    if(first&&sonic)animeSonicBoom(x,z,unit(actor.x-x,actor.z-z),color,actorRadius(actor)*1.12);
+    if(first&&sonic)animeSonicBoom(x,z,unit(dx,dz),color,actorRadius(actor)*1.12);
   }
+}
+
+function animeCurrentStretch(actor) {
+  return onlineSession?.slot===1 ? actor.animeRemoteStretch ?? null : animeStretchPose(actor);
+}
+function animeStretchBodyPart(actor,part) {
+  return part.visible && !part.isSprite && !part.isCelOutline &&
+    ![actor.groundShadow,actor.aura,actor.powerVisual,actor.jumpVisual,
+      actor.newcomerAura,actor.uryuWings,actor.opmAura,actor.bangFlameAura,
+      actor.batSpiritAura,actor.faJinMesh,actor.deadCalmMesh,actor.pinnedFeathers].includes(part) &&
+    !/ground-shadow|slot-ring|legacy-slot-shell|height-guide|aura/i.test(part.name);
+}
+function animeStretchLocalMatrix(root,pose) {
+  const [long,side,dx,dz]=pose,delta=long-side;
+  // Exact world-space movement axis, even when the character is facing elsewhere.
+  const stretch=new THREE.Matrix4().set(
+    side+delta*dx*dx,0,delta*dx*dz,0,
+    0,1,0,0,
+    delta*dx*dz,0,side+delta*dz*dz,0,
+    0,0,0,1);
+  const basis=root.matrixWorld.clone().setPosition(0,0,0);
+  return basis.clone().invert().multiply(stretch).multiply(basis);
+}
+function animeApplyStretch(actor,records) {
+  const root=actor.mesh,pose=animeCurrentStretch(actor);
+  if (!root?.visible || !pose || !actor.alive) return;
+  if (Math.abs(pose[0]-1)<1e-5 && Math.abs(pose[1]-1)<1e-5) return;
+  root.updateWorldMatrix(true,true);
+  if (Math.abs(root.matrixWorld.determinant())<1e-8) return;
+  const transform=animeStretchLocalMatrix(root,pose);
+  const parts=[];
+  records.push({root,parts});
+  for (const part of root.children) {
+    if (!animeStretchBodyPart(actor,part)) continue;
+    if (part.matrixAutoUpdate) part.updateMatrix();
+    parts.push([part,part.matrixAutoUpdate,part.matrix.clone()]);
+    part.matrixAutoUpdate=false;
+    part.matrix.premultiply(transform);
+    part.matrixWorldNeedsUpdate=true;
+  }
+  root.updateMatrixWorld(true);
+}
+function animeRestoreStretch(records) {
+  for (const {root,parts} of records) {
+    for (const [part,auto,matrix] of parts) {
+      part.matrix.copy(matrix);
+      part.matrixAutoUpdate=auto;
+      part.matrixWorldNeedsUpdate=true;
+    }
+    root.updateMatrixWorld(true);
+  }
+}
+
+// Optional compact visual pose; older online clients ignore it.
+function animeOnlineStretch(row) {
+  if (!onlineVector(row,4) || row[0]<.79 || row[0]>1.61 || row[1]<.69 || row[1]>1.16) return null;
+  const length=Math.hypot(row[2],row[3]);
+  if (length<.95 || length>1.05) return null;
+  return [row[0],row[1],row[2]/length,row[3]/length];
+}
+function animeSetRemoteStretch(actor,row,interpolate) {
+  const next=animeOnlineStretch(row),previous=actor.animeRemoteStretch;
+  actor.animeRemoteStretchBlend=null;
+  if (!interpolate || (!previous&&!next)) {
+    actor.animeRemoteStretch=next;
+    return;
+  }
+  const from=previous??[1,1,next[2],next[3]];
+  const to=next??[1,1,from[2],from[3]];
+  actor.animeRemoteStretchBlend={from,to,next};
+}
+function animeBlendRemoteStretch(actor,blend) {
+  const motion=actor.animeRemoteStretchBlend;
+  if (!motion) return;
+  const {from,to,next}=motion;
+  if (blend>=1) {
+    actor.animeRemoteStretch=next;
+    actor.animeRemoteStretchBlend=null;
+    return;
+  }
+  // An axis has no sign; avoid rotating it 180 degrees on a bounce.
+  const sign=from[2]*to[2]+from[3]*to[3]<0?-1:1;
+  const dx=THREE.MathUtils.lerp(from[2],sign*to[2],blend);
+  const dz=THREE.MathUtils.lerp(from[3],sign*to[3],blend);
+  const length=Math.hypot(dx,dz)||1;
+  actor.animeRemoteStretch=[THREE.MathUtils.lerp(from[0],to[0],blend),
+    THREE.MathUtils.lerp(from[1],to[1],blend),dx/length,dz/length];
 }
 
 
@@ -34265,6 +34406,7 @@ function collectOnlineScene(session) {
     bursts:gfx.events||[],seq: ++arena.seq, time: onlineRound(t), cameraTime: onlineRound(cinema.real),
     combatFeedback: actors.map(actor => encodeCombatFeedback(actor, now)),
     fighters: arena.models.map(onlineFighterState),
+    stretch: actors.map(actor => animeStretchPose(actor)?.map(value => onlineRound(value)) ?? null),
     motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
     storm: stormMesh ? [stormX, stormZ, stormUntil].map(value => onlineRound(value)) : null,
     banners: activeBanners.slice(-8).map(({x, z, key, slot, born, image}) =>
@@ -34524,6 +34666,7 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
     actor.alive = !!actor.alive;
     onlineApplyFighter(arena, arena.models[slot], view.fighters[slot], !final && arena.blendDuration > 1);
     applyRemoteCombatFeedback(actor, view.combatFeedback?.[slot], now);
+    animeSetRemoteStretch(actor,Array.isArray(view.stretch)?view.stretch[slot]:null,!final&&arena.blendDuration>1);
   }
   if (onlineVector(view.storm, 3)) {
     const [x, z, until] = view.storm;
@@ -34551,6 +34694,7 @@ function renderOnlineArena(session, timestamp, dt) {
     node.quaternion.copy(onlineFromRotation).slerp(onlineToRotation, blend);
   }
   if (blend >= 1) arena.moves.clear();
+  for (const actor of actors) animeBlendRemoteStretch(actor,blend);
   updateCinemaCamera(dt, true);
   updateStormMesh();
   updateBanners();
@@ -34837,9 +34981,10 @@ function wallDeflection(s,length){
 }
 
 function renderCombatFeedback(now = performance.now()) {
-  const swapped = [];
+  const swapped = [], stretched = [];
   try {
     for (const actor of actors) {
+      animeApplyStretch(actor,stretched);
       if (actor.combatFeedback || recoveryPlusGroups.has(actor)) updateRecoveryPluses(actor, now);
       const amount = combatHitOpacity(actor, now);
       if (amount === 0 || !actor.mesh?.visible) continue;
@@ -34864,6 +35009,7 @@ function renderCombatFeedback(now = performance.now()) {
     renderArenaGrade(now);
   } finally {
     for (const [part, source] of swapped) part.material = source;
+    animeRestoreStretch(stretched);
   }
 }
 
