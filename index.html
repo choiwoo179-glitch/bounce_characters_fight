@@ -2864,12 +2864,54 @@ body.startup-loading { overflow: hidden; }
     .fighter-statuses:not([hidden]) { gap: 4px; }
     .fighter-status img { width: 44px; height: 17px; }
   }
-@media(max-width:899px){
-body.battle-theme:not(.practice-mode) main:has(.multi-hud){overflow-y:auto}
-body.battle-theme:not(.practice-mode) #battle:has(.multi-hud){flex:1 0 auto}
-body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:clamp(200px,36dvh,360px)}
-.multi-hud .fighter-statuses[hidden]{display:block;visibility:hidden;height:20px;margin-top:5px}
-.multi-hud .fighter-head b{display:flex;align-items:center;gap:2px;white-space:nowrap;font-size:clamp(9px,2.5vw,13px)}
+/* Keep the arena above the HUD on narrow portrait screens and between the players in landscape. */
+@media (max-width: 899px), (orientation: portrait) and (any-pointer: coarse) {
+  body.battle-theme.multi-battle > main { overflow-y: auto; }
+  body.battle-theme.multi-battle #battle:not(.hidden) { flex: 1 0 auto; }
+  body.battle-theme.multi-battle .battle-controls { order: -2; }
+  body.battle-theme.multi-battle #arena {
+    order: -1;
+    flex: 1 0 0;
+    min-height: clamp(190px, 40vh, 420px);
+    min-height: clamp(190px, 40dvh, 420px);
+    margin-bottom: 6px;
+  }
+  body.battle-theme.multi-battle #arena > canvas { position: absolute; inset: 0; }
+  body.battle-theme.multi-battle #hud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0;
+  }
+  body.battle-theme.multi-battle #hud .fighter-head b {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: clamp(9px, 2.5vw, 13px);
+  }
+}
+@media (orientation: landscape) and (max-width: 899px) {
+  body.battle-theme.multi-battle #battle:not(.hidden) {
+    display: grid;
+    flex: 1 1 0;
+    grid-template-columns: clamp(115px, 24vw, 185px) minmax(0, 1fr) clamp(115px, 24vw, 185px);
+    grid-template-rows: auto repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    min-height: 196px;
+  }
+  body.battle-theme.multi-battle .battle-controls { grid-column: 1 / -1; margin: 0; }
+  body.battle-theme.multi-battle #arena {
+    grid-area: 2 / 2 / 4 / 3;
+    min-height: 0;
+    margin: 0;
+  }
+  body.battle-theme.multi-battle #hud { display: contents; }
+  body.battle-theme.multi-battle #hud .fighter-hud { overflow-y: auto; }
+  body.battle-theme.multi-battle #hud .fighter { flex-shrink: 0; }
+  body.battle-theme.multi-battle #hud .fighter-hud[data-slot="0"] { grid-area: 2 / 1; }
+  body.battle-theme.multi-battle #hud .fighter-hud[data-slot="1"] { grid-area: 2 / 3; }
+  body.battle-theme.multi-battle #hud .fighter-hud[data-slot="2"] { grid-area: 3 / 1; }
+  body.battle-theme.multi-battle #hud .fighter-hud[data-slot="3"] { grid-area: 3 / 3; }
+  body.battle-theme.multi-battle .arena-zoom-hint { display: none; }
 }
 #hud .fighter-status{border:1px solid var(--status-color);cursor:pointer}
 .fighter-status::before{content:attr(data-mark);color:var(--status-color);font-weight:bold}
@@ -2926,7 +2968,9 @@ body.battle-theme:not(.practice-mode) #battle:has(.multi-hud) #arena{min-height:
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 캐릭터 3D 외형</strong>
+                <strong>최신 패치 · 모바일 다인전 아레나</strong>
+                <p>모바일 3·4인전에서 세로 화면은 아레나를 상태창 위에, 가로 화면은 양쪽 상태창 사이에 배치합니다.</p>
+                <strong>이전 패치 · 캐릭터 3D 외형</strong>
                 <p>우류의 사각 안경, 버기의 둥근 빨간 코, 렌지의 금속 이마 장식을 다듬었습니다.</p>
                 <strong>이전 패치 · 시작 MP와 전투 유형</strong>
                 <p>대전 시작 시 캐릭터별로 최대 MP의 10~50%가 충전됩니다. 캐릭터 정보에서 시작 MP 비율을 확인할 수 있습니다.</p>
@@ -11629,7 +11673,6 @@ function startBattleNow(track) {
   ),
     setScreen("battle", track),
     $("arena").append(renderer.domElement),
-    resize(),
     actors.forEach(actor => { model(actor, true); preloadFighterBanners(actor.d); }),
     ($("battleMode").textContent =
       1 === mode ? "CHALLENGE / STAGE " + stage + " OF 5" : mode + " PLAYER / LOCAL BATTLE"),
@@ -11638,6 +11681,8 @@ function startBattleNow(track) {
     (running = !0),
     ($("pause").textContent = "일시정지"),
     buildHud(),
+    ($("battle").parentElement.scrollTop = 0),
+    resize(),
     note(
       1 === mode
         ? "상대 HP·피해 " + Math.round(100 * e) + "% · 각 캐릭터의 시작 MP 적용"
@@ -19220,6 +19265,7 @@ function voiceKey(e, a) {
 // ui.js
 function setScreen(e, battleTrack) {
   document.body.classList.toggle("practice-mode",e==="battle"&&practiceActive);
+  document.body.classList.toggle("multi-battle", e === "battle" && !practiceActive && actors.length >= 3);
   "selection" !== e && clearSelectionPreviews();
   for (const a of ["home", "selection", "battle"]) $(a).classList.toggle("hidden", a !== e);
   if(!reducedGraphics())$(e).animate?.([{translate:"12px 0",opacity:.5},{translate:"0 0",opacity:1}],{duration:170,easing:"ease-out"});
