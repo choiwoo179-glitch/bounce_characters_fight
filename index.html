@@ -2984,7 +2984,9 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 애니메이션 그래픽 2차</strong>
+                <strong>최신 패치 · 애니메이션 그래픽 3차</strong>
+                <p>속성별 검은 먹선과 붓터치 궤적, 날카로운 스파크, 방사형 집중선을 추가했습니다. 일반 기술은 0.15초, 스페셜 기술은 0.25초 동안 타격 연출이 남으며 스페셜의 검은 외곽선을 강화합니다. 투사체·돌진·근접 타격의 속성 표현을 구분하고 모바일에서는 이펙트 수를 조절합니다. 실제 전투 판정·히트스톱·이동 속도는 바꾸지 않습니다.</p>
+                <strong>이전 패치 · 애니메이션 그래픽 2차</strong>
                 <p>초고속 돌진은 진행 방향으로 1.6배, 직각 방향으로 0.7배 늘이고, 일반 돌진은 각각 1.25배와 0.85배로 변형합니다. 돌진 종료 시 순간적으로 눌린 뒤 0.12초 동안 원래 형태로 복구됩니다. 순간이동, 실제 충돌 범위, 피해량, 이동 거리 및 속도는 변경되지 않습니다.</p>
                 <strong>이전 패치 · 애니메이션 그래픽 1차</strong>
                 <p>고속 돌진·강한 발사에 팽창하는 소닉붐 고리를, 투사체의 실제 이동 경로에는 속성별 메시 트레일을 적용했습니다. 연속 돌진에는 0.1초 간격으로 캐릭터의 단색 실루엣 잔상을 생성하고 서서히 사라지도록 합니다.</p>
@@ -5436,7 +5438,7 @@ function updateTrioObjects(e) {
       if(e===a.owner||!e.alive||a.hit.has(e)||segmentDistance(e.x,e.z,o,n,a.x,a.z)>actorRadius(e)+a.r) continue;
       if(reflectAlchemyShot(a,e,o,n,236,a.r,TRIO_CONFIG.purpleSpeed,"rare")) return false;
       a.hit.add(e);
-      withAlchemyHitMode("ranged",()=>hurt(a.owner,e,236,"rare"));
+      withDamageOrigin(a.owner,specialSourceOf(a.owner),()=>withAlchemyHitMode("ranged",()=>hurt(a.owner,e,236,"rare")),undefined,undefined,"HOLLOW_PURPLE");
     }
     return (
       a.mesh && a.mesh.position.set(a.x, 1.3, a.z),
@@ -6278,10 +6280,11 @@ function updateHealthDashEffect(e) {
   } else e.life = 0;
 }
 
-function withDamageOrigin(e, a, o, label, skillType) {
+function withDamageOrigin(e, a, o, label, skillType, inkSkillType) {
   const n = damageOrigin;
   damageOrigin = { a: e, special: !!a, label: label ?? (n?.a === e ? n.label : undefined),
-    skillType: skillType ?? (n?.a === e ? n.skillType : undefined) };
+    skillType: skillType ?? (n?.a === e ? n.skillType : undefined),
+    inkSkillType: inkSkillType ?? (skillType ? undefined : n?.a === e ? n.inkSkillType : undefined) };
   try {
     return o();
   } finally {
@@ -7751,7 +7754,7 @@ function updateTeachObjects(e) {
       for (const e of actors)
         e !== a &&
           e.alive &&
-          hurt(a, e, gurashiDamage(Math.hypot(e.x - a.x, e.z - a.z)), "special");
+          withDamageOrigin(a,specialSourceOf(a),()=>hurt(a,e,gurashiDamage(Math.hypot(e.x-a.x,e.z-a.z)),"special"),undefined,undefined,"GURASHI");
       teachQuake(a);
     }
 }
@@ -8210,6 +8213,7 @@ function spGain(e, a) {
 }
 
 function collisionDamage(e, a = null) {
+  if(!headless&&a)e.animeContactSkill=e.contactAura||(e.blackFlash?"BLACK_FLASH":undefined);
   if (e.denjiShark?.until > t) return 90;
   e.shotoBoost = false;
   let o = e.nika
@@ -8412,7 +8416,8 @@ function schedule(e, a, o) {
   const n = specialSourceOf(e);
   const label = damageOrigin?.a === e ? damageOrigin.label : undefined;
   const type = animeSkillOf(e);
-  events.push({ at: t + a, a: e, fn: () => withDamageOrigin(e, n, o, label, type) });
+  const inkType = damageOrigin?.a === e ? damageOrigin.inkSkillType : undefined;
+  events.push({ at: t + a, a: e, fn: () => withDamageOrigin(e, n, o, label, type, inkType) });
 }
 
 function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
@@ -8453,6 +8458,8 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
       b: a,
       damageKind: n,
       damageLabel: damageOrigin?.a === e ? damageOrigin.label : undefined,
+      animeSkill: headless ? undefined : animeInkSourceOf(e) || animeDashType(e,animeMovementState(e)) || (i ? e.animeContactSkill : undefined),
+      animeContact: headless ? undefined : {x:a.x,z:a.z,dx:a.x-e.x,dz:a.z-e.z},
       hitMode: alchemyHitMode || (e.dash ? "melee" : null),
       cinemaRush: !!cinematic?.rush,
       cinemaFinal: !!cinematic?.final,
@@ -8684,6 +8691,7 @@ function applyQueuedDamage() {
       updateGuyTransforms());
     if (o > 0) {
       markCombatFeedback(e.b, "hit");
+      animeInkHit(e,o);
       cinemaDamage(e, o);
     }
     if(practiceActive)e.b.hp=e.b.maxHp;
@@ -10765,7 +10773,7 @@ function updateExtraShots(e) {
         r || (removeMesh(a.chain), removeMesh(a.mesh)),
         r
       );
-    }, a.damageLabel),
+    }, a.damageLabel, undefined, a.animeSkill || animeFlightType(a)),
   );
 }
 
@@ -11225,7 +11233,7 @@ function advanceProjectiles(e) {
           ? (removeMesh(a.mesh), !1)
           : (a.mesh && a.mesh.position.set(a.x, 1.3, a.z), !0)
       );
-    }, a.damageLabel),
+    }, a.damageLabel, undefined, a.animeSkill || animeFlightType(a)),
   );
 }
 
@@ -11245,6 +11253,7 @@ function updateAutomaticCasts(e) {
 function addZone(e, a, o, n, s, i, r, l, c, h = "special", d = new Set(), u = 0, m = !1) {
   const f = {
     a: e,
+    animeSkill: animeSkillOf(e),
     specialSource: specialSourceOf(e),
     damageLabel: damageOrigin?.a === e ? damageOrigin.label : undefined,
     x: a,
@@ -11277,7 +11286,7 @@ function updateZones() {
           hurt(e.a, a, e.damage, e.kind),
           e.healHit && heal(e.a, e.healHit));
       return !0;
-    }, e.damageLabel),
+    }, e.damageLabel, undefined, e.animeSkill),
   );
 }
 
@@ -26792,7 +26801,7 @@ function updateDuelMarks() {
 function duelDamage(summon, target, damage, mode) {
   const { owner, special, rules } = summon;
   const before = damageQueue.length;
-  withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () => hurt(owner, target, damage, special ? "special" : "skill")), rules.name);
+  withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () => hurt(owner, target, damage, special ? "special" : "skill")), rules.name,undefined,summon.type);
   return damageQueue.length > before && damageQueue.at(-1).b === target;
 }
 
@@ -27410,7 +27419,7 @@ function newcomerHit(owner, target, type, damage, mode, onConfirmedHit) {
   const [name, , , special] = NEWCOMER_SKILLS[type];
   const before = damageQueue.length;
   withDamageOrigin(owner, special, () => withAlchemyHitMode(mode, () =>
-    hurt(owner, target, damage, special ? "special" : "skill")), name);
+    hurt(owner, target, damage, special ? "special" : "skill")), name,undefined,type);
   if (damageQueue.length <= before) return;
   const entry = damageQueue.at(-1);
   if (entry.a !== owner || entry.b !== target) return;
@@ -30897,6 +30906,8 @@ function animeEffect(mesh, life, family, animate) {
   const mobile = mobileGraphics();
   const limit = family === "ghost" ? (mobile ? 16 : 24)
     : family === "sonic" ? (mobile ? 12 : 22)
+    : family === "ink-impact" ? (mobile || gfx.level === 0 ? 8 : 12)
+    : family === "ink-dash" ? (mobile || gfx.level === 0 ? 12 : 20)
     : (mobile ? (actors.length >= 4 ? 72 : 100) : 180);
   const existing = effects.filter(effect => effect.animeFamily === family && effect.life > 0);
   if (existing.length >= limit) {
@@ -31205,6 +31216,7 @@ function animeActorMotionFinish(samples) {
       state.animeGhostAt=t;
     }
     if(first&&sonic)animeSonicBoom(x,z,unit(dx,dz),color,actorRadius(actor)*1.12);
+    animeInkDashSample(actor,state,type,x,z,dx,dz);
   }
 }
 
@@ -31293,6 +31305,343 @@ function animeBlendRemoteStretch(actor,blend) {
   const length=Math.hypot(dx,dz)||1;
   actor.animeRemoteStretch=[THREE.MathUtils.lerp(from[0],to[0],blend),
     THREE.MathUtils.lerp(from[1],to[1],blend),dx/length,dz/length];
+}
+
+
+// Stage 3: hand-drawn impact silhouettes and directional ink strokes.
+// Palette/shape IDs are stable because the compact online scene uses their indices.
+const ANIME_INK_PALETTES = Object.freeze([
+  {name:"lightning",color:0xffda37,accent:0xe6fbff,shape:"bolt"},
+  {name:"fire",color:0xff5425,accent:0xffe36b,shape:"flame"},
+  {name:"blue-fire",color:0x248eff,accent:0x9bf5ff,shape:"flame"},
+  {name:"water",color:0x249eff,accent:0xc2f7ff,shape:"wave"},
+  {name:"blade",color:0xed3858,accent:0xfff7ea,shape:"blade"},
+  {name:"moon",color:0xd36aff,accent:0xffdc83,shape:"moon"},
+  {name:"ice",color:0x64d5ff,accent:0xf2ffff,shape:"crystal"},
+  {name:"fist",color:0xffbc45,accent:0xfff2d5,shape:"impact"},
+  {name:"explosion",color:0xff7224,accent:0xffe330,shape:"burst"},
+  {name:"dark",color:0xa65cef,accent:0xe2acff,shape:"ink"},
+  {name:"fracture",color:0xd4bca2,accent:0xffffff,shape:"crack"},
+  {name:"holy",color:0x58cfff,accent:0xeafcff,shape:"arrow"},
+  {name:"force",color:0x65f0bd,accent:0xf2fff5,shape:"impact"},
+  {name:"gold",color:0xffde68,accent:0xfff9dc,shape:"arrow"},
+  {name:"blood",color:0xf52e54,accent:0xffa4b1,shape:"blade"},
+  {name:"red-lightning",color:0xff394c,accent:0xffbcb7,shape:"bolt"},
+  {name:"blue-lightning",color:0x489dff,accent:0xdafaff,shape:"bolt"},
+  {name:"violet-blade",color:0x9c64ff,accent:0xf1deff,shape:"blade"},
+  {name:"gold-blade",color:0xffc73c,accent:0xfff6c8,shape:"blade"},
+  {name:"blue-blade",color:0x6e9dff,accent:0xeefaff,shape:"blade"},
+  {name:"pink-blade",color:0xff6ab7,accent:0xffebf7,shape:"blade"},
+]);
+const ANIME_INK_SKILLS = new Map();
+for (const [index,skills] of [
+  [0,"THUNDERCLAP_FLASH THUNDERCLAP_SIXFOLD THUNDER_GOD RAIKIRI LIGHTNING_CLONE CHIDORI_AURA NIKA_LIGHTNING NUE"],
+  [1,"BURNING_BONES HINOKAMI_ENBU UNKNOWING_FIRE RISING_SCORCHING_SUN RENGOKU SANJI_DIABLE RED_ROC DAI_FUNKA MEIGO RYUSEI_KAZAN FLASHFIRE_FIST ROY_PRECISION ROY_CHAIN"],
+  [2,"SANJI_IFRIT SOKATSUI FLASHFREEZE_HEATWAVE"],
+  [3,"WATER_SLASH STRIKING_TIDE RIPPLE_THRUST DEAD_CALM BANG_ASSAULT BANG_WALL_ART"],
+  [4,"PURGATORY_ONIGIRI ASURA GETSUGA BLACK_GETSUGA ICHIGO_SHUNPO TENSA_ZANGETSU KENPACHI_TWO_HANDED_SLASH KENPACHI_NOZARASHI KENPACHI_BANKAI RENJI_HIKOTSU RENJI_ZABIMARU RENJI_BANKAI BEAST_FANG_SLASH BEAST_SPATIAL_RAMPAGE SENBONZAKURA BYAKUYA_SHUNPO SENBONZAKURA_KAGEYOSHI EDWARD_BLADE HIGURUMA_DEATH_PENALTY CHAINSAW_RUSH SHARK_RIDER"],
+  [5,"CRESCENT_SLASH MOONLIGHT_BARRAGE"],
+  [6,"ICE_AGE PHEASANT_BEAK ICE_BALL RYOJIN_HYOHEKI TENSO_JURIN RYUSENKA LOTUS_ICE SCATTERING_LOTUSES FROZEN_WATER_LILY_BODHISATTVA HEAVEN_ICE_WALL"],
+  [7,"NORMAL_PUNCH CONSECUTIVE_PUNCHES SERIOUS_PUNCH GUM_GUM_GATLING GEAR_THIRD_GIANT_PISTOL BOUND_MAN NIKA_GIGANT DESTRUCTIVE_DEATH_AIR_TYPE COMPASS_NEEDLE_DISORDER BLUE_SILVER_CHAOTIC_AFTERGLOW ORA_RUSH THE_WORLD MUDA_RUSH DIO_THE_WORLD SANJI_MUTTON SANJI_PARTY ALPHONSE_SHOULDER ALPHONSE_COMBO BAT_SLAM BAT_BARRAGE BAT_DRAGON STONE_FLAIL STONE_WHIRLWIND HIGURUMA_GAVEL_GIANT HIGURUMA_GAVEL_VOLLEY SHUTTER_RUSH ARI_RUSH ARRIVEDERCI"],
+  [8,"EXPLOSION_DRIVE HOWITZER_IMPACT REZE_SHOT REZE_DASH REZE_BOMB BUGGY_BALL ROAR CONSTANT_RESONANT_SLASHES STRING_PERFORMANCE ROY_INFERNO FIRST_BOMB SHEER_HEART_ATTACK BITES_THE_DUST INCINERATION INCINERATION_UPGRADE EDWARD_CANNON"],
+  [9,"AMATERASU TEACH_BLACK_HOLE KUROUZU SHADOW_SMASH BLACK_ANKH BLACK_ANKH_BALDUR KUROHITSUGI KYOKA_SUIGETSU AKI_CURSE NARA_STITCHING KAMUI"],
+  [10,"SCAR_ARM SCAR_GROUND SCAR_CHAIN GURASHI EDWARD_GROUND GAARA_BURIAL CHIBAKU_TENSEI"],
+  [11,"URYU_SPRENGER URYU_REGEN URYU_ANTITHESIS DUEL_BLUE_EYES DUEL_XYZ DUEL_ULTIMATE DUEL_MAGICIAN_GIRL RASENGAN_AURA SAGE_RASENSHURIKEN KURAMA_RASENGAN CURSED_BLUE"],
+  [12,"SMASH_KICK DELAWARE_SMASH DETROIT_120 MORNING_PEACOCK DAYTIME_TIGER EVENING_ELEPHANT SHINRA_TENSEI PSYCHIC_THROW PSYCHOKINESIS MACHINEGUN_BLOW DELTA_SCALE_SABER BANG_GUARD PROJECTION_BARRAGE"],
+  [13,"YASAKANI_MAGATAMA AMA_NO_MURAKUMO MAHORAGA MILLENNIUM_EMPEROR_NOVA"],
+  [14,"POWER_WEAPON POWER_BLOOD FIERCE_WINGS_SHOT FIERCE_WINGS_SWORD FIERCE_WINGS_BARRAGE BUGGY_ESCAPE BUGGY_FESTIVAL"],
+  [15,"BLACK_FLASH BOOGIE_BLACK_FLASH NIGHT_GUY MALEVOLENT_SHRINE DUEL_OSIRIS CURSED_RED"],
+  [9,"HOLLOW_PURPLE DUEL_BLACK_MAGICIAN"],
+  // The same drawing family retains each character's signature energy colors.
+  [16,"RAIKIRI LIGHTNING_CLONE CHIDORI_AURA NUE THUNDER_GOD"],
+  [17,"ASURA PURGATORY_ONIGIRI"],
+  [18,"KENPACHI_TWO_HANDED_SLASH KENPACHI_NOZARASHI KENPACHI_BANKAI AMA_NO_MURAKUMO"],
+  [19,"GETSUGA ICHIGO_SHUNPO"],
+  [20,"SENBONZAKURA BYAKUYA_SHUNPO SENBONZAKURA_KAGEYOSHI"],
+]) for (const type of skills.split(" ")) ANIME_INK_SKILLS.set(type,index);
+
+// Older persistent skill objects sometimes carry only a Korean damage label.
+// Resolve that label before using a conservative character-family fallback.
+const ANIME_INK_FALLBACK = Object.freeze({
+  zenitsu:0, kakashi:0, sasuke:9, tanjiro:1, rengoku:1, sanji:7, roy:1,
+  giyu:3, zoro:4, ichigo:4, kenpachi:4, renji:4, denji:4, byakuya:4, inosuke:4,
+  kokushibo:5, kuzan:6, toshiro:6, douma:6, shoto:6,
+  saitama:7, luffy:7, emperor_luffy:7, akaza:7, yuji:15, todo:15, jotaro:7, dio:7,
+  silver_fang:3, metal_bat:7, alphonse:7, higuruma:7, bucciarati:7, hakari:7,
+  bakugo:8, reze:8, buggy:8, tengen:8, kira:8, genos:8, sakazuki:1,
+  teach:9, tokoyami:9, aizen:9, scar:10, edward:10, gaara:10, pain:10,
+  uryu:11, yuugi:9, kaiba:11, naruto:11, gojo:9, borsalino:13,
+  izuku:12, dark_deku:12, guy:12, tatsumaki:12, naoya:12, child_emperor:12,
+  hawks:14, power:14, megumi:0, shikamaru:9,
+});
+const animeInkLabelCache = new WeakMap();
+const animeInkRecentHits = new WeakMap();
+let animeInkSerial=0;
+function animeInkLabelType(actor,label) {
+  if (!label || !actor?.d) return null;
+  let names=animeInkLabelCache.get(actor.d);
+  if(!names){
+    names=new Map();
+    for(const type of ANIME_INK_SKILLS.keys()){
+      const name=practiceName(type,actor.d);
+      if(name!==type)names.set(name,type);
+    }
+    animeInkLabelCache.set(actor.d,names);
+  }
+  return names.get(label) || null;
+}
+function animeInkSourceOf(actor) {
+  return damageOrigin?.a===actor ? damageOrigin.inkSkillType??damageOrigin.skillType : undefined;
+}
+function animeInkImpactStyle(hit) {
+  if (!hit.a || !hit.b || hit.a===hit.b) return null;
+  // Plain collisions, environmental hits, and passive burn ticks keep their existing feedback.
+  if (["royBurn","magmaBurn","teachBurn","burn","roomWall"].includes(hit.damageKind)) return null;
+  // Sustained magic seals and ice storms are attacks in their own right, not passive burn.
+  if (hit.damageKind==="bleachDot" && hit.a.d.id!=="toshiro") return null;
+  if (hit.damageKind==="duelDot" && hit.a.d.id!=="yuugi" && !animeInkLabelType(hit.a,hit.damageLabel)) return null;
+  if (!hit.skillHit&&!hit.specialHit&&!hit.animeSkill) return null;
+  if (hit.damageKind==="collision"&&!hit.skillHit&&!hit.specialHit) return null;
+  const explicit=ANIME_INK_SKILLS.has(hit.animeSkill)?hit.animeSkill:animeInkLabelType(hit.a,hit.damageLabel);
+  if (ANIME_INK_SKILLS.has(explicit)) return ANIME_INK_SKILLS.get(explicit);
+  if (hit.damageKind==="uryuReturn") return 11;
+  const active=animeDashType(hit.a,animeMovementState(hit.a));
+  if (ANIME_INK_SKILLS.has(active)) return ANIME_INK_SKILLS.get(active);
+  const recent=animeInkLabelType(hit.a,hit.a.castName);
+  if (ANIME_INK_SKILLS.has(recent)) return ANIME_INK_SKILLS.get(recent);
+  return ANIME_INK_FALLBACK[hit.a.d.id] ?? null;
+}
+function animeInkRandom(seed) {
+  // Separate deterministic visual random stream: never consume combat Math.random().
+  let n=seed>>>0;
+  return ()=>((n=(Math.imul(n,1664525)+1013904223)>>>0)/4294967296);
+}
+function animeInkStrip(buffer,points,widths,factor=1,lift=0) {
+  const pairs=points.map((p,i)=>{
+    const before=points[Math.max(0,i-1)],after=points[Math.min(points.length-1,i+1)];
+    const d=unit(after[0]-before[0],after[2]-before[2]),w=widths[i]*factor;
+    return [[p[0]-d.z*w,p[1]+lift,p[2]+d.x*w],[p[0]+d.z*w,p[1]+lift,p[2]-d.x*w]];
+  });
+  for(let i=1;i<pairs.length;i++){
+    const [a,b]=pairs[i-1],[c,d]=pairs[i];
+    buffer.push(...a,...b,...c,...c,...b,...d);
+  }
+}
+function animeInkStroke(layers,points,widths,special,highlight=true) {
+  animeInkStrip(layers[0],points,widths,special?1.67:1.39,0);
+  animeInkStrip(layers[1],points,widths,1,.034);
+  if(highlight)animeInkStrip(layers[2],points,widths,.28,.068);
+}
+function animeInkLayer(group,vertices,color,name,opacity,order) {
+  if(!vertices.length)return null;
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute("position",new THREE.Float32BufferAttribute(vertices,3));
+  const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({
+    color,opacity,transparent:true,side:THREE.DoubleSide,depthWrite:false,
+  }));
+  mesh.name=name;
+  mesh.userData.animeInk=true;
+  mesh.renderOrder=order;
+  group.add(mesh);
+  return {mesh,opacity};
+}
+let animeInkBuildSerial=0;
+function animeInkBuild(row) {
+  // Three.js constructors also generate random object UUIDs. Isolate that synchronous
+  // work, so adding a presentation effect cannot consume a combat random number.
+  const combatRandom=Math.random;
+  Math.random=animeInkRandom((row[11]^Math.imul(++animeInkBuildSerial,2246822519))>>>0);
+  try{return animeInkConstruct(row);}
+  finally{Math.random=combatRandom;}
+}
+function animeInkConstruct(row) {
+  const [id,kind,styleIndex,special,x,y,z,dx,dz,length,width,seed,detail]=row;
+  const palette=ANIME_INK_PALETTES[styleIndex],rand=animeInkRandom(seed);
+  const group=new THREE.Group(),layers=[[],[],[]];
+  const isSpecial=!!special;
+  const shape=palette.shape;
+  group.name=kind===0?"anime-ink-impact":"anime-ink-brush-trail";
+  group.userData.animeInk=true;
+  group.position.set(x,y,z);
+  group.rotation.y=Math.atan2(dx,dz);
+  if(kind===0){
+    // Layered, hand-cut shapes: black perimeter, saturated interior, white-hot tapered accent.
+    const count=isSpecial?[15,20,24][detail]:[6,8,10][detail];
+    const lines=isSpecial?[8,10,12][detail]:[4,5,6][detail];
+    for(let i=0;i<count;i++){
+      const q=(i+.20+.6*rand())*Math.PI*2/count;
+      const c=Math.cos(q),s=Math.sin(q),span=(1.4+rand()*2.05)*(isSpecial?1.27:1);
+      const near=.14+rand()*.52,edge=.08+rand()*.18;
+      const bend=(rand()-.5)*(shape==="moon"||shape==="wave"||shape==="flame"?1.05:.52);
+      const rise=(rand()-.3)*.43;
+      const at=(r,side,h)=>[c*r-s*side,h,s*r+c*side];
+      let points,widths;
+      if(shape==="bolt"||shape==="crack"){
+        points=[at(near,0,0),at(near+span*.35,bend+.29,rise*.45),
+          at(near+span*.48,-bend-.20,rise*.7),at(near+span,0,rise)];
+        widths=[edge*.20,edge,edge*.49,.008];
+      }else if(["flame","wave","moon","ink"].includes(shape)){
+        points=[at(near,0,0),at(near+span*.22,bend*.6,rise*.3),at(near+span*.60,bend,rise*.7),
+          at(near+span,0,rise)];
+        widths=[edge*.18,edge*(shape==="flame"?1.4:1.1),edge*.66,.006];
+      }else{
+        const flare=shape==="burst"||shape==="crystal"?1.38:shape==="blade"?.78:1;
+        points=[at(near,0,0),at(near+span*.25,bend,rise*.35),at(near+span,0,rise)];
+        widths=[edge*.20,edge*flare,.005];
+      }
+      animeInkStroke(layers,points,widths,isSpecial,i%3!==1);
+    }
+    // World-space radial speed lines; deliberately not a screen-covering CSS overlay.
+    for(let i=0;i<lines;i++){
+      const q=(i+.22+rand()*.56)*2*Math.PI/lines;
+      const c=Math.cos(q),s=Math.sin(q),start=2.0+rand()*.85,end=start+1.2+rand()*1.25;
+      const y=.12+(rand()-.4)*.24;
+      const points=[[c*start,y,s*start],[c*(start+.35),y,s*(start+.35)],[c*end,y+.10,s*end]];
+      const w=(.038+rand()*.04)*(isSpecial?1.4:1);
+      animeInkStrip(layers[0],points,[.002,w,.006],1,0);
+      if(i%2===0)animeInkStrip(layers[2],points,[.002,w*.31,.003],1,.068);
+    }
+  } else {
+    // Long, irregular brush strips laid along the real travelled segment.
+    const ribbons=detail===0?2:3;
+    for(let k=0;k<ribbons;k++){
+      const side=k===0?0:(k===1?-1:1),offset=side*(.28+rand()*.23);
+      const points=[],widths=[];
+      for(let i=0;i<=5;i++){
+        const u=i/5,curve=Math.sin(u*Math.PI);
+        let ripple=(rand()-.5)*.12;
+        if(shape==="bolt"||shape==="crack")ripple+=(i%2?1:-1)*.15*curve;
+        if(["moon","wave","flame","ink"].includes(shape))ripple+=(side||1)*.19*curve;
+        const r=(k===0?.32:.13)*(isSpecial?1.12:1);
+        points.push([offset+ripple,.035*k+Math.sin(u*Math.PI)*.12,u]);
+        widths.push(i===0?.008:i===5?.025:r*(.62+.38*rand())*Math.sin(Math.PI*u)**.5);
+      }
+      animeInkStroke(layers,points,widths,isSpecial,k!==2);
+    }
+    for(let i=0;i<(isSpecial?5:3);i++){
+      const s=i%2?1:-1,u=.12+rand()*.60,v=Math.min(1,u+.17+rand()*.18);
+      const points=[[s*(.48+rand()*.10),.05,u],[s*(.69+rand()*.10),.07,(u+v)/2],[s*.57,.10,v]];
+      animeInkStrip(layers[0],points,[.008,.073,.004],isSpecial?1.3:1);
+      animeInkStrip(layers[1],points,[.004,.042,.003],1,.034);
+    }
+  }
+  const ink=animeInkLayer(group,layers[0],0x120d19,"anime-ink-outline",isSpecial?.96:.78,15);
+  const paint=animeInkLayer(group,layers[1],palette.color,"anime-ink-color",.98,16);
+  const core=animeInkLayer(group,layers[2],palette.accent,"anime-ink-highlight",.96,17);
+  const meshes=[ink,paint,core].filter(Boolean);
+  const animate=progress=>{
+    const p=THREE.MathUtils.clamp(progress,0,1),fade=(1-p)**1.35;
+    if(kind===0){
+      const scale=width*(.87+.40*(1-(1-p)**2));
+      group.scale.set(scale,scale,scale);
+    }else{
+      const narrow=width*(1-.44*p);
+      group.scale.set(narrow,narrow,length);
+    }
+    for(const {mesh,opacity} of meshes){
+      mesh.userData.akiCustomOpacity=opacity*fade;
+      mesh.material.opacity=opacity*fade;
+    }
+  };
+  animate(0);
+  return {mesh:group,animate};
+}
+function animeInkLife(special){return special?.25:.15;}
+function animeInkEmit(kind,style,special,x,y,z,dx,dz,length,width) {
+  if(headless||!world||!ANIME_INK_PALETTES[style]||!Number.isFinite(x+y+z+dx+dz+length+width))return;
+  const id=++animeInkSerial,seed=(Math.imul(id,2654435761)^Math.round(t*120))>>>0;
+  const detail=mobileGraphics()||gfx.level===0||reducedGraphics()?0:gfx.level===2?2:1;
+  const heading=unit(dx,dz);
+  const row=[id,kind,style,+!!special,x,y,z,heading.x,heading.z,length,width,seed,detail,0];
+  const visual=animeInkBuild(row);
+  animeEffect(visual.mesh,animeInkLife(special),kind===0?"ink-impact":"ink-dash",visual.animate);
+  effects.at(-1).animeInkRow=row;
+}
+function animeInkHit(hit,damage) {
+  if(headless||!world||damage<=0)return;
+  const style=animeInkImpactStyle(hit);
+  if(style==null)return;
+  const special=!!hit.specialHit || hit.damageKind==="rare";
+  let perTarget=animeInkRecentHits.get(hit.b);
+  if(!perTarget)animeInkRecentHits.set(hit.b,perTarget=new WeakMap());
+  const previous=perTarget.get(hit.a);
+  // Merge burst pellets from the same source, without combining different targets.
+  if(previous && t-previous.at < (special?.09:.055)-1e-8 && (!special||previous.special) && previous.style===style)return;
+  perTarget.set(hit.a,{at:t,style,special});
+  const point=hit.animeContact||{x:hit.b.x,z:hit.b.z,dx:hit.b.x-hit.a.x,dz:hit.b.z-hit.a.z};
+  const d=Math.hypot(point.dx,point.dz)>.0001?unit(point.dx,point.dz):unit(hit.a.dx||1,hit.a.dz||0);
+  const radius=actorRadius(hit.b);
+  const scale=Math.max(.86,Math.min(1.65,.75+radius*.18+damage/500));
+  animeInkEmit(0,style,special,point.x-d.x*radius*.35,Math.max(1.2,hit.b.mesh?.position.y??1.25)+.3,
+    point.z-d.z*radius*.35,d.x,d.z,1,scale);
+}
+function animeInkDashSample(actor,state,type,x,z,dx,dz) {
+  if(headless||!world||!state||type==="KAMUI")return;
+  const style=ANIME_INK_SKILLS.get(type);
+  if(style==null)return;
+  const sample=state.animeInkPath;
+  const special=!!state.specialSource;
+  const current=animeMovementState(actor);
+  if(sample&&t-sample.at<.055-1e-8&&current===state)return;
+  const start=sample??{x,z};
+  const ex=actor.x,ez=actor.z,distance=Math.hypot(ex-start.x,ez-start.z);
+  if(distance<.24)return;
+  // If the actor has been displaced discontinuously, start a new short segment instead.
+  const maxLength=Math.max(5,Math.hypot(dx,dz)*9);
+  const origin=distance>maxLength?{x,z}:start;
+  const vx=ex-origin.x,vz=ez-origin.z,len=Math.hypot(vx,vz);
+  if(len<.24)return;
+  const width=Math.max(.85,Math.min(2.4,actorRadius(actor)*(special?1.13:.94)));
+  animeInkEmit(1,style,special,origin.x,1.15,origin.z,vx,vz,len,width);
+  state.animeInkPath={x:ex,z:ez,at:t};
+}
+
+// Compact stage 3 visual replication, with no geometry changes sent over the network.
+function animeOnlineInkRows() {
+  const items=effects.filter(e=>e.animeInkRow&&e.life>0&&e.mesh?.visible);
+  // Prioritize new confirmed impacts over older dash strokes.
+  const selected=[...items.filter(e=>e.animeInkRow[1]===0).slice(-8),
+    ...items.filter(e=>e.animeInkRow[1]===1).slice(-12)];
+  return selected.map(e=>[...e.animeInkRow.slice(0,13).map((v,i)=>i===11||i===0?v:onlineRound(v)),
+    onlineRound(Math.max(0,e.total-e.life))]);
+}
+function animeValidInkRow(row) {
+  return Array.isArray(row)&&row.length===14&&row.every(Number.isFinite)&&
+    Number.isSafeInteger(row[0])&&row[0]>0&&(row[1]===0||row[1]===1)&&
+    Number.isInteger(row[2])&&row[2]>=0&&row[2]<ANIME_INK_PALETTES.length&&
+    [0,1].includes(row[3])&&Math.abs(row[4])<1000&&row[5]>=0&&row[5]<100&&Math.abs(row[6])<1000&&
+    Math.abs(Math.hypot(row[7],row[8])-1)<.02&&row[9]>.01&&row[9]<=100&&row[10]>=.1&&row[10]<=8&&
+    Number.isInteger(row[11])&&row[11]>=0&&row[11]<=0xffffffff&&[0,1,2].includes(row[12])&&
+    row[13]>=0&&row[13]<=animeInkLife(row[3])+.001;
+}
+function animeApplyOnlineInk(arena,rows,interpolate) {
+  const entries=arena.ink??=new Map(),present=new Set();
+  for(const row of (Array.isArray(rows)?rows:[]).slice(0,20)){
+    if(!animeValidInkRow(row)||present.has(row[0]))continue;
+    const id=row[0],age=Math.min(1,row[13]/animeInkLife(row[3]));
+    present.add(id);
+    let entry=entries.get(id);
+    if(!entry){
+      const visual=animeInkBuild(row);
+      world.add(visual.mesh);
+      entry={...visual,progress:age,from:age,to:age};
+      entries.set(id,entry);
+    }
+    entry.from=interpolate?Math.min(age,entry.progress):age;
+    entry.to=age;
+    entry.progress=entry.from;
+    entry.animate(entry.progress);
+  }
+  for(const [id,entry] of entries)if(!present.has(id)){
+    removeMesh(entry.mesh);
+    entries.delete(id);
+  }
+}
+function animeRenderOnlineInk(arena,blend) {
+  for(const entry of arena.ink?.values()||[]){
+    entry.progress=THREE.MathUtils.lerp(entry.from,entry.to,blend);
+    entry.animate(entry.progress);
+  }
 }
 
 
@@ -34344,7 +34693,7 @@ function onlineSceneEffects(arena, roomBudget) {
   const candidates = [];
   world.traverseVisible(node => {
     if (base.has(node) || node === stormMesh || node.parent === stormMesh) return;
-    if (node.isCelOutline) return;
+    if (node.isCelOutline || node.userData.animeInk) return;
     const kind = onlineEffectKind(node);
     if (!kind || !node.material) return;
     candidates.push({node, kind});
@@ -34407,13 +34756,18 @@ function collectOnlineScene(session) {
     combatFeedback: actors.map(actor => encodeCombatFeedback(actor, now)),
     fighters: arena.models.map(onlineFighterState),
     stretch: actors.map(actor => animeStretchPose(actor)?.map(value => onlineRound(value)) ?? null),
+    ink: animeOnlineInkRows(),
     motion: actors.map(({x, z, dx, dz, alive}) => [x, z, dx, dz, +alive].map(value => onlineRound(value))),
     storm: stormMesh ? [stormX, stormZ, stormUntil].map(value => onlineRound(value)) : null,
     banners: activeBanners.slice(-8).map(({x, z, key, slot, born, image}) =>
       [onlineRound(x), onlineRound(z), key, slot, onlineRound(born), image.alt.slice(0, 80)]),
     stopped: !!timeStop,
   };
-  const size = JSON.stringify(view).length;
+  let size = JSON.stringify(view).length;
+  while(view.ink.length && size>ONLINE_SCENE_LIMIT-512){
+    view.ink.pop();
+    size=JSON.stringify(view).length;
+  }
   [view.effects, view.geometry] = onlineSceneEffects(arena, Math.max(0, ONLINE_SCENE_LIMIT - size - 64));
   let encoded = JSON.stringify(view);
   if (encoded.length > ONLINE_SCENE_LIMIT) {
@@ -34677,6 +35031,7 @@ function applyOnlineScene(session, encoded, now = performance.now(), final = fal
   } else if (stormMesh) clearStormVisual();
   onlineUpdateEffects(arena, Array.isArray(view.effects) ? view.effects : [],
     Array.isArray(view.geometry) ? view.geometry : [], !final && arena.blendDuration > 1);
+  animeApplyOnlineInk(arena,view.ink,!final&&arena.blendDuration>1);
   if (Array.isArray(view.banners)) onlineUpdateBanners(arena, view.banners);
   document.body.classList.toggle("time-stopped", view.stopped === true);
 }
@@ -34695,6 +35050,7 @@ function renderOnlineArena(session, timestamp, dt) {
   }
   if (blend >= 1) arena.moves.clear();
   for (const actor of actors) animeBlendRemoteStretch(actor,blend);
+  animeRenderOnlineInk(arena,blend);
   updateCinemaCamera(dt, true);
   updateStormMesh();
   updateBanners();
