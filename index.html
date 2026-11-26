@@ -1572,12 +1572,21 @@ body.battle-theme {
   flex-direction: row-reverse;
   text-align: right;
 }
-#hud .rare-cast {
+#hud .rare-status {
+  display: block;
+  color: #b7a9c9;
+  border-left: 2px solid #736387;
   font-size: 10px;
-  width: 100%;
+  line-height: 1.3;
   margin-top: 4px;
   padding: 5px;
   background: #201c37;
+  overflow-wrap: anywhere;
+}
+#hud .rare-status.is-ready {
+  color: #f2ddff;
+  border-color: #d395ff;
+  background: #35234b;
 }
 .hud-versus {
   grid-column: 2;
@@ -1737,7 +1746,7 @@ body.battle-theme {
   margin-top: 4px;
   gap: 3px;
 }
-#hud .rare-cast {
+#hud .rare-status {
   padding: 3px 7px;
 }
 @media (max-width: 520px) {
@@ -2081,7 +2090,7 @@ body.battle-theme #hud {
 #hud .skill-kind {
   font-size: 9px;
 }
-#hud .rare-cast {
+#hud .rare-status {
   font-size: 9px;
   padding: 2px 5px;
   margin-top: 2px;
@@ -2455,7 +2464,9 @@ header .audio-control-row {
 #selection .profile-detail-skills{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 #selection .selection-info .profile-detail-skills>.profile-skill{height:auto;min-height:0;max-height:none;overflow:visible;margin:0;padding:0;border:0;display:block;}
 #selection .profile-detail-skills h3{font-size:15px;line-height:1.5;color:#dcebf4;margin:0 0 10px;overflow-wrap:anywhere;}
-#selection .profile-detail-skills .profile-skill>p{overflow:visible;height:auto;max-height:none;min-height:0;flex:none;padding:0;margin:0;font-size:14px;line-height:1.75;word-break:normal;overflow-wrap:anywhere;color:#b9cbd7;}
+#selection .profile-detail-skills dl{margin:0;}
+#selection .profile-detail-skills dt{margin:10px 0 3px;font-size:13px;font-weight:800;color:#e2eef7;}
+#selection .profile-detail-skills dd{margin:0 0 10px;font-size:13px;line-height:1.55;overflow-wrap:anywhere;color:#b9cbd7;}
 #selection .profile-page-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid #344652;margin-top:auto;}
 #selection .profile-page-footer>span{font-size:11px;color:#95acbd;}
 #selection .profile-confirm{flex-shrink:0;min-height:42px;}
@@ -2760,10 +2771,10 @@ body.startup-loading { overflow: hidden; }
 .skill-ready-label { display: none; color: #d4fa72; font-size: .72em; }
 #hud .cast-buttons button.skill-ready:not(:disabled) { box-shadow: inset 0 0 0 1px #a9d550; }
 #hud .cast-buttons button.skill-ready .skill-ready-label { display: inline; }
-#lastBattleHit { margin: 8px 0; color: #d2dfeb; overflow-wrap: anywhere; }
+#topSkillDamage { margin: 8px 0; color: #d2dfeb; overflow-wrap: anywhere; }
 @media (any-pointer: coarse) {
   body.battle-theme:not(.practice-mode) #hud .cast-buttons button,
-  #hud .cast-buttons button, #hud .rare-cast {
+  #hud .cast-buttons button {
     min-height: 44px; min-width: 44px; font-size: 13px; touch-action: manipulation;
   }
   #hud .cast-buttons button, #hud .fighter-right .cast-buttons button {
@@ -2979,12 +2990,14 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-25">2026.11.25</time></span>
+            <span>최종 수정 <time datetime="2026-11-26">2026.11.26</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 애니메이션 그래픽 4·5차</strong>
+                <strong>최신 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
+                <p>토오가타 밀리오, 히비노 카프카, 시노미야 키코루, 호시나 소시로, 아시로 미나를 추가했습니다. 변신과 관통, 착지 예고, 반격, 포격을 각 캐릭터의 3D 모델과 함께 구현했습니다.</p>
+                <strong>이전 패치 · 애니메이션 그래픽 4·5차</strong>
                 <p>타격 스파크의 짙은 외곽선과 명암 대비를 완화하고 반투명도를 조정했습니다. 확정된 스페셜 적중 시 연출 강도에 따라 0.05초 / 0.075초 / 0.10초의 히트스톱을 적용합니다. 연속 공격은 마지막 단계의 적중에만 적용하며 동시에 명중한 경우 가장 강한 정지를 한 번 적용합니다.</p>
                 <p>캐릭터 69명의 고유 색상과 효과 강도를 반영했습니다. 돌진 잔상, 충격파, 투사체 트레일, 타격 효과를 조정했으며 화면 전체 CSS 집중선은 추가하지 않았습니다. 데미지·속도·실제 충돌 범위는 유지됩니다.</p>
                 <strong>이전 패치 · 애니메이션 그래픽 3차</strong>
@@ -3101,7 +3114,7 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
           <div class="slots" id="slots"></div>
           <button class="quiet" id="back">← 모드 선택</button>
         </div>
-        <div class="selection-stage" id="selectionStage"><div id="selectionCanvas" aria-hidden="true"></div><div class="fighter-windows" id="fighterWindows"></div><div class="selection-info" id="selectionInfo" aria-live="polite"></div></div><div class="roster-intro"><h3>CHOOSE YOUR FIGHTER</h3><p>플레이어 창을 누른 뒤 같은 캐릭터를 두 번 클릭하면 선택이 완료됩니다. 선택하기 버튼으로도 완료할 수 있습니다.</p></div><div class="roster-controls" role="group" aria-label="캐릭터 정렬"><button type="button" data-roster-group="default" aria-pressed="false" onclick="setRosterGrouping('default')">전체</button><button type="button" data-roster-group="recent" aria-pressed="false" onclick="setRosterGrouping('recent')">최신순</button><button type="button" data-roster-group="type" aria-pressed="true" onclick="setRosterGrouping('type')">유형별</button><button type="button" data-roster-group="anime" aria-pressed="false" onclick="setRosterGrouping('anime')">애니별</button></div><div class="roster" id="roster" aria-label="캐릭터 목록"></div><details class="source-credits"><summary>사황 루피 · 모드 적용 규칙</summary><p>HP1200·속도40·기본 피해45·MP110·SP100. 레드 로크는 거리30·폭6의 거대 주먹으로 첫 상대에게 피해100을 한 번 적용합니다. HP가 최대HP의 50%를 초과하면 SP 사용으로 6초간 바운드맨(속도60·기본 충돌60·받는 피해20% 감소)이 됩니다. 0.5초 정지 후 매 돌진 직전에 상대를 다시 조준하여 속도90·거리20을 5회 연속 돌진하며, 벽에서 반사해 거리를 완료합니다.</p><p>HP가 최대HP의 50% 이하에서 SP를 사용하면 니카로 영구 전환하며 0.5초간 정지하고 HP320을 최대HP까지 회복합니다. HP 회복으로 50%를 넘어도 유지되며 속도65·기본 충돌50·받는 피해20% 감소입니다. 니카 중 MP는 고무고무 번개(속도72·거리40·피해100), SP는 고무고무기간트(5초간 크기250%·충돌 피해2배로100)에 사용합니다. 두 게이지가 동시에 가득 차면 자동 사용은 SP가 우선이며, 남은 MP는 다음 시전에 사용합니다. 번개는 시전 순간의 상대 위치로 날아가며 첫 상대 적중 또는 벽 도달 시 제거됩니다. 사망·전투 종료·재시작 시 예약 공격·투사체·모드를 정리합니다.</p></details><details class="source-credits"><summary>최신 패치 · 세부 적용 규칙</summary><p>루피 HP 1200, 나오야 HP 1100. 마허라는 일반 충돌 70·돌진 90. 아카자의 공식은 상대 방향으로 파란 불꽃 6개를 발사하며 사거리 40·개당 50·상대별 한 시전 최대 150 피해입니다. HP 10을 초당 1회씩 5초간 회복합니다. 나침은 눈송이 모양·반경 7.2·1초 간격 25 피해 4회이며, 사용 후 1초간 정지하고 HP 120 회복 후 1·2·3초째에 돌진하여 충돌 피해 70을 줍니다. 덴지 스페셜은 충돌 90·피해 30% 감소, 교메이 마무리 피해는 70입니다. 바쿠고 대폭발의 겹친 원 페이드 효과는 시각 효과이며 실제 공격 반경 17.5는 유지합니다.</p><p>고죠 최대 MP 70, SP 150. MP 70 및 SP 80~100에서만 무라사키를 우선 사용하며 두 자원을 모두 소모합니다. 창 공전 반경 5, 무라사키 반지름 3r입니다. 나오야 분신당 HP 25·기본 피해 10·속도 6 증가, 연격 충돌 80·받는 충돌 피해 70% 감소입니다.</p><p>룸은 한 변 12·6초 유지·투명도 20%입니다. 지정 대상만 내부에 갇히며, 소유자 로가 샴블즈로 내부 대상과 교환하면 로가 내부 구속을 이어받고 상대는 밖으로 나갑니다. 다른 캐릭터는 진입할 수 없습니다. 룸 벽의 안팎 충돌마다 적은 피해 10·SP 1.5, 소유자 로는 HP 10 회복·SP 3을 얻습니다. 다른 경로의 SP 획득량은 줄이지 않습니다. 회복은 최대 HP를 넘지 않으며, 코너 동시 충돌은 1회로 처리합니다. 겹치는 룸은 새 룸이 우선합니다. 사망·종료·재시작 시 임시 효과를 정리합니다.</p><p>눈송이 나침 디자인 참고: <a href="https://online.aniplex.co.jp/itemTxILALhb.html" target="_blank" rel="noopener noreferrer">ANIPLEX 공식 파괴살·나침 피규어</a></p></details>
+        <div class="selection-stage" id="selectionStage"><div id="selectionCanvas" aria-hidden="true"></div><div class="fighter-windows" id="fighterWindows"></div><div class="selection-info" id="selectionInfo" aria-live="polite"></div></div><div class="roster-intro"><h3>CHOOSE YOUR FIGHTER</h3><p>플레이어 창을 누른 뒤 같은 캐릭터를 두 번 클릭하면 선택이 완료됩니다. 선택하기 버튼으로도 완료할 수 있습니다.</p></div><div class="roster-controls" role="group" aria-label="캐릭터 정렬"><button type="button" data-roster-group="default" aria-pressed="false" onclick="setRosterGrouping('default')">전체</button><button type="button" data-roster-group="recent" aria-pressed="false" onclick="setRosterGrouping('recent')">최신순</button><button type="button" data-roster-group="type" aria-pressed="true" onclick="setRosterGrouping('type')">유형별</button><button type="button" data-roster-group="anime" aria-pressed="false" onclick="setRosterGrouping('anime')">애니별</button></div><div class="roster" id="roster" aria-label="캐릭터 목록"></div><details class="source-credits"><summary>스킬 디자인 참고</summary><p><a href="https://online.aniplex.co.jp/itemTxILALhb.html" target="_blank" rel="noopener noreferrer">ANIPLEX 파괴살·나침 피규어</a></p></details>
         <details class="source-credits">
           <summary>캐릭터 자료·공식 이미지 출처</summary>
           <p>
@@ -3232,7 +3245,7 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
         <h2 id="modalTitle"></h2>
         <div id="battleResult" class="battle-result hidden" aria-label="전투 결과"></div>
         <p id="modalText"></p>
-        <p id="lastBattleHit" hidden></p>
+        <p id="topSkillDamage" hidden></p>
         <div class="actions" id="modalActions"></div>
         <pre id="testReport" class="hidden"></pre>
       </div>
@@ -4475,10 +4488,10 @@ function aimRaikiriDash(a,dt) {
 }
 
 function advanceNinjaForce(b,dt){const f=b.ninjaForce;if(!f)return false;if(t>f.until||!f.owner.alive||f.left<=0){b.ninjaForce=null;return false;}const d=f.pull?unit(f.owner.x-b.x,f.owner.z-b.z):{x:f.dx,z:f.dz};const n=Math.min(f.left,f.speed*dt,f.pull?Math.max(0,Math.hypot(f.owner.x-b.x,f.owner.z-b.z)-3):Infinity);b.x+=d.x*n;b.z+=d.z*n;f.left-=n;checkWallBounce(b);if(n===0)b.ninjaForce=null;return true;}
-function ninjaWallHit(b){const f=b.ninjaWall;if(f&&t<=f.until&&f.owner.alive){b.ninjaWall=null;hurt(f.owner,b,42);}}
-function updateNinja(dt){for(const a of actors){if(!a.alive){a.ninjaFields=[];continue;}const stab=a.ninjaStab;if(stab){if(t>stab.until||!stab.target.alive)a.ninjaStab=null;else if(Math.hypot(stab.target.x-a.x,stab.target.z-a.z)<=8){hurt(a,stab.target,144);ninjaRod(a,stab.target);stab.target.ninjaForce=null;a.ninjaStab=null;}}
+function ninjaWallHit(b){const f=b.ninjaWall;if(f&&t<=f.until&&f.owner.alive){b.ninjaWall=null;hurt(f.owner,b,42, "skill", 0, {statsSkill:"SHINRA_TENSEI"});}}
+function updateNinja(dt){for(const a of actors){if(!a.alive){a.ninjaFields=[];continue;}const stab=a.ninjaStab;if(stab){if(t>stab.until||!stab.target.alive)a.ninjaStab=null;else if(Math.hypot(stab.target.x-a.x,stab.target.z-a.z)<=8){hurt(a,stab.target,144, "skill", 0, {statsSkill:"BANSHO_TENIN"});ninjaRod(a,stab.target);stab.target.ninjaForce=null;a.ninjaStab=null;}}
  a.ninjaFields=(a.ninjaFields||[]).filter(f=>{
- if(f.kind==='clone'){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=actorRadius(b)+R){hurt(a,b,120);b.rootUntil=Math.max(b.rootUntil||0,t+.3);ninjaFx('lightning',f.x,f.z,3,.25);if(f.visual)f.visual.visible=false;if(f.clone)f.clone.visible=false;return false;}return t<f.until;}
+ if(f.kind==='clone'){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=actorRadius(b)+R){hurt(a,b,120, "skill", 0, {statsSkill:"LIGHTNING_CLONE"});b.rootUntil=Math.max(b.rootUntil||0,t+.3);ninjaFx('lightning',f.x,f.z,3,.25);if(f.visual)f.visual.visible=false;if(f.clone)f.clone.visible=false;return false;}return t<f.until;}
  if(t>=f.until){for(const b of actors)if(b!==a&&b.alive&&Math.hypot(b.x-f.x,b.z-f.z)<=5.5){b.rootUntil=Math.max(b.rootUntil||0,t+1);if(b.dash)endDash(b);b.ninjaForce=null;b.ninjaLiftUntil=t+1;hurt(a,b,240,"skill",0,{type:"CHIBAKU_TENSEI",visualSpecial:true});}ninjaFx('push',f.x,f.z,5.5,.5);return false;}
  for(const b of actors)if(b!==a&&b.alive)gravityHolePull(b,f,10,dt);return true;
  });}}
@@ -4734,14 +4747,14 @@ function stoneShockwave(owner, x, z, radius) {
   effects.push({ mesh: group, life: 0.45, total: 0.45, kind: "stoneShockwave", radius });
 }
 
-function stoneRadialAttack(owner, x, z, radius, damage, push = 0) {
+function stoneRadialAttack(owner, x, z, radius, damage, push = 0, type = "STONE_WHIRLWIND") {
   for (const enemy of actors)
     if (
       enemy !== owner &&
       enemy.alive &&
       Math.hypot(enemy.x - x, enemy.z - z) <= radius + actorRadius(enemy)
     ) {
-      hurt(owner, enemy, damage);
+      hurt(owner, enemy, damage, "skill", 0, {statsSkill:type});
       if (push) pushActor(enemy, unit(enemy.x - x, enemy.z - z), push);
     }
   stoneShockwave(owner, x, z, radius);
@@ -4823,11 +4836,11 @@ function advanceStoneFlail(shot, dt) {
         return false;
       }
       shot.hit.add(enemy);
-      hurt(shot.a, enemy, shot.damage);
+      hurt(shot.a, enemy, shot.damage, "skill", 0, {statsSkill:"STONE_FLAIL"});
       flailKnockback(shot, enemy, fromX, fromZ);
     }
   if (!shot.returning && (wall || shot.remaining <= 1e-8)) {
-    stoneRadialAttack(shot.a, shot.x, shot.z, 12, 60);
+    stoneRadialAttack(shot.a, shot.x, shot.z, 12, 60, 0, "STONE_FLAIL");
     extraSignal(shot.a, "STONE_FLAIL", "shockwave");
     shot.wallUntil = t + 0.5;
   } else if (shot.returning && Math.hypot(shot.a.x - shot.x, shot.a.z - shot.z) < 1e-6)
@@ -4869,11 +4882,23 @@ function roomSpFactor(e) {
     : 1;
 }
 
+const HOLLOW_PURPLE = Object.freeze({ mp:70, spMin:70, spMax:100, radiusFactor:3, damage:236 });
+
 function hollowPurpleReady(e) {
-  return "gojo" === e?.d.id && e.mp >= 70 && e.sp >= 70 && e.sp <= 100;
+  return e?.d.id === "gojo" && e.mp >= HOLLOW_PURPLE.mp &&
+    e.sp >= HOLLOW_PURPLE.spMin && e.sp <= HOLLOW_PURPLE.spMax;
+}
+
+function canCastHollowPurple(actor) {
+  return hollowPurpleReady(actor) && actor.alive && !timeStop &&
+    actor.busy <= t + 1e-8 && !actor.dash && !bitesMovement &&
+    !sandShadowLocked(actor) && !higurumaSkillLocked(actor) && !arrivederciStopped(actor) &&
+    !bleachLocked(actor) && !alchemyLocked(actor) && !ballFrozen(actor) &&
+    !teachLocked(actor) && !actor.teachThrown && !!nearest(actor);
 }
 
 function roomTravelLimit(e, a, o) {
+  if (milioPhasing(e)) return o;
   if (!actors.includes(e)) return o;
   for (const n of lawRooms)
     if (n.owner.alive && n.target.alive && !(t >= n.until - 1e-8))
@@ -5237,16 +5262,12 @@ function addMagmaRedAura(group,radius){for(let i=0;i<2;i++){const mesh=new THREE
 function purpleStormOrb(radius){if(headless||!world)return null;const group=new THREE.Group();const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uTime:{value:0}},vertexShader:`varying vec3 vP;varying vec3 vN;varying vec3 vView;void main(){vP=position;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vView=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,fragmentShader:`varying vec3 vP,vN,vView;uniform float uTime;void main(){vec3 p=normalize(vP);float angle=atan(p.z,p.x);float swirl=sin(angle*7.+p.y*13.-uTime*5.+sin(p.y*9.+uTime*3.)*2.);float cloud=.5+.5*sin(swirl*2.+p.y*17.+uTime*2.);float rim=pow(1.-abs(dot(normalize(vN),normalize(vView))),2.);vec3 c=mix(vec3(.12,.015,.3),vec3(.55,.14,.9),cloud);c=mix(c,vec3(.82,.58,1.),rim*.8);float lightning=pow(max(0.,sin(angle*11.+p.y*23.-uTime*7.)),24.);c+=vec3(.35,.2,.6)*lightning;gl_FragColor=vec4(c,.94);}`});const mesh=new THREE.Mesh(reuseEffectGeometry('purple-storm-sphere',()=>new THREE.SphereGeometry(1,48,32)),mat);mesh.scale.setScalar(radius);mesh.onBeforeRender=()=>{mat.uniforms.uTime.value=t;};group.add(mesh);for(let i=0;i<2;i++){const halo=new THREE.Mesh(reuseEffectGeometry('purple-storm-halo',()=>new THREE.SphereGeometry(1,32,20)),new THREE.MeshBasicMaterial({color:0x9b4fff,transparent:true,opacity:i?.05:.1,depthWrite:false,blending:THREE.AdditiveBlending}));halo.scale.setScalar(radius*(1.07+i*.1));group.add(halo);}world.add(group);return group;}
 
 function castHollowPurple(e) {
-  if (e && (sandShadowLocked(e) || higurumaSkillLocked(e))) return false;
-  if (arrivederciStopped(e)) return false;
-  if (bitesMovement || ballFrozen(e) || teachLocked(e) || e?.teachThrown) return !1;
-  if (!hollowPurpleReady(e) || !e.alive || timeStop || e.busy > t + 1e-8 || e.dash || !nearest(e))
-    return !1;
+  if (!canCastHollowPurple(e)) return false;
   ((e.mp = e.sp = 0), (e.castName = "허식 무라사키"));
   const a = (e.x < 0 ? -1 : 1) * (W / 2 - R),
     o = (e.z < 0 ? -1 : 1) * (H / 2 - R);
   ((e.x = a), (e.z = o), enforceRooms(e, !1));
-  const n = 3 * R,
+  const n = HOLLOW_PURPLE.radiusFactor * R,
     s = Math.sign(a) * (W / 2 - n),
     i = Math.sign(o) * (H / 2 - n),
     r = unit(-s, -i),
@@ -5357,6 +5378,7 @@ function useRoom(e) {
 }
 
 function enforceRooms(e, a = !0) {
+  if (milioPhasing(e)) return;
   for (const o of lawRooms) {
     if (!o.owner.alive || !o.target.alive || t >= o.until - 1e-8) continue;
     const n = TRIO_CONFIG.roomHalf;
@@ -5416,7 +5438,7 @@ function updateTrioObjects(e) {
         const s = segmentDistance(e.x, e.z, o, n, a.x, a.z) <= 0.7 * R + actorRadius(e),
           i = a.contacts.get(e) || { touch: !1, last: -99 };
         if (s && !i.touch && t - i.last >= TRIO_CONFIG.blueHitCooldown - 1e-8) {
-          hurt(a.owner, e, 55);
+          hurt(a.owner, e, 55, "skill", 0, {statsSkill:"CURSED_BLUE"});
           const o = unit(e.x - a.x, e.z - a.z),
             n = speedOf(e),
             s = -Math.sin(a.angle) * TRIO_CONFIG.blueSpeed,
@@ -5443,7 +5465,7 @@ function updateTrioObjects(e) {
       if(e===a.owner||!e.alive||a.hit.has(e)||segmentDistance(e.x,e.z,o,n,a.x,a.z)>actorRadius(e)+a.r) continue;
       if(reflectAlchemyShot(a,e,o,n,236,a.r,TRIO_CONFIG.purpleSpeed,"rare")) return false;
       a.hit.add(e);
-      withDamageOrigin(a.owner,specialSourceOf(a.owner),()=>withAlchemyHitMode("ranged",()=>hurt(a.owner,e,236,"rare")),undefined,undefined,"HOLLOW_PURPLE");
+      withDamageOrigin(a.owner,specialSourceOf(a.owner),()=>withAlchemyHitMode("ranged",()=>hurt(a.owner,e,HOLLOW_PURPLE.damage,"rare")),undefined,undefined,"HOLLOW_PURPLE");
     }
     return (
       a.mesh && a.mesh.position.set(a.x, 1.3, a.z),
@@ -5643,13 +5665,13 @@ function actorRadius(e) {
 function useRedRoc(e, a, o) {
   (hold(e, 0.15),
     schedule(e, 0.15, () => {
-      const a = punch(e, 20, 100, 6, 1511448, unit(o.x - e.x, o.z - e.z), 0.4);
+      const a = punch(e, EMPEROR_CONFIG.redRocDistance, EMPEROR_CONFIG.redRocDamage, 6, 1511448, unit(o.x - e.x, o.z - e.z), 0.4);
       (a && decorateRedRoc(a), (e.rootUntil = t), (e.busy = t + 0.4));
     }));
 }
 
 function useBoundMan(e) {
-  (buff(e, 6, {
+  (buff(e, EMPEROR_CONFIG.boundDuration, {
     speed: (e.d.speed + 20) / 1.6,
     damage: e.d.baseDamage + 15,
     reduce: 0.2,
@@ -5670,10 +5692,10 @@ function useBoundMan(e) {
         boundman: !0,
         specialSource: !0,
         speed: 90,
-        remaining: 20,
+        remaining: EMPEROR_CONFIG.boundDashDistance,
         hit: new Set(),
         onEnd: () => {
-          a < 4 ? start(a + 1) : (e.busy = t);
+          a + 1 < EMPEROR_CONFIG.boundDashes ? start(a + 1) : (e.busy = t);
         },
       }),
       (e.busy = 1 / 0),
@@ -5754,8 +5776,8 @@ function emperorProjectile(e, a) {
     a,
     EMPEROR_CONFIG.lightningSpeed,
     0.6 * EMPEROR_CONFIG.lightningScale,
-    40,
-    100,
+    EMPEROR_CONFIG.lightningRange,
+    EMPEROR_CONFIG.lightningDamage,
     4388570,
   );
   const o = shots[shots.length - 1];
@@ -6467,7 +6489,7 @@ function detonateFirstBomb(e) {
     removeKiraMesh(e.mesh),
     e.owner.alive &&
       e.target.alive &&
-      (withDamageOrigin(e.owner, !1, () => hurt(e.owner, e.target, 100)),
+      (withDamageOrigin(e.owner, !1, () => hurt(e.owner, e.target, 100, "skill", 0, {statsSkill:"FIRST_BOMB"})),
       kiraExplosion(e.target.x, e.target.z, 4)));
 }
 
@@ -6602,7 +6624,7 @@ function updateKiraObjects(e) {
           a.alive &&
           !e.hits.has(a) &&
           Math.hypot(a.x - e.x, a.z - e.z) <= 7 + actorRadius(a) &&
-          (e.hits.add(a), withDamageOrigin(e.owner, !0, () => hurt(e.owner, a, 130)));
+          (e.hits.add(a), withDamageOrigin(e.owner, !0, () => hurt(e.owner, a, 130, "skill", 0, {statsSkill:"SHEER_HEART_ATTACK"})));
       return !0;
     })));
 }
@@ -6751,7 +6773,7 @@ function shatterIce(e, a = !1) {
     o.owner.alive &&
       e.alive &&
       ("age" === o.kind || a) &&
-      withDamageOrigin(o.owner, o.specialSource, () => hurt(o.owner, e, a ? 80 : 90)),
+      withDamageOrigin(o.owner, o.specialSource, () => hurt(o.owner, e, a ? 80 : 90, "skill", 0, {statsSkill:o.kind === "age" ? "ICE_AGE" : "ICE_BALL"})),
     fx("ring", e.x, e.z, 1.6 * actorRadius(e), 11859711, 0.4),
     !headless && world)
   ) {
@@ -6878,6 +6900,7 @@ function iceWallTravelLimit(e, a, o) {
 }
 
 function resolveIceWallContact(e) {
+  if (milioPhasing(e) || e.defenseMotion?.kind==="jump") return false;
   const shotoHit = resolveShotoWall(e);
   let a = e.iceWallContact;
   e.iceWallContact = null;
@@ -6908,7 +6931,7 @@ function resolveIceWallContact(e) {
     s < 0 && ((e.dx -= 2 * s * n.x), (e.dz -= 2 * s * n.z)),
     t - (o.contacts.get(e) ?? -99) >= 0.25 - 1e-8 &&
       (o.contacts.set(e, t),
-      o.kind === "doumaBuddha" ? doumaBuddhaHit(o, e) : (particleBurst(e.x,1,e.z,0xb0eaff),hurt(o.owner, e, 40))),
+      o.kind === "doumaBuddha" ? doumaBuddhaHit(o, e) : (particleBurst(e.x,1,e.z,0xb0eaff),hurt(o.owner, e, 40, "skill", 0, {statsSkill:"PHEASANT_BEAK"}))),
     !0
   );
 }
@@ -6970,7 +6993,7 @@ function updateKuzanObjects(e) {
         !(
           !opmPhasing(o) && segmentDistance(o.x, o.z, s, i, a.x, a.z) <= actorRadius(o) + 0.9 &&
           (reflectAlchemyShot(a,o,s,i,80,.9,50,"special") ||
-            (withDamageOrigin(a.owner, !0, () => hurt(a.owner, o, 80)),
+            (withDamageOrigin(a.owner, !0, () => hurt(a.owner, o, 80, "skill", 0, {statsSkill:"ICE_BALL"})),
           freezeActor(a.owner, o, "ball"),
           removeMesh(a.mesh),
           1))
@@ -7038,8 +7061,8 @@ function useConstantResonantSlashes(e) {
         (e.dash.sparkAt = -1 / 0),
         (e.dash.onHit = (o) => {
           (a.hits.has(o)
-            ? hurt(e, o, collisionDamage(e, o), "collision")
-            : (a.hits.add(o), hurt(e, o, 105)),
+            ? hurt(e, o, collisionDamage(e, o), "collision", 0, {statsSkill:"CONSTANT_RESONANT_SLASHES"})
+            : (a.hits.add(o), hurt(e, o, 105, "skill", 0, {statsSkill:"CONSTANT_RESONANT_SLASHES"})),
             tengenFirework(o.x, o.z));
         }))
       : (e.tengenRush = null);
@@ -7067,7 +7090,7 @@ function tengenFestivalHit(e, a) {
     s = o.hits.get(a) || { count: 0, stage: -1 };
   if (s.count >= 3 || s.stage === n) return;
   const i = damageQueue.length;
-  (hurt(e, a, 90, "special"),
+  (hurt(e, a, 90, "special", 0, {statsSkill:"STRING_PERFORMANCE"}),
     damageQueue.length > i && (s.count++, (s.stage = n), o.hits.set(a, s)));
 }
 
@@ -7081,7 +7104,7 @@ function updateTengenObjects() {
             o.alive &&
             !a.hits.has(o) &&
             Math.hypot(o.x - a.x, o.z - a.z) <= 6 + actorRadius(o) &&
-            (a.hits.add(o), hurt(e, o, 110));
+            (a.hits.add(o), hurt(e, o, 110, "skill", 0, {statsSkill:"ROAR"}));
         return !0;
       })),
       e.tengenRush && e.dash?.tengenRush !== e.tengenRush && (e.tengenRush = null),
@@ -7618,7 +7641,7 @@ function releaseTeachGrab(e, a) {
         i.teachWallHit &&
           e.alive &&
           n.alive &&
-          (hurt(e, n, 50), mpGain(e, 60, true), fx("ring", n.x, n.z, 2, 3150143, 0.4)));
+          (hurt(e, n, 50, "skill", 0, {statsSkill:"KUROUZU"}), mpGain(e, 60, true), fx("ring", n.x, n.z, 2, 3150143, 0.4)));
     }));
 }
 
@@ -7775,6 +7798,7 @@ function applyTeachBurnTicks() {
             a: a.owner,
             b: e,
             ...reducedHit(e, 17 * a.owner.power),
+            statsSkill: "TEACH_BLACK_HOLE",
             skillHit: !0,
           }),
             (a.next += 1));
@@ -7848,6 +7872,7 @@ function applyMagmaTicks() {
             b: e,
             ...reducedHit(e, a.damage * a.a.power),
             specialHit: a.specialSource,
+            statsSkill: a.banner,
             skillHit: !0,
           }),
             (a.next += 1));
@@ -8071,10 +8096,10 @@ function advanceLightShot(e, a) {
       if (e.magma) queueMagmaHit(e.a, d, e.damage, e.magma.duration, e.magma.damage, e.magma.cap, e.magma.banner);
       else if ("radial" === e.lightType) {
         const a = damageQueue.length;
-        (hurt(e.a, d, e.damage),
+        (hurt(e.a, d, e.damage, "skill", 0, {statsSkill:"YASAKANI_MAGATAMA"}),
           damageQueue.length > a && (damageQueue[damageQueue.length - 1].lightCap = e.cap));
       } else
-        (hurt(e.a, d, 100),
+        (hurt(e.a, d, 100, "skill", 0, {statsSkill:"YATA_MIRROR"}),
           (e.a.extraReduce = { until: t + 1, value: 0.8, banner: "YATA_MIRROR" }),
           animeGhost(e.a,e.a.x,e.a.z,ANIME_TELEPORT_COLORS.YATA_MIRROR,.30),
           (e.a.x = Math.max(-W / 2 + actorRadius(e.a), Math.min(W / 2 - actorRadius(e.a), e.x))),
@@ -8110,8 +8135,8 @@ function useAmaNoMurakumo(e) {
       (e.dash.extraType = "lightSword"),
       (e.dash.onHit = (o) => {
         (a.hits.has(o)
-          ? hurt(e, o, collisionDamage(e, o), "collision")
-          : (a.hits.add(o), hurt(e, o, 200)),
+          ? hurt(e, o, collisionDamage(e, o), "collision", 0, {statsSkill:"AMA_NO_MURAKUMO"})
+          : (a.hits.add(o), hurt(e, o, 200, "skill", 0, {statsSkill:"AMA_NO_MURAKUMO"})),
           lightImpact(o.x, o.z));
       }));
   };
@@ -8183,7 +8208,7 @@ function boundedTravel(e, a, o, n = actorRadius(e)) {
 }
 
 function pushActor(e, a, o) {
-  if (!ballFrozen(e) && !alchemyLocked(e)) {
+  if (!milioPhasing(e) && !ballFrozen(e) && !alchemyLocked(e)) {
     ((o = iceWallTravelLimit(e, a, o)),
       (e.x = Math.max(-W / 2 + actorRadius(e), Math.min(W / 2 - actorRadius(e), e.x + a.x * o))),
       (e.z = Math.max(-H / 2 + actorRadius(e), Math.min(H / 2 - actorRadius(e), e.z + a.z * o))),
@@ -8219,7 +8244,27 @@ function spGain(e, a) {
 }
 
 function collisionDamage(e, a = null) {
-  if(!headless&&a)e.animeContactSkill=e.contactAura||(e.blackFlash?"BLACK_FLASH":undefined);
+  if (a) {
+    e.animeContactSkill = e.contactAura || (e.blackFlash ? "BLACK_FLASH" : undefined);
+    e.statsContactSkill = e.animeContactSkill ||
+      (e.denjiShark?.until > t ? "SHARK_RIDER" :
+        nikaGigantActive(e) ? "NIKA_GIGANT" :
+        e.higurumaSwordUntil > t ? "HIGURUMA_DEATH_PENALTY" :
+        e.higurumaGavelUntil > t ? "HIGURUMA_GAVEL_GIANT" :
+        e.bankaiUntil > t ? "TENSA_ZANGETSU" :
+        e.renjiShikai?.until > t ? "RENJI_ZABIMARU" :
+        e.powerHammerUntil > t ? "POWER_WEAPON" :
+        e.hawksSwordUntil > t ? "FIERCE_WINGS_SWORD" :
+        e.faJinStart != null ? "FA_JIN" :
+        a.darkPull?.owner === e && t <= a.darkPull.until + 1e-8 ? "BLACK_WHIP" :
+        e.shadowState?.armorUntil > t && e.shadowState.charges > 0 ? "BLACK_ANKH" :
+        e.doumaBuddhaUntil > t ? "FROZEN_WATER_LILY_BODHISATTVA" :
+        e.projectionStacks > 0 ? "PROJECTION_SORCERY" :
+        e.jackpotUntil > t ? "IDLE_DEATH_GAMBLE" :
+        e.batBarrageUntil > t ? "BAT_BARRAGE" :
+        defenseActive(e,"kaijuUntil") ? "KAFKA_KAIJU" :
+        e.buff?.until > t ? e.buff.banner : undefined);
+  }
   if (e.denjiShark?.until > t) return 90;
   e.shotoBoost = false;
   let o = e.nika
@@ -8227,11 +8272,11 @@ function collisionDamage(e, a = null) {
     : (e.buff && e.buff.until > t && e.buff.damage) ||
       (e.d.id === "guy" && e.guyGates ? 58 : e.d.baseDamage);
   o += higurumaCollisionBonus(e);
-  o += 4*metalStacks(e)+(e.batBarrageUntil>t?25:0);
+  o += 4*metalStacks(e)+(e.batBarrageUntil>t?25:0)+(defenseActive(e,"kaijuUntil")?15:0);
   (e.powerHammerUntil > t && ((o += 50), (e.powerSwingAt = t)),
     (o += (e.doumaBuddhaUntil > t + 1e-8 ? 20 : 0) + 10 * (e.projectionStacks || 0)),
     e.jackpotUntil > t + 1e-8 && (o += HAKARI_CONFIG.collisionBonus),
-    nikaGigantActive(e) && (o = 95),
+    nikaGigantActive(e) && (o = EMPEROR_CONFIG.gigantCollisionDamage),
     e.blackFlash &&
       ((o *= 2),
       (e.blackFlash = !1),
@@ -8351,7 +8396,8 @@ function speedOf(e) {
         (e.d.id === "guy" && e.guyGates ? 47 : braveActive(e) ? OPM_BALANCE.braveSpeed : e.d.speed)) +
     (e.jackpotUntil > t + 1e-8 ? HAKARI_CONFIG.speedBonus : 0) +
     6 * (e.projectionStacks || 0) +
-    (tengenFestivalActive(e) ? 15 : 0) + 2*metalStacks(e);
+    (tengenFestivalActive(e) ? 15 : 0) + 2*metalStacks(e) +
+    (defenseActive(e,"kaijuUntil") ? 3 : 0);
   return Math.max(0, (e.dash ? e.dash.speed : a) + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1) * (e.bankaiUntil>t?1.25:1) * (kenpachiBankaiActive(e) ? 1.2 : 1) * (opmPhasing(e)?1.5:1) * (bleachSnowSlow(e)?.75:1);
 }
 
@@ -8369,6 +8415,7 @@ function reduction(e) {
       (e.buff && e.buff.until > t && e.buff.reduce) || 0,
       (e.dash && e.dash.reduce) || 0,
       e.sanjiParty?.until > t ? .20 : 0,
+      defenseActive(e,"kaijuUntil") ? .25 : 0,
     ),
     o = Math.max(a, e.extraReduce && e.extraReduce.until > t + 1e-8 ? e.extraReduce.value : 0);
   return rikaActive(e) ? 1 - 0.8 * (1 - o) : o;
@@ -8427,7 +8474,7 @@ function schedule(e, a, o) {
 }
 
 function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
-  if (duelCardActive(a)) return;
+  if (duelCardActive(a) || (e!==a && milioPhasing(a))) return;
   if (opmPhasing(a) && ["collision","summon"].includes(n)) return;
   if (e.bangGuardUntil > t && ["collision","skill","special","summon","powerWeapon"].includes(n)) o *= 1.2;
   let denjiState = e.denjiAttack || null;
@@ -8442,6 +8489,8 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
   if (akiDodge(e, a, n)) return;
   if (a.guyInvulnerableUntil > t + 1e-8 || kamuiHidden(a)) return;
   const i = "collision" === n && !!e.skillContact;
+  const contactSkill = n === "collision" ? e.statsContactSkill : undefined;
+  if (n === "collision") e.statsContactSkill = undefined;
   if (((e.skillContact = !1), "collision" === n && e.alive && a.alive && kuzanCollision(e, a)))
     return;
   if (
@@ -8463,6 +8512,11 @@ function hurt(e, a, o, n = "skill", s = 0, cinematic = null) {
       a: e,
       b: a,
       damageKind: n,
+      statsSkill: cinematic?.statsSkill ||
+        (n !== "collision" ? animeSkillOf(e) : undefined) ||
+        (n === "collision" && e.denjiShark?.until > t ? "SHARK_RIDER" : undefined) ||
+        (n === "collision" && (e.dash?.projection || e.dash?.boundman) ? animeDashType(e,e.dash) : undefined) ||
+        (i ? contactSkill : undefined),
       damageLabel: damageOrigin?.a === e ? damageOrigin.label : undefined,
       animeSkill: cinematic?.type || animeInkSourceOf(e) || animeDashType(e,animeMovementState(e)) || (i ? e.animeContactSkill : undefined),
       animeContact: headless ? undefined : {x:a.x,z:a.z,dx:a.x-e.x,dz:a.z-e.z},
@@ -8654,10 +8708,28 @@ function airShot(e, a) {
   }
 }
 
+const SKILL_DAMAGE_BY_KIND = {
+  rare:"HOLLOW_PURPLE", uryuReturn:"URYU_ANTITHESIS", rikaBeam:"RIKA_MANIFESTATION",
+  roomWall:"ROOM", akiCounter:"AKI_FUTURE", illusionCounter:"KYOKA_SUIGETSU",
+  bleachDot:"TENSO_JURIN", duelDot:"DUEL_BLACK_MAGICIAN",
+};
+
+function recordSkillDamage(hit, damage) {
+  if (damage <= 0 || !running || practiceActive || hit.a === hit.b || !actors.includes(hit.a)) return;
+  const type = hit.statsSkill || SKILL_DAMAGE_BY_KIND[hit.damageKind] || hit.animeSkill;
+  if (hit.damageKind === "collision" && !hit.statsSkill && !hit.skillHit && !hit.specialHit) return;
+  const resolved = type && practiceName(type, hit.a.d);
+  const skill = resolved && resolved !== type ? resolved : hit.damageLabel || (type && rosterSkillName(type));
+  if (!skill || typeof skill !== "string") return;
+  const totals = hit.a.skillDamageTotals ??= new Map();
+  totals.set(skill, (totals.get(skill) || 0) + damage);
+}
+
 function applyQueuedDamage() {
   for (const e of damageQueue) {
 
     const guaranteed = e.damageKind === "uryuReturn";
+    if (e.a!==e.b && milioPhasing(e.b)) continue;
     if (e.buggyBlastHits?.has(e.b) || e.uryuArrowHits?.get(e.b) >= URYU_REGEN_MAX_HITS) continue;
     if (e.buggyBlastHits) e.n = Math.min(e.n, BUGGY_BALL_DAMAGE);
     if (!guaranteed && (duelCardActive(e.b) || e.b.guyInvulnerableUntil > t + 1e-8 || e.kenpachiForm?.hits >= 2)) continue;
@@ -8668,16 +8740,18 @@ function applyQueuedDamage() {
     if (!guaranteed && buggyEvades(e)) continue;
     e.calmMp && e.b.alive && mpGain(e.b, e.calmMp, true);
     if (!guaranteed) applyAlchemyGuard(e);
+    const counterAttacker = consumeHoshinaCounter(e);
     const a = e.b.hp,
       o = Math.min(e.b.hp, e.n);
     ((e.b.hp = Math.max(0, e.b.hp - e.n)),
       metalDamageTaken(e.b,o),
       recordAntithesisDamage(e, o),
+      recordSkillDamage(e, o),
       o > 0 && e.buggyBlastHits?.add(e.b),
       o > 0 && e.uryuArrowHits && e.uryuArrowHits.set(e.b,(e.uryuArrowHits.get(e.b) || 0) + 1),
       e.lightCap && e.lightCap.set(e.b, (e.lightCap.get(e.b) || 0) + o),
       o > 0 && e.upgradeImpact && skillUpgradeImpact(e.upgradeImpact),
-      o > 0 && e.denjiSource && denjiApplyHit(e.a, e.b, e.denjiState),
+      o > 0 && e.denjiSource && denjiApplyHit(e.a, e.b, e.denjiState, e.statsSkill || e.animeSkill),
       o > 0 && e.powerBloodHit && addPowerBlood(e.a, e.powerBloodHit.x, e.powerBloodHit.z),
       o > 0 && e.akiFoxHit && e.akiFoxHit(),
       o > 0 && e.gunHeadshot && showAkiGunHeadshot(e.a, e.b),
@@ -8698,6 +8772,7 @@ function applyQueuedDamage() {
       fx("hit", e.b.x, e.b.z, 0.7, e.a.d.color, 0.18),
       tone(110 + e.n, 0.025, 0.025),
       updateGuyTransforms());
+    if (counterAttacker) triggerHoshinaCounter(e.b,counterAttacker);
     if (o > 0) {
       markCombatFeedback(e.b, "hit");
       animeInkHit(e,o);
@@ -9084,7 +9159,7 @@ function castShrine(e) {
 }
 
 function castSkill(e, a) {
-  if (!e || sandShadowLocked(e) || higurumaSkillLocked(e)) return false;
+  if (!e || e.defenseMotion || sandShadowLocked(e) || higurumaSkillLocked(e)) return false;
   if (bleachLocked(e) || alchemyLocked(e) || kenpachiBankaiActive(e)) return false;
   if (arrivederciStopped(e)) return false;
   if(!a && e?.d.skillType==="PAIN_CHOICE"){e.painPending??=(Math.random()<.6?"SHINRA_TENSEI":"BANSHO_TENIN");if(e.painPending==="SHINRA_TENSEI" && t<(e.shinraReady||0))return false;}
@@ -9122,6 +9197,7 @@ function castSkill(e, a) {
     !a && e.d.id==='child_emperor' && spGain(e,30),
     s.endsWith('_CHOICE') && BLEACH_IDS.includes(e.d.id) && (s = e.d.id==='ichigo'&&e.bankaiUntil>t ? 'BLACK_GETSUGA' : ({ichigo:['GETSUGA','ICHIGO_SHUNPO'],byakuya:['SENBONZAKURA','BYAKUYA_SHUNPO'],aizen:['KYOKA_SUIGETSU','SOKATSUI'],toshiro:['RYOJIN_HYOHEKI','TENSO_JURIN']})[e.d.id][Math.random()<.5?0:1]),
     "KENPACHI_CHOICE" === s && (s = chooseKenpachiSkill()),
+    s === "KAFKA_CHOICE" && (s = kafkaRegularSkill(e)),
     OPM_CHOICES[s] && (s=randomOpmSkill(s)),
     "ZIP_CHOICE" === s && (s=Math.random()<.5?"ZIP_AMBUSH":"ARI_RUSH"),
     "PAIN_CHOICE" === s && (s=e.painPending|| (Math.random()<.6?"SHINRA_TENSEI":"BANSHO_TENIN"),e.painPending=null),
@@ -9155,7 +9231,7 @@ function castSkill(e, a) {
         AKI_FOX: "여우의 악마",
         AKI_FUTURE: "미래의 악마",
       }[s] ||
-      NEWCOMER_SKILLS[s]?.[0] || DUEL_SUMMONS[s]?.name || SAND_SHADOW_NAMES[s] || AKI_GUN_NAMES[s] || OPM_NAMES[s] || BLEACH_NAMES[s] ||
+      DEFENSE_SKILLS[s]?.[0] || NEWCOMER_SKILLS[s]?.[0] || DUEL_SUMMONS[s]?.name || SAND_SHADOW_NAMES[s] || AKI_GUN_NAMES[s] || OPM_NAMES[s] || BLEACH_NAMES[s] ||
       TENGEN_NAMES[s] ||
       GIYU_NAMES[s] ||
       RENGOKU_NAMES[s] ||
@@ -9443,7 +9519,7 @@ function powerWallHit(b) {
       p.triggered = true;
       p.fadeAt = t;
       p.until = t + 0.3;
-      hurt(p.a, b, p.damage, "special");
+      hurt(p.a, b, p.damage, "special", 0, {statsSkill:"POWER_BLOOD"});
       fx("ring", b.x, b.z, 3, 0xd41838, 0.35);
     }
   }
@@ -9961,7 +10037,7 @@ function useAkiFox(a, b) {
           Math.abs(dx * side.x + dz * side.z) <= 6 + actorRadius(target)
         ) {
           const before = damageQueue.length;
-          hurt(a, target, 145);
+          hurt(a, target, 145, "skill", 0, {statsSkill:"AKI_FOX"});
           if (damageQueue.length > before)
             damageQueue[damageQueue.length - 1].akiFoxHit = () => akiHoldTarget(a, target, state);
         }
@@ -10135,7 +10211,7 @@ function akiMark(a, b) {
       schedule(a, 0.35, () => {
         if (b.alive) {
           const before = damageQueue.length;
-          hurt(a, b, 400, "curse");
+          hurt(a, b, 400, "curse", 0, {statsSkill:"AKI_CURSE"});
           if (damageQueue.length > before)
             damageQueue[damageQueue.length - 1].akiFoxHit = () => akiCurseFlames(b);
         }
@@ -10266,8 +10342,9 @@ function useCopyTechnique(e, a, o) {
       (e.castName = "술식 모방 · " + (HEALTH_SKILL_NAMES[n] || OPM_NAMES[n] || s?.skill || n)),
       skillEvent(e, n, "copied"));
     const i = "DIVINE_DOG" === n ? randomMegumiSummon()
+      : n === "KAFKA_CHOICE" ? kafkaRegularSkill(e)
       : OPM_CHOICES[n] && !Object.hasOwn(SKILL_HANDLERS,n) ? randomOpmSkill(n) : n;
-    const copiedVariant = NEWCOMER_SKILLS[i]?.[0] || DUEL_SUMMONS[i]?.name || SAND_SHADOW_NAMES[i] || (ALCHEMY_SKILLS.has(i) ? OPM_NAMES[i] : null);
+    const copiedVariant = DEFENSE_SKILLS[i]?.[0] || NEWCOMER_SKILLS[i]?.[0] || DUEL_SUMMONS[i]?.name || SAND_SHADOW_NAMES[i] || (ALCHEMY_SKILLS.has(i) ? OPM_NAMES[i] : null);
     if (copiedVariant) e.castName = "술식 모방 · " + copiedVariant;
     return (
       "DIVINE_DOG" === n &&
@@ -10452,8 +10529,8 @@ function denjiReward(a, b, state) {
   }
 }
 
-function denjiApplyHit(a, b, state) {
-  b.denjiBleed = { a, until: t + 3, next: t + 1 };
+function denjiApplyHit(a, b, state, type) {
+  b.denjiBleed = { a, until: t + 3, next: t + 1, type };
   denjiReward(a, b, state);
 }
 
@@ -10465,6 +10542,7 @@ function denjiTicks() {
       damageQueue.push({
         a: bleed.a,
         b,
+        statsSkill:bleed.type,
         ...reducedHit(b, 3 * bleed.a.power),
         skillHit: true,
         specialHit: false,
@@ -10601,11 +10679,11 @@ function advanceExtraDashSegment(e,a) {
     speed = Math.max(0, o.speed + iceSpeedOffset(e)),
     i = Math.min(o.remaining, speed * a),
     arenaReach = boundedTravel(e, n, i),
-    obstruction = alchemyObstacle(e,s,n,arenaReach,o.breakAlchemyObstacle),
+    obstruction = milioPhasing(e) ? null : alchemyObstacle(e,s,n,arenaReach,o.breakAlchemyObstacle),
     r = obstruction ? Math.max(0,obstruction.distance-.002) : arenaReach,
     l = [];
   for (const a of actors)
-    if (a !== e && a.alive && !opmPhasing(a) && !o.fanOnly && !o.hit.has(a) && !(o.singleAlchemyHit && o.hit.size)) {
+    if (a !== e && a.alive && !opmPhasing(a) && !milioPhasing(a) && !o.fanOnly && !o.hit.has(a) && !(o.singleAlchemyHit && o.hit.size)) {
       const s = a.x - e.x,
         i = a.z - e.z,
         c = s * n.x + i * n.z,
@@ -10713,7 +10791,7 @@ function advanceTimeStop(e) {
       a.index++);
   if (a.elapsed >= ORA_CONFIG.timeStopDuration) {
     clearTimeStop();
-    for (const [e, o] of a.damage) withDamageOrigin(a.a, !0, () => hurt(a.a, e, o));
+    for (const [e, o] of a.damage) withDamageOrigin(a.a, !0, () => hurt(a.a, e, o, "skill", 0, {statsSkill:"THE_WORLD"}));
     ((a.a.busy = t), settle(), extraSignal(a.a, "THE_WORLD", "resume"));
   }
 }
@@ -10815,7 +10893,7 @@ function checkWallBounce(e) {
 }
 
 function resolveBallCollision(e, a) {
-  if (duelCardActive(e) || duelCardActive(a) || opmPhasing(e) || opmPhasing(a)) return;
+  if (duelCardActive(e) || duelCardActive(a) || opmPhasing(e) || opmPhasing(a) || milioPhasing(e) || milioPhasing(a)) return;
   if (e.alchemyCarriedBy?.alive || a.alchemyCarriedBy?.alive) return;
   if (e.guyTransformUntil > t || a.guyTransformUntil > t) return;
   if (e.teachHeldBy === a || a.teachHeldBy === e) return;
@@ -10930,6 +11008,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   updateRoyBurns();
   applyMagmaTicks();
   applyTeachBurnTicks();
+  updateKafkaRegen();
   runDueEvents();
   if (timeStop) return;
   if (animeFlights) for (const shot of animeCollectFlights()) animeFlights.add(shot);
@@ -10946,6 +11025,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   updateNaraControls(dt);
   updateSandPrisons(false);
   resolveActorContacts();
+  milioPhaseContacts();
   updateNaraCaptures();
   updateSandPrisons();
   constrainAlchemyActors();
@@ -11004,7 +11084,7 @@ function advanceSkillObjects(dt) {
 }
 
 function constrainActorsToBleachWalls() {
-  for (const actor of actors) if (actor.alive) resolveBleachWalls(actor, actor.bleachPrevious);
+  for (const actor of actors) if (actor.alive && !milioPhasing(actor) && actor.defenseMotion?.kind!=="jump") resolveBleachWalls(actor, actor.bleachPrevious);
 }
 
 function steerStorm(e, a) {
@@ -11060,6 +11140,7 @@ function applyBurnTicks() {
           a: e.burns[0].a,
           b: e,
           damageLabel: "아마테라스",
+          statsSkill: "AMATERASU",
           ...(deadCalmActive(e)
             ? reducedHit(e, amaterasuDamage(e.burns.length))
             : { n: amaterasuDamage(e.burns.length) }),
@@ -11126,6 +11207,7 @@ function advanceActors(e) {
       a.x = a.zipTransition.x; a.z = a.zipTransition.z;
       continue;
     }
+    if (advanceDefenseMotion(a)) continue;
     if (advanceZipGrab(a, e)) continue;
     if (advanceOpmPunchFlight(a,e)) continue;
     if (advanceNinjaForce(a,e)) continue;
@@ -11135,7 +11217,8 @@ function advanceActors(e) {
       (aimRezeDash(a, e),
       aimAkazaFlurry(a),
       aimGiyuThrust(a),
-      t < stormUntil && !a.dash?.projection && !a.dash?.boundman && steerStorm(a, e),
+      t < stormUntil && !a.dash?.projection && !a.dash?.boundman &&
+        a.dash?.extraType!=="defense" && steerStorm(a,e),
       a.dash?.projection || a.dash?.boundman)
     ) {
       withDamageOrigin(a,a.dash.specialSource,()=>advanceReflectingDash(a,e),undefined,undefined,animeDashType(a,a.dash));
@@ -11407,7 +11490,7 @@ function updateSummons(e) {
           a.mesh.userData.wheel && (a.mesh.userData.wheel.rotation.z = 1.7 * t));
       }
       return !0;
-    }),
+    }, undefined, {dog:"DIVINE_DOG",nue:"NUE",rabbit:"RABBIT_ESCAPE",mahoraga:"MAHORAGA"}[a.kind]),
   );
 }
 
@@ -11602,6 +11685,16 @@ function randomPreview(){
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   return new THREE.Mesh(new THREE.SphereGeometry(1.65,48,32),new THREE.MeshStandardMaterial({map:texture,roughness:.8}));
 }
+function renderProfileSkills(character) {
+  const skills = practiceSkills(character);
+  return `<div class="profile-detail-skills">${[false,true].map(special => {
+    const group = skills.filter(skill => skill.special === special);
+    return `<section class="profile-skill"><h3>${special ? "SP · 스페셜 스킬" : "MP · 일반 스킬"}</h3>
+      <dl>${group.map(({type,name}) => `<dt>${name}</dt><dd>${skillDescription(type,character)}</dd>`).join("")}</dl>
+    </section>`;
+  }).join("")}</div>`;
+}
+
 function renderSelectionInfo(){
  if(selectionChoices[selectionSlot]===RANDOM_PICK){
    const panel=$("selectionInfo");panel.profileFitObserver?.disconnect();
@@ -11613,7 +11706,7 @@ function renderSelectionInfo(){
  const second=selectionProfilePage===1,ready=chosen[selectionSlot]!==undefined,panel=$('selectionInfo');
  const stats=[['HP',actor.maxHp],['MP',actor.maxMp,`시작 ${STARTING_MP_PERCENT[actor.id]}%`],['SP',actor.maxSp],['이동 속도',Number(actor.speed.toFixed(1))],['충돌 피해',Number(actor.baseDamage.toFixed(1))]];
  panel.innerHTML=`<div class="profile-page-heading"><span class="eyebrow">P${selectionSlot+1} / FIGHTER PROFILE</span><div class="profile-pagination" aria-live="polite"><span>${second?'2 / 2 · 스킬 상세':'1 / 2 · 캐릭터 정보'}</span><span class="profile-page-dots" aria-hidden="true">${second?'○ ●':'● ○'}</span></div></div>
- <div class="profile-page-content ${second?'profile-detail-page':'profile-summary-page'}"><h2>${actor.name}</h2>${second?`<div class="profile-detail-skills"><section class="profile-skill"><h3>MP · ${actor.skill}</h3><p>${actor.desc}</p></section><section class="profile-skill"><h3>SP · ${actor.special}</h3><p>${actor.spDesc}</p></section></div>`:`${characterTags(actor)}<p class="fighter-role">${actor.role}</p><div class="profile-stats">${stats.map(([name,value,detail])=>`<div><span>${name}</span><b>${value}</b>${detail ? `<small>${detail}</small>` : ""}</div>`).join('')}</div><div class="profile-skill-names"><div><small>MP · 스킬</small><strong>${actor.skill}</strong></div><div><small>SP · 스페셜 스킬</small><strong>${actor.special}</strong></div></div>`}</div>
+ <div class="profile-page-content ${second?'profile-detail-page':'profile-summary-page'}"><h2>${actor.name}</h2>${second?renderProfileSkills(actor):`${characterTags(actor)}<p class="fighter-role">${actor.role}</p><div class="profile-stats">${stats.map(([name,value,detail])=>`<div><span>${name}</span><b>${value}</b>${detail ? `<small>${detail}</small>` : ""}</div>`).join('')}</div><div class="profile-skill-names"><div><small>MP · 스킬</small><strong>${actor.skill}</strong></div><div><small>SP · 스페셜 스킬</small><strong>${actor.special}</strong></div></div>`}</div>
  <footer class="profile-page-footer"><span>좌우로 드래그 · 터치하여 넘기기</span><button type="button" class="selection-practice" id="practiceSelectedFighter">이 캐릭터 연습</button></footer>`;
  $("practiceSelectedFighter").onclick = practiceFromSelection;
   $("practiceSelectedFighter").hidden = !!onlineSession;
@@ -12252,6 +12345,11 @@ function updateTransientEffects(e) {
       const p = Math.min(1, (a.total - a.life) / a.total),
         r = a.radius * (1 - Math.pow(1 - p, 2));
       a.mesh.scale.set(r, 1, r);
+    }
+    if (a.kind === "defenseShockwave") {
+      const progress=(a.total-a.life)/a.total;
+      const radius=a.radius*(.2+.8*progress);
+      a.mesh.scale.set(radius,radius,1);
     }
     if (a.kind === "doumaSweep") a.mesh.rotation.y -= e * 12;
     if (
@@ -14405,7 +14503,7 @@ function doumaBuddhaHit(w, b) {
   const count = w.hits.get(b) || 0;
   if (count >= 5) return;
   w.hits.set(b, count + 1);
-  hurt(w.owner, b, 35, "special", 0.3);
+  hurt(w.owner, b, 35, "special", 0.3, {statsSkill:"FROZEN_WATER_LILY_BODHISATTVA"});
   skillEvent(w.owner, "FROZEN_WATER_LILY_BODHISATTVA", "hit", { target: b.slot, index: count + 1 });
 }
 
@@ -14425,7 +14523,7 @@ function updateDoumaObjects() {
           ) {
             const hit = r.hits.get(b) || { count: 0, at: -Infinity };
             if (hit.count < 2 && t - hit.at >= 0.6 - 1e-8) {
-              withDamageOrigin(a, r.specialSource, () => hurt(a, b, 30));
+              withDamageOrigin(a, r.specialSource, () => hurt(a, b, 30, "skill", 0, {statsSkill:"LOTUS_ICE"}));
               r.hits.set(b, { count: hit.count + 1, at: t });
             }
           }
@@ -14673,7 +14771,8 @@ function updateShadows(dt) {
           checkWallBounce(b);
         }
         if (!last.touch && t - last.time >= 0.25) {
-          hurt(a, b, big ? 70 : 34, big ? "special" : "summon");
+          hurt(a, b, big ? 70 : 34, big ? "special" : "summon", 0,
+            big ? {statsSkill:"BLACK_ANKH_BALDUR"} : null);
           last.time = t;
         }
         last.touch = true;
@@ -14936,7 +15035,7 @@ function resolveShotoWall(a) {
     } else {
       const hits = w.hits.get(a) || 0;
       if (hits < 3) {
-        hurt(w.owner, a, 40);
+        hurt(w.owner, a, 40, "skill", 0, {statsSkill:"HEAVEN_ICE_WALL"});
         w.hits.set(a, hits + 1);
       }
     }
@@ -15106,7 +15205,7 @@ function updateShoto() {
     for (const b of actors)
       if (b !== a && b.alive && !road.hit.has(b) && onShotoRoad(b, road)) {
         road.hit.add(b);
-        hurt(a, b, 60, "special");
+        hurt(a, b, 60, "special", 0, {statsSkill:"FLASHFREEZE_HEATWAVE"});
       }
     return road.points.length > 0;
   });
@@ -15242,7 +15341,7 @@ function updateHawks(dt) {
         if (f.kind === "rose") {
           const n = f.hits.get(b) || 0;
           if (n < 3) {
-            hurt(a, b, 60);
+            hurt(a, b, 60, "skill", 0, {statsSkill:"FIERCE_WINGS_SHOT"});
             f.hits.set(b, n + 1);
           }
         } else {
@@ -15309,7 +15408,7 @@ function updateDarkWhips(a) {
         ) {
           w.hit.add(b);
           s.target = b;
-          hurt(a, b, 75);
+          hurt(a, b, 75, "skill", 0, {statsSkill:"BLACK_WHIP"});
           b.darkPull = {
             owner: a,
             startAt: t + 0.3,
@@ -17065,6 +17164,8 @@ function guyBeastModel(...args) {
 }
 
 function hudPortrait(actor) {
+  if (actor.d.id === "kafka" && defenseActive(actor,"kaijuUntil") && readyPortrait("kafka_kaiju"))
+    return readyPortrait("kafka_kaiju");
   if (actor.d.id === "kenpachi" && kenpachiBankaiActive(actor) && readyPortrait("kenpachi_bankai"))
     return readyPortrait("kenpachi_bankai");
   return (
@@ -17747,6 +17848,7 @@ function updateActorMeshes(e) {
       updateKenpachiVisual(a);
       updateZipActorVisual(a);
       updateKamuiActorVisual(a);
+      updateDefenseAvatar(a);
       if (a.akiGunAttack || a.akiGunRig) updateAkiGunVisual(a);
     }
 }
@@ -18324,6 +18426,7 @@ function model(e, a = !1) {
   } else {
     const appearance = addAvatarAppearance(e, n, s);
     if (["buggy","sanji","uryu","renji"].includes(o.id)) newcomerAvatar(e, n, appearance, s);
+    if (DEFENSE_IDS.has(o.id)) defenseAvatar(e,n,appearance,s);
   }
   if (o.id === "higuruma") addHigurumaGear(e, n);
   if (o.id === "gaara" || o.id === "shikamaru") addSandShadowAvatar(o.id, n);
@@ -19632,6 +19735,8 @@ function renderSelectionPreviews(e) {
 }
 
 const HUD_STATUS_NAMES = Object.freeze({
+  MILIO_PHASE:"투과 돌진", KAFKA_REGEN:"조직 재생", KAFKA_KAIJU:"괴수 8호 완전 변신",
+  HOSHINA_COUNTER:"파쇄 반격",
   BUGGY_ESCAPE: "동강동강 긴급 탈출",
   URYU_ANTITHESIS: "슈리프트 A-디 앤티서시스",
   RENJI_ZABIMARU: "시해 사미환",
@@ -19730,6 +19835,10 @@ function fighterStatusEffects(actor) {
   if (actor.guyGates) add("EIGHT_GATES");
   if (actor.buggyEscape?.charges > 0) timed(actor.buggyEscape.until, "BUGGY_ESCAPE");
   timed(actor.uryuAntithesis?.until, "URYU_ANTITHESIS");
+  timed(actor.milioPhaseUntil,"MILIO_PHASE");
+  timed(actor.kaijuUntil,"KAFKA_KAIJU");
+  timed(actor.hoshinaGuardUntil,"HOSHINA_COUNTER");
+  if (actor.kaijuRegen) add("KAFKA_REGEN",actor.kaijuRegen.remaining);
   timed(actor.renjiShikai?.until, "RENJI_ZABIMARU");
 
   for (const [key, recovery] of Object.entries(actor.hudRecoveries || {})) {
@@ -19823,22 +19932,15 @@ function buildHud(fighters = actors, remote = false) {
   }
   for (const e of fighters) {
     if (e.d.id === "gojo") {
-      const button = document.createElement("button");
-      button.id = "rareb" + e.slot;
-      button.className = "rare-cast";
-      button.textContent = "허식 무라사키";
-      button.title = "MP 70 / SP 80~100";
-      button.onclick = () => {
-        if (routeOnlineCast(e.slot, "rare")) return;
-        if (running && !paused && manual && !(mode === 1 && e.slot === 1)) castHollowPurple(e);
-        updateHud();
-      };
-      $("f" + e.slot)
-        .querySelector(".fighter-copy")
-        .append(button);
+      const status = document.createElement("span");
+      status.id = "rareStatus" + e.slot;
+      status.className = "rare-status";
+      status.textContent = "허식 무라사키 · 사용 불가";
+      status.title = `MP ${HOLLOW_PURPLE.mp} 이상 · SP ${HOLLOW_PURPLE.spMin}~${HOLLOW_PURPLE.spMax}`;
+      $("f" + e.slot).querySelector(".fighter-copy").append(status);
     }
     if (onlineSession && e.slot !== onlineSession.slot) {
-      for (const id of ["mpb", "spb", ...(e.d.id === "gojo" ? ["rareb"] : [])]) {
+      for (const id of ["mpb", "spb"]) {
         $(id + e.slot).tabIndex = -1;
         $(id + e.slot).setAttribute("aria-disabled", "true");
       }
@@ -19859,8 +19961,9 @@ function fighterHudState(actor) {
       (mode === 1 && slot === 1) ||
       higurumaSkillLocked(actor) || actor.busy > t + 1e-8 || !!actor.dash || !!bitesMovement || ballFrozen(actor) ||
       alchemyLocked(actor) || arrivederciStopped(actor) || bleachLocked(actor) || sandShadowLocked(actor) ||
-      actor.guyTransformUntil > t || kenpachiBankaiActive(actor);
-    const rare = actor.d.id === "gojo" && hollowPurpleReady(actor);
+      actor.guyTransformUntil > t || kenpachiBankaiActive(actor) || !!actor.defenseMotion;
+    const rareThreshold = hollowPurpleReady(actor);
+    const rareAvailable = rareThreshold && canCastHollowPurple(actor);
     const names = [actor.d.skill,actor.d.special];
     if (actor.d.id === "emperor_luffy") {
       names[0] = actor.nika ? EMPEROR_NAMES.NIKA_LIGHTNING : EMPEROR_NAMES.RED_ROC;
@@ -19879,6 +19982,7 @@ function fighterHudState(actor) {
     if(actor.d.id==='child_emperor'){ names[0]=braveActive(actor)?OPM_NAMES.DELTA_SCALE_SABER:actor.d.skill; names[1]=braveActive(actor)?OPM_NAMES.MILLENNIUM_EMPEROR_NOVA:actor.d.special; }
     if (actor.d.id === "kira") names[1] = KIRA_NAMES[2 * actor.hp <= actor.maxHp && !actor.bitesUsed ? "BITES_THE_DUST" : "SHEER_HEART_ATTACK"];
     if (actor.d.id === "teach" && actor.teachCopied) names[0] = actor.teachCopied.name;
+    if (actor.d.id === "kafka" && actor.hp > actor.maxHp*.5) names[0]=DEFENSE_SKILLS.KAFKA_PUNCH[0];
     if(actor.d.id==="ichigo") names[0]=actor.bankaiUntil>t?"검붉은 월아천충":actor.d.skill;
     const gauges = ["hp","mp","sp"].map(resource => {
       const max = resource === "hp" ? actor.maxHp : opmResourceMax(actor, resource);
@@ -19888,18 +19992,40 @@ function fighterHudState(actor) {
     const skills = names.map((name,index)=>{
       const locked = index ? pendingTimeStop && ["THE_WORLD","DIO_THE_WORLD"].includes(actor.d.specialType) : tengenFestivalActive(actor) || (actor.painPending==="SHINRA_TENSEI" && t<actor.shinraReady);
       const enough = index ? actor.sp>=opmResourceMax(actor,"sp") : actor.mp>=actor.d.maxMp;
-      return [name,!!(running && !cinema.ending && !blocked && (rare || (!locked && enough)))];
+      return [name,!!(running && !cinema.ending && !blocked && (rareThreshold ? rareAvailable : !locked && enough))];
     });
     return {alive:actor.alive, speed:"속도 "+speedOf(actor).toFixed(1), statuses:running?fighterStatusEffects(actor):[], gauges, skills,
-      rare:!!(rare && !blocked && running && !cinema.ending),
-      portrait:actor.nika?"emperor_nika":actor.d.id==="kenpachi" && kenpachiBankaiActive(actor)?"kenpachi_bankai":""};
+      rare:!!(running && !paused && !cinema.ending && cinema.stop <= 0 && rareAvailable),
+      portrait:actor.nika?"emperor_nika":actor.d.id==="kenpachi" && kenpachiBankaiActive(actor)?"kenpachi_bankai":
+        actor.d.id==="kafka" && defenseActive(actor,"kaijuUntil")?"kafka_kaiju":""};
 }
 function updateHud(){
   if(practiceActive)return practiceUpdateHud();
   applyOnlineHud(collectOnlineHud(),false);
 }
+function highestSkillDamage() {
+  let best = null;
+  for (const actor of actors) {
+    for (const [skill, damage] of actor.skillDamageTotals || []) {
+      if (!best || damage > best.damage + 1e-8) best = {slot:actor.slot, skill, damage};
+    }
+  }
+  return best;
+}
+
+function renderTopSkillDamage(record, fighters = actors.map(actor => actor.d)) {
+  const line = $("topSkillDamage");
+  const fighter = Number.isSafeInteger(record?.slot) && record.slot >= 0 && fighters[record.slot];
+  const valid = fighter && typeof record.skill === "string" && record.skill.length > 0 &&
+    record.skill.length <= 100 && Number.isFinite(record.damage) && record.damage > 0;
+  line.textContent = valid
+    ? `가장 많은 피해를 준 스킬 · ${record.slot + 1}P ${fighter.short} · ${record.skill} · 총 ${Number(record.damage.toFixed(1))} 피해`
+    : "가장 많은 피해를 준 스킬 · 기록 없음";
+  line.hidden = false;
+}
+
 function showModal(e, a, o, n) {
-  $("lastBattleHit").hidden = true;
+  $("topSkillDamage").hidden = true;
   $('modal').classList.toggle('result-fade-in', e === 'BATTLE RESULT');
   ($("battleResult").classList.add("hidden"),
     $("battleResult").replaceChildren(),
@@ -20011,7 +20137,7 @@ function finish() {
     if (o) {
       const n = document.createElement("img");
       ((n.src =
-        (o.nika && readyPortrait("emperor_nika")) || fighterPortrait(o.d)),
+        hudPortrait(o)),
         (n.alt = e.group.map((e) => e.d.name).join(", ")),
         a.append(n));
     }
@@ -20027,13 +20153,7 @@ function finish() {
       i.append(a));
   }
   i.classList.remove("hidden");
-  const hit = cinema.ending?.hit;
-  if (hit) {
-    const lastHit = $("lastBattleHit");
-    const damage = Number(hit.damage.toFixed(1));
-    lastHit.textContent = `마지막 유효타 · ${hit.attacker.d.short} · ${hit.label} · ${damage} 피해`;
-    lastHit.hidden = false;
-  }
+  renderTopSkillDamage(highestSkillDamage());
 }
 
 function togglePause() {
@@ -23784,6 +23904,14 @@ const MOVEMENT_SCALE = 1.6,
   }),
   RESOURCE_MAX_KEYS = Object.freeze({ mp: "maxMp", sp: "maxSp" }),
   SKILL_HANDLERS = Object.freeze({
+    MILIO_AMBUSH:milioAmbush, MILIO_PHASE:milioPhase, MILIO_PHANTOM:milioPhantom,
+    KAFKA_PUNCH:kafkaPunch, KAFKA_REGEN:kafkaRegen, KAFKA_KAIJU:kafkaKaiju,
+    KIKORU_SWEEP:kikoruSweep, KIKORU_DROP:(actor,target)=>kikoruLeap(actor,target),
+    KIKORU_NUMBERS:(actor,target)=>kikoruLeap(actor,target,true),
+    HOSHINA_CROSS:(actor,target)=>hoshinaRush(actor,target), HOSHINA_COUNTER:hoshinaCounter,
+    HOSHINA_NUMBERS:(actor,target)=>hoshinaRush(actor,target,true),
+    MINA_CANNON:(actor,target)=>minaFire(actor,target), MINA_RETREAT:minaRetreat,
+    MINA_KERAUNOS:(actor,target)=>minaFire(actor,target,true),
     BUGGY_BALL: useBuggyBall,
     BUGGY_ESCAPE: owner => { owner.buggyEscape = { charges:BUGGY_ESCAPE_CHARGES, until:t+9 }; },
     BUGGY_FESTIVAL: owner => {
@@ -24913,12 +25041,20 @@ let projectionClones = [],
   lawRooms = [];
 
 const EMPEROR_CONFIG = Object.freeze({
+  redRocDistance: 20,
+  redRocDamage: 100,
+  boundDashes: 5,
+  boundDashDistance: 20,
+  boundDuration: 6,
   nikaHeal: 300,
   lightningSpeed: 72,
+  lightningRange: 40,
+  lightningDamage: 100,
   lightningScale: 2,
   gigantDuration: 5,
   gigantScale: 2.5,
   gigantCollisionMultiplier: 2,
+  gigantCollisionDamage: 95,
 });
 
 const EMPEROR_NAMES = {
@@ -25144,7 +25280,7 @@ function endKenpachiBankai(actor) {
 
 function queueKenpachiBankaiContact(actor, victim) {
   withAlchemyHitMode("melee", () =>
-    hurt(actor, victim, 110, "special", 0, { kenpachiForm: actor.kenpachiBankai }));
+    hurt(actor, victim, 110, "special", 0, { statsSkill:"KENPACHI_BANKAI", kenpachiForm: actor.kenpachiBankai }));
 }
 
 function confirmKenpachiBankaiContact(actor, victim, form) {
@@ -25477,16 +25613,16 @@ function useRyusenka(a){bleachPrepare(a,.4,()=>{const b=nearest(a);if(!b)return;
 function advanceBleachDash(a,dt){const s=a.bleachDash;if(!s)return false;const target=nearest(a);if(target){const current=Math.atan2(a.dz,a.dx),desired=Math.atan2(target.z-a.z,target.x-a.x),delta=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),q=current+Math.max(-.8*dt,Math.min(.8*dt,delta));a.dx=Math.cos(q);a.dz=Math.sin(q);}const ox=a.x,oz=a.z,n=Math.min(s.remaining,speedOf(a)*dt);a.x+=a.dx*n;a.z+=a.dz*n;bleachClamp(a);resolveBleachWalls(a,{x:ox,z:oz});s.remaining-=n;const b=actors.filter(b=>b!==a&&bleachLive(b)&&!opmPhasing(b)&&segmentDistance(b.x,b.z,ox,oz,a.x,a.z)<=3+actorRadius(b)).sort((b,c)=>Math.hypot(b.x-ox,b.z-oz)-Math.hypot(c.x-ox,c.z-oz))[0];if(b){const frozenBonus=actors.some(owner=>(owner.bleachFields||[]).some(f=>owner.alive&&f.kind==='snow'&&t<f.until&&f.counts.has(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9));hurt(a,b,60,'special',0,{type:'RYUSENKA',rush:true,final:false});a.noContactUntil=t+.2;b.noContactUntil=Math.max(b.noContactUntil||0,t+1);b.rootUntil=Math.max(b.rootUntil||0,t+1);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+1);b.bleachAnchor={x:b.x,z:b.z,until:t+1};bleachIcePrison(b,t+1);const anchor={x:b.x,z:b.z};schedule(a,1,()=>{if(b.alive){hurt(a,b,frozenBonus?240:180,'special',0,{type:'RYUSENKA',rush:true,final:true});bleachShards(anchor.x,anchor.z,0xb1f1ff);}});}if(b||s.remaining<=1e-8||Math.hypot(a.x-ox,a.z-oz)<n*.5){a.bleachDash=null;a.busy=t;}if(!headless)beam(ox,oz,a.x,a.z,0xb2f0ff,.2,.45);mpGain(a,6*dt);return true;}
 function bleachSegmentRect(x,z,ex,ez,f,pad=0){const ux=f.nz,uz=-f.nx;let ax=(x-f.x)*ux+(z-f.z)*uz,az=(x-f.x)*f.nx+(z-f.z)*f.nz,bx=(ex-f.x)*ux+(ez-f.z)*uz,bz=(ex-f.x)*f.nx+(ez-f.z)*f.nz;let lo=0,hi=1;for(const [v,d,r]of[[ax,bx-ax,6.5+pad],[az,bz-az,.75+pad]]){if(Math.abs(d)<1e-9){if(Math.abs(v)>r)return false;}else{let n=(-r-v)/d,m=(r-v)/d;if(n>m)[n,m]=[m,n];lo=Math.max(lo,n);hi=Math.min(hi,m);if(lo>hi)return false;}}return true;}
 function bleachWalls(){return actors.flatMap(a=>(a.bleachFields||[]).filter(f=>a.alive&&f.kind==='wall'&&t<f.until).map(f=>({a,f})));}
-function resolveBleachWalls(b,old={x:b.x,z:b.z}){for(const {a,f}of bleachWalls()){if(b===a||!bleachLive(b)||!bleachSegmentRect(old.x,old.z,b.x,b.z,f,actorRadius(b)))continue;const normal=(old.x-f.x)*f.nx+(old.z-f.z)*f.nz,side=Math.sign(normal)||-1,lat=(b.x-f.x)*f.nz-(b.z-f.z)*f.nx,r=actorRadius(b);b.x=f.x+Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nz+f.nx*side*(.75+r+.025);b.z=f.z-Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nx+f.nz*side*(.75+r+.025);const dot=b.dx*f.nx+b.dz*f.nz;if(dot*side<0){b.dx-=2*dot*f.nx;b.dz-=2*dot*f.nz;}const last=f.contacts?.get(b)??-99;if(t-last>=.3-1e-8){const first=!f.hits.has(b),stun=first?.3:.2;f.hits.add(b);(f.contacts??=new Map()).set(b,t);hurt(a,b,first?80:15);b.rootUntil=Math.max(b.rootUntil||0,t+stun);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+stun);}bleachClamp(b);}}
+function resolveBleachWalls(b,old={x:b.x,z:b.z}){for(const {a,f}of bleachWalls()){if(b===a||!bleachLive(b)||!bleachSegmentRect(old.x,old.z,b.x,b.z,f,actorRadius(b)))continue;const normal=(old.x-f.x)*f.nx+(old.z-f.z)*f.nz,side=Math.sign(normal)||-1,lat=(b.x-f.x)*f.nz-(b.z-f.z)*f.nx,r=actorRadius(b);b.x=f.x+Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nz+f.nx*side*(.75+r+.025);b.z=f.z-Math.max(-6.5-r,Math.min(6.5+r,lat))*f.nx+f.nz*side*(.75+r+.025);const dot=b.dx*f.nx+b.dz*f.nz;if(dot*side<0){b.dx-=2*dot*f.nx;b.dz-=2*dot*f.nz;}const last=f.contacts?.get(b)??-99;if(t-last>=.3-1e-8){const first=!f.hits.has(b),stun=first?.3:.2;f.hits.add(b);(f.contacts??=new Map()).set(b,t);hurt(a,b,first?80:15, "skill", 0, {statsSkill:"RYOJIN_HYOHEKI"});b.rootUntil=Math.max(b.rootUntil||0,t+stun);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,t+stun);}bleachClamp(b);}}
 function bleachBlockShots(list,dt){const walls=bleachWalls();return list.filter(s=>{if(!s.a)return true;const length=Math.min(s.remaining??Infinity,(s.speed||0)*dt);if(walls.some(({a,f})=>a!==s.a&&bleachSegmentRect(s.x,s.z,s.x+(s.dx||0)*length,s.z+(s.dz||0)*length,f,s.bleachKind==='getsuga'?5:(s.r??(s.width||.2)/2)))){wallDeflection(s,length);
 if(s.sandShadowType==="GAARA_SHOWER" && s.a.alive)addSandPile(s.a,s.x+s.dx*length,s.z+s.dz*length);removeMesh(s.mesh);removeMesh(s.chain);return false;}return true;});}
 function advanceBleachShot(s,dt){if(s.bleachKind==='kageBlade')return advanceKageBlade(s,dt);if(!s.a.alive||t>s.until)return removeMesh(s.mesh),false;const ox=s.x,oz=s.z;if(s.bleachKind==='petal'&&t<s.homeUntil&&s.target?.alive){const current=Math.atan2(s.dz,s.dx),desired=Math.atan2(s.target.z-s.z,s.target.x-s.x),diff=Math.atan2(Math.sin(desired-current),Math.cos(desired-current)),turn=Math.max(-4*dt,Math.min(4*dt,diff))+Math.sin(t*12+s.phase)*dt*.8;s.dx=Math.cos(current+turn);s.dz=Math.sin(current+turn);}const n=Math.min(s.remaining,s.speed*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;let impact=false;for(const b of opmProjectileActors()){if(b===s.a||!bleachLive(b)||s.hit?.has(b))continue;const dist=segmentDistance(b.x,b.z,ox,oz,s.x,s.z),r=s.bleachKind==='getsuga'?5:s.r;if(dist>r+actorRadius(b))continue;
 const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);
 const impactDamage=s.bleachKind==='getsuga'?(lateral<=2.5?s.damage:s.edge):s.bleachKind==='petal'?34:125;
 if((s.bleachKind!=='petal'||(s.cast.counts.get(b)||0)<5)&&reflectAlchemyShot(s,b,ox,oz,impactDamage,r))return false;
-if(s.bleachKind==='getsuga'){const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);s.hit.add(b);hurt(s.a,b,lateral<=2.5?s.damage:s.edge);}else if(s.bleachKind==='petal'){const count=s.cast.counts.get(b)||0;if(count<5){s.cast.counts.set(b,count+1);hurt(s.a,b,34);}senbonzakuraImpactPetals(s.cast,b);impact=true;break;}else{impact=true;s.x=b.x;s.z=b.z;break;}}
+if(s.bleachKind==='getsuga'){const lateral=Math.abs((b.x-ox)*-s.dz+(b.z-oz)*s.dx);s.hit.add(b);hurt(s.a,b,lateral<=2.5?s.damage:s.edge, "skill", 0, {statsSkill:s.damage === 190 ? "BLACK_GETSUGA" : "GETSUGA"});}else if(s.bleachKind==='petal'){const count=s.cast.counts.get(b)||0;if(count<5){s.cast.counts.set(b,count+1);hurt(s.a,b,34, "skill", 0, {statsSkill:"SENBONZAKURA"});}senbonzakuraImpactPetals(s.cast,b);impact=true;break;}else{impact=true;s.x=b.x;s.z=b.z;break;}}
 const expired=s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2;
-if(s.bleachKind==='sokatsui'&&(impact||expired)){area(s.a,s.x,s.z,4,125,0x408fff);bleachShards(s.x,s.z,0x3eaaff,14);bleachRing(s.x,s.z,4,0x6cd5ff,.4);}
+if(s.bleachKind==='sokatsui'&&(impact||expired)){withDamageOrigin(s.a,false,()=>area(s.a,s.x,s.z,4,125,0x408fff),undefined,"SOKATSUI");bleachShards(s.x,s.z,0x3eaaff,14);bleachRing(s.x,s.z,4,0x6cd5ff,.4);}
 if(impact||expired){removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.4,s.z);if(s.bleachKind!=='getsuga')s.mesh.rotation.y+=dt*8;}return true;}
 function bleachSnowSlow(a){return actors.some(owner=>owner!==a&&owner.alive&&(owner.bleachFields||[]).some(f=>f.kind==='snow'&&t<f.until&&Math.hypot(a.x-f.x,a.z-f.z)<=9));}
 function updateBleach(dt){for(const a of actors){if(a.bleachIllusion&&!a.alive){if(a.bleachIllusion.mesh)a.bleachIllusion.mesh.visible=false;a.bleachIllusion=null;}if(bleachLocked(a)&&a.bleachAnchor?.until>t){a.x=a.bleachAnchor.x;a.z=a.bleachAnchor.z;}a.bleachFields=(a.bleachFields||[]).filter(f=>{if(!a.alive){f.active=false;return false;}if(f.kind==='coffin'){if(!f.captured&&t<f.capture){if(f.target?.alive){const d=unit(f.target.x-f.x,f.target.z-f.z),n=Math.min(50*dt,Math.hypot(f.target.x-f.x,f.target.z-f.z));f.x+=d.x*n;f.z+=d.z*n;}}else if(!f.captured){f.captured=true;f.targets=actors.filter(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=4+actorRadius(b));for(const b of f.targets){b.rootUntil=Math.max(b.rootUntil||0,f.until);b.bleachLockUntil=Math.max(b.bleachLockUntil||0,f.until);b.bleachAnchor={x:b.x,z:b.z,until:f.until};}}for(const b of f.targets)if(b.alive&&t<f.until){const d=unit(f.x-b.x,f.z-b.z),n=Math.min(30*dt,Math.hypot(f.x-b.x,f.z-b.z));b.x+=d.x*n;b.z+=d.z*n;b.bleachAnchor={x:b.x,z:b.z,until:f.until};}if(t>=f.until-1e-8&&!f.hit){f.hit=true;for(const b of f.targets)if(b.alive)hurt(a,b,240,'special',0,{type:'KUROHITSUGI',final:true});}}if(t>=f.until-1e-8){f.active=false;return false;}if(f.kind==='snow'){const target=f.follow?.alive?f.follow:a;f.x=target.x;f.z=target.z;if(f.follow===a){const b=actors.find(b=>b!==a&&bleachLive(b)&&Math.hypot(b.x-f.x,b.z-f.z)<=9+actorRadius(b));if(b)f.follow=b;}bleachSnowTicks(a,f);}return true;});}}
@@ -25766,6 +25902,8 @@ Object.assign(OPM_NAMES,{
 });
 
 const officialPortraits = consumeAssetData("official-portrait-data");
+for (const id of ["milio","kafka","kafka_kaiju","kikoru","hoshina","mina"])
+  officialPortraits[id] = "./assets/portraits/"+id+".webp";
 
 let last = 0,
   accumulator = 0;
@@ -26017,7 +26155,7 @@ function addSandShadowFighters() {
 }
 
 function sandShadowTarget(owner, target) {
-  return owner !== target && target.alive && !kamuiHidden(target) && !opmPhasing(target);
+  return owner !== target && target.alive && !kamuiHidden(target) && !opmPhasing(target) && !milioPhasing(target);
 }
 
 function sandShadowLocked(actor) {
@@ -26271,7 +26409,7 @@ function sandShadowImpact(shot, target) {
   const { a: owner, sandShadowType: type } = shot;
   const prisonHit = type === "GAARA_COFFIN" || type === "GAARA_BURIAL";
   const before = damageQueue.length;
-  hurt(owner, target, shot.damage, shot.specialSource ? "special" : "skill");
+  hurt(owner, target, shot.damage, shot.specialSource ? "special" : "skill", 0, {statsSkill:type});
   const hit = damageQueue.length > before ? damageQueue.at(-1) : null;
   if (!prisonHit || hit?.b !== target) return;
   const burial = type === "GAARA_BURIAL";
@@ -27389,6 +27527,7 @@ const SANJI_RUSH_DISTANCE = 10;
 const SANJI_PARTY_DURATION = 4;
 const SANJI_PARTY_INTERVAL = .4;
 const SANJI_PARTY_MAX_HITS = 4;
+const SANJI_PARTY_DAMAGE = 40;
 const URYU_REGEN_RANGE = 20;
 const URYU_REGEN_SPEED = 50;
 const URYU_REGEN_RADIUS = .42;
@@ -27397,15 +27536,15 @@ const URYU_REGEN_DAMAGE = 30;
 const URYU_REGEN_MAX_HITS = 5;
 
 const NEWCOMER_SKILLS = {
-  BUGGY_BALL: ["특제 버기탄", "buggy-ball", "8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 한 번 사용할 때 폭발이 겹쳐도 대상당 최대 1회, 75 피해를 줍니다."],
-  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", "9초 동안 다음 피해 2회를 피합니다. 피할 때마다 거리 17까지 날아갔다 돌아오는 팔을 발사합니다. 팔의 피격 판정 반경은 0.528입니다. 팔은 첫 적에게 45 피해를 줍니다."],
-  BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", "0.5초 준비 후 거리 17까지 6방향에 팔을 날립니다. 팔의 피격 판정 반경은 0.528입니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 다시 던지며 두 번째 발사도 거리 17입니다.", true],
-  SANJI_MUTTON: ["양고기 샷", "sanji-mutton", "상대를 향해 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해."],
-  SANJI_PARTY: ["파티 테이블 킥 코스", "sanji-party-table", "0.5초간 멈춘 뒤 4초 동안 물구나무로 회전하며 이동합니다. 반경 6 안의 상대에게 0.4초 간격으로 40 피해를 줍니다. 대상당 최대 4회(160 피해), 기술 사용 중 받는 피해 20% 감소."],
-  SANJI_DIABLE: ["디아블 잠브", "sanji-diable", "붉은 불꽃으로 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.", true],
-  SANJI_IFRIT: ["이프리트 잠브", "sanji-ifrit", "푸른 불꽃으로 거리 10씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 260 피해와 거리 13 밀치기.", true],
+  BUGGY_BALL: ["특제 버기탄", "buggy-ball", `8방향에 폭탄을 던집니다. 거리 7, 벽 또는 적에 닿으면 폭발하며 반경 3의 잔상이 0.5초 유지됩니다. 한 번 사용할 때 폭발이 겹쳐도 대상당 최대 1회, ${BUGGY_BALL_DAMAGE} 피해를 줍니다.`],
+  BUGGY_ESCAPE: ["동강동강 긴급 탈출", "buggy-escape", `9초 동안 다음 피해 ${BUGGY_ESCAPE_CHARGES}회를 피합니다. 피할 때마다 거리 ${BUGGY_ARM_RANGE}까지 날아갔다 돌아오는 팔을 발사합니다. 팔의 피격 판정 반경은 ${BUGGY_ARM_RADIUS}입니다. 팔은 첫 적에게 45 피해를 줍니다.`],
+  BUGGY_FESTIVAL: ["동강동강 페스티벌", "buggy-festival", `0.5초 준비 후 거리 ${BUGGY_ARM_RANGE}까지 6방향에 팔을 날립니다. 팔의 피격 판정 반경은 ${BUGGY_ARM_RADIUS}입니다. 적중 시 팔이 사라지고 95 피해를 줍니다. 돌아온 팔 수만큼 다시 던지며 두 번째 발사도 거리 ${BUGGY_ARM_RANGE}입니다.`, true],
+  SANJI_MUTTON: ["양고기 샷", "sanji-mutton", `상대를 향해 거리 ${SANJI_RUSH_DISTANCE}씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 기술의 첫 충돌에 105 피해.`],
+  SANJI_PARTY: ["파티 테이블 킥 코스", "sanji-party-table", `0.5초간 멈춘 뒤 ${SANJI_PARTY_DURATION}초 동안 물구나무로 회전하며 이동합니다. 반경 6 안의 상대에게 ${SANJI_PARTY_INTERVAL}초 간격으로 ${SANJI_PARTY_DAMAGE} 피해를 줍니다. 대상당 최대 ${SANJI_PARTY_MAX_HITS}회(${SANJI_PARTY_MAX_HITS * SANJI_PARTY_DAMAGE} 피해), 기술 사용 중 받는 피해 20% 감소.`],
+  SANJI_DIABLE: ["디아블 잠브", "sanji-diable", `붉은 불꽃으로 거리 ${SANJI_RUSH_DISTANCE}씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 170 피해와 거리 13 밀치기.`, true],
+  SANJI_IFRIT: ["이프리트 잠브", "sanji-ifrit", `푸른 불꽃으로 거리 ${SANJI_RUSH_DISTANCE}씩 세 번 돌진합니다. 돌진 중 피해 20% 감소, 첫 충돌에 260 피해와 거리 13 밀치기.`, true],
   URYU_SPRENGER: ["슈프렝거", "uryu-sprenger", "0.5초 뒤 무작위 위치에 반경 6의 푸른 오각형을 4초간 설치합니다. 처음 들어온 상대를 1초 정지시키고 관통 화살로 100 피해를 줍니다."],
-  URYU_REGEN: ["리히트 레겐", "uryu-regen", "상대의 예상 이동량을 40% 선반영해 0.1초마다 화살을 한 발씩 총 15발 쏩니다. 사거리 20, 속도 50, 판정 반경 0.42이며, 발당 30 피해로 대상당 최대 5회(총 150 피해) 적중합니다."],
+  URYU_REGEN: ["리히트 레겐", "uryu-regen", `상대의 예상 이동량을 ${URYU_REGEN_LEAD * 100}% 선반영해 0.1초마다 화살을 한 발씩 총 15발 쏩니다. 사거리 ${URYU_REGEN_RANGE}, 속도 ${URYU_REGEN_SPEED}, 판정 반경 ${URYU_REGEN_RADIUS}이며, 발당 ${URYU_REGEN_DAMAGE} 피해로 대상당 최대 ${URYU_REGEN_MAX_HITS}회(총 ${URYU_REGEN_DAMAGE * URYU_REGEN_MAX_HITS} 피해) 적중합니다.`],
   URYU_ANTITHESIS: ["슈리프트 A-디 앤티서시스", "uryu-antithesis", "푸른 날개를 6초간 펼칩니다. 생존하면 그동안 받은 피해를 최대 300 회복하고, 가장 많은 피해를 준 생존 상대에게 같은 피해를 돌려줍니다. 날개가 있는 동안에도 기술을 사용할 수 있습니다.", true],
   RENJI_HIKOTSU: ["비골대포", "renji-hikotsu", "1초 정지 후 사미환에서 전방 빔을 발사해 85 피해를 줍니다."],
   RENJI_ZABIMARU: ["시해 사미환", "renji-zabimaru", "6초 동안 사미환을 휘둘러 기본 충돌 피해가 25 증가하고, 자신의 충돌 공격 범위가 반경 5로 넓어집니다."],
@@ -27793,7 +27932,7 @@ function updateNewcomerStances() {
       for (const target of actors) {
         if (!duelTarget(owner, target) || (spin.hits.get(target) || 0) >= SANJI_PARTY_MAX_HITS ||
             Math.hypot(owner.x-target.x, owner.z-target.z) > 6+actorRadius(target)) continue;
-        newcomerHit(owner, target, "SANJI_PARTY", 40, "melee", () => {
+        newcomerHit(owner, target, "SANJI_PARTY", SANJI_PARTY_DAMAGE, "melee", () => {
           spin.hits.set(target, (spin.hits.get(target) || 0) + 1);
           newcomerKickImpact(target, unit(target.x-owner.x,target.z-owner.z), "SANJI_PARTY");
         });
@@ -28390,11 +28529,617 @@ function addNewcomerFighters() {
 
 addNewcomerFighters();
 
+const DEFENSE_SKILLS = {
+  MILIO_AMBUSH:["투과 기습","0.5초간 지하로 돌진합니다. 상대 위치에서 솟아오른 뒤 첫 주먹에 95 피해를 줍니다."],
+  MILIO_PHASE:["투과 돌진","5초 동안 적과 설치 지형을 관통하고 적의 공격 피해를 받지 않습니다. 적을 관통할 때마다 기본 충돌 피해를 줍니다. 같은 접촉에서는 한 번만 적중합니다."],
+  MILIO_PHANTOM:["팬텀 메너스","바닥에 예고된 세 지점에서 순서대로 솟아오릅니다. 피해는 65, 65, 95로 대상당 최대 225입니다."],
+  KAFKA_PUNCH:["괴수화 정권","팔을 괴수화해 전방에 115 피해를 주고 상대를 밀쳐냅니다."],
+  KAFKA_REGEN:["조직 재생","HP가 50% 이하일 때 일반 스킬의 50% 확률로 발동합니다. 10초 동안 초당 HP 8과 MP 4를 회복합니다."],
+  KAFKA_KAIJU:["괴수 8호 완전 변신","8초간 괴수 8호가 됩니다. 받는 피해 25% 감소, 속도 +3, 기본 충돌 피해 +15. 변신 2초 뒤 거리 10 돌진을 두 번 하며 첫 적중에 170 피해를 줍니다."],
+  KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 5를 돌진한 뒤 반경 6·전방 120° 부채꼴에 110 피해를 줍니다."],
+  KIKORU_DROP:["도약 내려찍기","예고한 지점에 도끼를 내려찍습니다. 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다."],
+  KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초 정지 후 예고 지점으로 뛰어내려 반경 5에 145 피해를 줍니다. 이어 반경 10까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
+  HOSHINA_CROSS:["호시나류 쌍검 교차 베기","짧게 두 번 돌진해 각 55 피해를 줍니다. 대상당 최대 110 피해. 돌진 중 받는 피해가 20% 감소합니다."],
+  HOSHINA_COUNTER:["파쇄 반격","5초 안에 받는 첫 적 공격의 피해를 50% 줄입니다. 생존하면 공격자 뒤로 뛰어들어 80 피해로 반격합니다."],
+  HOSHINA_NUMBERS:["넘버즈 10 연계","적을 향해 거리 15씩 두 번 돌진하며 쌍검으로 각 60 피해를 줍니다. 마지막 꼬리 공격은 100 피해이며 대상당 최대 220입니다."],
+  MINA_CANNON:["대형 괴수포","0.4초간 조준선을 표시하고 고정된 직선으로 90 피해를 줍니다."],
+  MINA_RETREAT:["후퇴 사격","뒤로 거리 6을 이동하면서 세 발을 쏩니다. 발당 35 피해, 대상당 최대 105입니다."],
+  MINA_KERAUNOS:["케라우노스","제자리에서 0.9초간 포격을 준비합니다. 넓은 사격선의 중심은 245, 가장자리는 135 피해를 주며 대상당 한 번 적용됩니다."],
+};
+const DEFENSE_ROSTER = [
+  {id:"milio", name:"토오가타 밀리오", short:"밀리오", anime:"나의 히어로 아카데미아", battleType:"변칙형", role:"지하 기습 · 관통", color:0xffb851, maxHp:1120, maxMp:82, maxSp:125, speed:40, baseDamage:45, types:["MILIO_AMBUSH","MILIO_PHASE","MILIO_PHANTOM"]},
+  {id:"kafka", name:"히비노 카프카", short:"카프카", anime:"괴수 8호", battleType:"내구형", role:"재생 · 괴수화 · 돌진", color:0x26ddcf, maxHp:1340, maxMp:95, maxSp:145, speed:34, baseDamage:52, types:["KAFKA_PUNCH","KAFKA_REGEN","KAFKA_KAIJU"]},
+  {id:"kikoru", name:"시노미야 키코루", short:"키코루", anime:"괴수 8호", battleType:"밸런스형", role:"도끼 · 착지 충격파", color:0xb7df6e, maxHp:1180, maxMp:85, maxSp:138, speed:38, baseDamage:48, types:["KIKORU_SWEEP","KIKORU_DROP","KIKORU_NUMBERS"]},
+  {id:"hoshina", name:"호시나 소시로", short:"호시나", anime:"괴수 8호", battleType:"기동형", role:"쌍검 · 반격 · 꼬리 연계", color:0xc48cff, maxHp:1150, maxMp:78, maxSp:145, speed:41, baseDamage:45, types:["HOSHINA_CROSS","HOSHINA_COUNTER","HOSHINA_NUMBERS"]},
+  {id:"mina", name:"아시로 미나", short:"미나", anime:"괴수 8호", battleType:"원거리형", role:"후퇴 사격 · 장거리 포격", color:0x77c5ff, maxHp:1090, maxMp:90, maxSp:160, speed:34, baseDamage:42, types:["MINA_CANNON","MINA_RETREAT","MINA_KERAUNOS"]},
+];
+const DEFENSE_IDS = new Set(DEFENSE_ROSTER.map(({id})=>id));
+const DEFENSE_SPECIALS = new Set(DEFENSE_ROSTER.map(({types})=>types[2]));
+for (const {types,...record} of DEFENSE_ROSTER) {
+  const [first,second,specialType] = types;
+  const skillType = record.id.toUpperCase()+"_CHOICE";
+  CHARACTER_DATABASE.push({...record, radius:1.2, skillType, specialType,
+    skill:DEFENSE_SKILLS[first][0]+" / "+DEFENSE_SKILLS[second][0],
+    special:DEFENSE_SKILLS[specialType][0],
+    desc:DEFENSE_SKILLS[first][1]+" "+DEFENSE_SKILLS[second][1],
+    spDesc:DEFENSE_SKILLS[specialType][1]});
+  if (record.id !== "kafka") OPM_CHOICES[skillType] = [first,second,.5];
+}
+
+function defenseActive(actor, key) {
+  return actor?.[key] > t + 1e-8;
+}
+
+function milioPhasing(actor) {
+  return defenseActive(actor,"milioPhaseUntil") || actor?.defenseMotion?.kind === "underground";
+}
+
+function defenseClamp(actor, point) {
+  const radius = actorRadius(actor);
+  return {x:clampAlchemy(point.x,W,radius), z:clampAlchemy(point.z,H,radius)};
+}
+
+function defenseHit(actor,target,type,damage,mode="melee",stage={}) {
+  if (!target?.alive || target.hp<=0 || !actor.alive || actor.hp<=0) return;
+  const special = DEFENSE_SPECIALS.has(type);
+  const before = damageQueue.length;
+  withDamageOrigin(actor,special,()=>withAlchemyHitMode(mode,()=>
+    hurt(actor,target,damage,special?"special":"skill",0,{type,...stage})),DEFENSE_SKILLS[type][0],type);
+  const hit = damageQueue.length > before ? damageQueue.at(-1) : null;
+  if (hit?.a===actor && hit.b===target) return hit;
+}
+
+function defenseArea(actor,point,radius,type,damage,edge=null,stage={}) {
+  for (const target of actors) {
+    if (target===actor) continue;
+    const distance = Math.hypot(target.x-point.x,target.z-point.z);
+    if (distance<=radius) defenseHit(actor,target,type,damage,"melee",stage);
+    else if (edge && distance<=edge.radius) defenseHit(actor,target,type,edge.damage,"melee",stage);
+  }
+}
+
+function defensePulse(point,radius,color,life=.36) {
+  fx("ring",point.x,point.z,radius,color,life);
+  if (!headless && world) {
+    fx("ring",point.x,point.z,radius*.65,animeMixColor(color,0xffffff,.44),life*.7);
+    particleBurst(point.x,.38,point.z,color,12,Math.max(.6,radius*.34));
+  }
+}
+
+function defenseMotion(actor,point,duration,kind,finish,destination=null) {
+  const start = {x:actor.x,z:actor.z};
+  actor.defenseMotion = {kind,start,end:defenseClamp(actor,point),destination,from:t,until:t+duration,finish};
+  hold(actor,duration);
+  actor.noContactUntil = Math.max(actor.noContactUntil||0,t+duration+STEP);
+}
+
+function advanceDefenseMotion(actor) {
+  const motion = actor.defenseMotion;
+  if (!motion) return false;
+  const progress = Math.min(1,Math.max(0,(t-motion.from)/(motion.until-motion.from)));
+  if (motion.destination?.alive) motion.end = defenseClamp(actor,motion.destination);
+  actor.x=motion.start.x+(motion.end.x-motion.start.x)*progress;
+  actor.z=motion.start.z+(motion.end.z-motion.start.z)*progress;
+  if (t>=motion.until-1e-8) {
+    actor.defenseMotion=null;
+    actor.rootUntil=t;
+    actor.busy=t;
+    motion.finish(motion.end);
+  }
+  return true;
+}
+
+function defenseMotionHeight(actor) {
+  const motion=actor.defenseMotion;
+  if (!motion) return 0;
+  const progress=Math.min(1,Math.max(0,(t-motion.from)/(motion.until-motion.from)));
+  return Math.sin(Math.PI*progress)*(motion.kind==="underground"?-2.75:motion.kind==="jump"?4.8:1.15);
+}
+
+function milioAmbush(actor,target) {
+  defensePulse(actor,1.8,0xe6b17f);
+  defenseMotion(actor,target,.5,"underground",point=>{
+    defensePulse(point,2.4,0xffcc74);
+    const victim=target.alive && Math.hypot(target.x-point.x,target.z-point.z)<=2.4 ? target
+      : actors.find(other=>other!==actor && other.alive && Math.hypot(other.x-point.x,other.z-point.z)<=2.4);
+    defenseHit(actor,victim,"MILIO_AMBUSH",95);
+  },target);
+}
+
+function milioPhase(actor) {
+  actor.milioPhaseUntil=t+5;
+  actor.milioContacts=new Set();
+  defensePulse(actor,2.3,0xffdb95);
+}
+
+function milioPhaseContacts() {
+  for (const actor of actors) {
+    if (!actor.alive || !defenseActive(actor,"milioPhaseUntil") || actor.defenseMotion) continue;
+    const from=actor.opmPrevious || actor;
+    for (const target of actors) {
+      if (target===actor || !target.alive) continue;
+      const previous=target.opmPrevious || target;
+      const bounds=actorRadius(actor)+actorRadius(target);
+      const overlap=Math.hypot(target.x-actor.x,target.z-actor.z)<=bounds;
+      const crossed=segmentDistance(0,0,from.x-previous.x,from.z-previous.z,actor.x-target.x,actor.z-target.z)<=bounds;
+      if (crossed && !actor.milioContacts.has(target)) {
+        defenseHit(actor,target,"MILIO_PHASE",actor.d.baseDamage);
+      }
+      if (overlap) actor.milioContacts.add(target);
+      else actor.milioContacts.delete(target);
+    }
+  }
+}
+
+function milioPhantom(actor,target) {
+  const heading=unit(target.x-actor.x,target.z-actor.z);
+  const series={};
+  const points=[-2.15,2.15,0].map(offset=>defenseClamp(actor,{
+    x:target.x-heading.z*offset,z:target.z+heading.x*offset
+  }));
+  const strike=index=>{
+    const point=points[index];
+    fx("warning",point.x,point.z,4,0xffd183,.29);
+    defenseMotion(actor,point,.28,"underground",()=>{
+      defenseArea(actor,point,4,"MILIO_PHANTOM",[65,65,95][index],null,{rush:true,final:index===2,series});
+      defensePulse(point,4,0xffc16e);
+      if (index<2) strike(index+1);
+    });
+  };
+  strike(0);
+}
+
+function kafkaPunch(actor,target) {
+  actor.kaijuFistUntil=t+.5;
+  const direction=unit(target.x-actor.x,target.z-actor.z);
+  defenseFacing(actor,direction);
+  hold(actor,.18);
+  schedule(actor,.18,()=>{
+    const point={x:actor.x+direction.x*7,z:actor.z+direction.z*7};
+    beam(actor.x,actor.z,point.x,point.z,0x38efdf,.26,3);
+    defensePulse(point,2.5,0x90ffed);
+    for (const victim of actors) {
+      if (victim===actor || !oraHits(actor,victim,direction,7,40)) continue;
+      const hit=defenseHit(actor,victim,"KAFKA_PUNCH",115);
+      if (hit) hit.onConfirmedHit=()=>pushActor(victim,direction,5);
+    }
+  });
+}
+
+function kafkaRegularSkill(actor) {
+  return actor.hp <= actor.maxHp*.5 && Math.random()<.5 ? "KAFKA_REGEN" : "KAFKA_PUNCH";
+}
+
+function kafkaRegen(actor) {
+  actor.kaijuRegen={next:t+1,remaining:10};
+  defensePulse(actor,2.1,0x5ef3ac);
+}
+
+function updateKafkaRegen() {
+  for (const actor of actors) {
+    const regen=actor.kaijuRegen;
+    if (!actor.alive || !regen || t+1e-8<regen.next) continue;
+    heal(actor,8);
+    gainResource(actor,"mp",4,true);
+    regen.next+=1;
+    if (!--regen.remaining) actor.kaijuRegen=null;
+  }
+}
+
+function defenseFacing(actor,direction) {
+  actor.dx=direction.x;
+  actor.dz=direction.z;
+}
+
+function defenseDash(actor,point,distance,options) {
+  const {type,damage=0,reduce=0,onEnd,onHit,series,final=false} = options;
+  const special=DEFENSE_SPECIALS.has(type);
+  withDamageOrigin(actor,special,()=>{
+    dash(actor,point,distance,47,2.8,0,reduce,false,onEnd);
+    actor.dash.extraType="defense";
+    actor.dash.onHit=target=>{
+      if (onHit) onHit(target);
+      else if (damage) defenseHit(actor,target,type,damage,"melee",{rush:true,final,series});
+    };
+    if (damage===0 && !onHit) actor.dash.fanOnly=true;
+    animeSonicBoom(actor.x,actor.z,{x:actor.dx,z:actor.dz},actor.d.color,1.15);
+  },DEFENSE_SKILLS[type][0],type);
+}
+
+function kafkaKaiju(actor) {
+  actor.kaijuUntil=t+8;
+  defensePulse(actor,3.8,0x38ffdb,.55);
+  const series={done:false,attemptAt:-1};
+  const hit=target=>{
+    if (series.done || series.attemptAt===t) return;
+    const entry=defenseHit(actor,target,"KAFKA_KAIJU",170,"melee",{final:true,series});
+    if (entry) {
+      series.attemptAt=t;
+      entry.onConfirmedHit=()=>{series.done=true;};
+    }
+  };
+  const start=index=>{
+    const target=nearest(actor);
+    if (!target || !defenseActive(actor,"kaijuUntil")) return;
+    actor.rootUntil=t;
+    defenseDash(actor,target,10,{type:"KAFKA_KAIJU",onHit:hit,onEnd:()=>{
+      if (index===0) {
+        hold(actor,.12);
+        schedule(actor,.12,()=>start(1));
+      }
+    }});
+  };
+  schedule(actor,2,()=>start(0));
+}
+
+function kikoruSweep(actor,target) {
+  const direction=unit(target.x-actor.x,target.z-actor.z);
+  defenseDash(actor,target,5,{type:"KIKORU_SWEEP",onEnd:()=>{
+    defenseFacing(actor,direction);
+    defenseArc(actor,direction,6,120,0xdcff89);
+    for (const victim of actors)
+      if (victim!==actor && oraHits(actor,victim,direction,6,60)) defenseHit(actor,victim,"KIKORU_SWEEP",110);
+  }});
+}
+
+function kikoruLeap(actor,target,special=false) {
+  const point=defenseClamp(actor,target);
+  const type=special?"KIKORU_NUMBERS":"KIKORU_DROP";
+  const radius=special?5:4;
+  const duration=special?.42:.44;
+  fx("warning",point.x,point.z,radius,0xd1fa73,duration+(special?.5:0));
+  if (!special) fx("warning",point.x,point.z,7,0x91bd52,duration);
+  const series={};
+  const start=()=>defenseMotion(actor,point,duration,"jump",()=>{
+    defensePulse(point,radius,0xe7ff92);
+    defenseArea(actor,point,radius,type,special?145:120,special?null:{radius:7,damage:65},
+      {rush:special,final:!special,series});
+    if (special) {
+      hold(actor,.19);
+      schedule(actor,.19,()=>{
+        defenseShockwave(actor,point,type,65,10,series);
+      });
+    }
+  });
+  if (special) {
+    hold(actor,.5);
+    schedule(actor,.5,start);
+  } else start();
+}
+
+function defenseShockwave(actor,point,type,damage,radius,series) {
+  const hits=new Set();
+  const visual={...point};
+  for (let step=1;step<=5;step++) {
+    schedule(actor,(step-1)*.045,()=>{
+      const reach=radius*step/5;
+      if (!headless && world && step===1) {
+        const ring=new THREE.Mesh(new THREE.RingGeometry(.96,1,48),
+          new THREE.MeshBasicMaterial({color:0xc5fd78,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false}));
+        ring.rotation.x=-Math.PI/2;
+        ring.position.set(visual.x,.16,visual.z);
+        world.add(ring);
+        const effect={mesh:ring,life:.225,total:.225,kind:"defenseShockwave",radius};
+        ring.scale.setScalar(radius/5);
+        effects.push(effect);
+      }
+      for (const target of actors) {
+        if (target===actor || hits.has(target) || Math.hypot(target.x-point.x,target.z-point.z)>reach) continue;
+        hits.add(target);
+        defenseHit(actor,target,type,damage,"melee",{rush:true,final:true,series});
+      }
+    });
+  }
+}
+
+function hoshinaRush(actor,target,special=false) {
+  const type=special?"HOSHINA_NUMBERS":"HOSHINA_CROSS";
+  const series={};
+  if (special) actor.hoshinaTailUntil=t+2;
+  const start=index=>{
+    const victim=nearest(actor) || target;
+    if (!victim.alive) return;
+    const direction=unit(victim.x-actor.x,victim.z-actor.z);
+    defenseDash(actor,victim,special?15:7,{
+      type,damage:special?60:55,reduce:special?0:.2,series,
+      onEnd:()=>{
+        defenseArc(actor,direction,3.2,130,0xc095ff);
+        if (!index) {
+          hold(actor,.1);
+          schedule(actor,.1,()=>start(1));
+        } else if (special) {
+          hold(actor,.13);
+          schedule(actor,.13,()=>{
+            const current=nearest(actor);
+            const facing=current?unit(current.x-actor.x,current.z-actor.z):direction;
+            defenseFacing(actor,facing);
+            defenseArc(actor,facing,7,190,0xf780ea);
+            for (const other of actors)
+              if (other!==actor && oraHits(actor,other,facing,7,95))
+                defenseHit(actor,other,type,100,"melee",{rush:true,final:true,series});
+          });
+        }
+      }
+    });
+  };
+  start(0);
+}
+
+function hoshinaCounter(actor) {
+  actor.hoshinaGuardUntil=t+5;
+  defensePulse(actor,1.9,0xd1b1ff);
+}
+
+function consumeHoshinaCounter(hit) {
+  const {a:attacker,b:actor}=hit;
+  if (!defenseActive(actor,"hoshinaGuardUntil") || hit.n<=0 || actor.hp<=0 ||
+      attacker===actor || !actors.includes(attacker)) return;
+  actor.hoshinaGuardUntil=0;
+  hit.n=Math.round(hit.n*.5);
+  return attacker;
+}
+
+function triggerHoshinaCounter(actor,attacker) {
+  if (!attacker || !attacker.alive || actor.hp<=0) return;
+  // A counter interrupts a windup or rush and drops its pending actions.
+  events=events.filter(event=>event.a!==actor);
+  actor.dash=null;
+  actor.bleachDash=null;
+  actor.rootUntil=t;
+  const direction=unit(attacker.dx,attacker.dz);
+  const gap=actorRadius(actor)+actorRadius(attacker)+.18;
+  const point={x:attacker.x-direction.x*gap,z:attacker.z-direction.z*gap};
+  defensePulse(actor,1.6,0xd1b1ff);
+  defenseMotion(actor,point,.11,"counter",()=>{
+    const facing=unit(attacker.x-actor.x,attacker.z-actor.z);
+    defenseFacing(actor,facing);
+    defenseArc(actor,facing,4.1,125,0xf1c7ff);
+    defenseHit(actor,attacker,"HOSHINA_COUNTER",80);
+  });
+}
+
+function minaFire(actor,target,special=false) {
+  const type=special?"MINA_KERAUNOS":"MINA_CANNON";
+  const duration=special?.9:.4, halfWidth=special?4:1.45;
+  const origin={x:actor.x,z:actor.z};
+  const direction=unit(target.x-origin.x,target.z-origin.z);
+  defenseFacing(actor,direction);
+  hold(actor,duration);
+  actor.minaChargeUntil=t+duration;
+  const reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
+  defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0x7fdfff,true);
+  if (special) defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3,true);
+  schedule(actor,duration,()=>{
+    const obstacle=alchemyObstacle(actor,origin,direction,reach,false,true,true);
+    const length=obstacle?.distance ?? reach;
+    const endpoint={x:origin.x+direction.x*length,z:origin.z+direction.z*length};
+    defenseLine(origin,direction,length,halfWidth,.59,special?.38:.24,special?0xffc067:0x60cfff);
+    beam(origin.x,origin.z,endpoint.x,endpoint.z,0xfff4df,special?.23:.15,special?2.9:1.1);
+    defensePulse(origin,special?3.2:1.7,special?0xffca7d:0xadf3ff);
+    for (const victim of actors) {
+      if (victim===actor || !victim.alive) continue;
+      const x=victim.x-origin.x,z=victim.z-origin.z;
+      const along=x*direction.x+z*direction.z;
+      const across=Math.abs(x*direction.z-z*direction.x);
+      if (along<0 || along>length || across>halfWidth+actorRadius(victim)) continue;
+      defenseHit(actor,victim,type,special?(across<=1.55?245:135):90,"ranged",{final:true});
+    }
+  });
+}
+
+function minaRetreat(actor,target) {
+  const direction=unit(target.x-actor.x,target.z-actor.z);
+  const behind={x:actor.x-direction.x*6,z:actor.z-direction.z*6};
+  defenseDash(actor,behind,6,{type:"MINA_RETREAT"});
+  // Keep the firearm pointed forwards while the body retreats.
+  actor.minaFacing={...direction,until:t+.14};
+  for (let shot=0;shot<3;shot++) {
+    const fire=()=>{
+      const aim=target.alive?unit(target.x-actor.x,target.z-actor.z):direction;
+      actor.minaFacing={...aim,until:t+.12};
+      projectile(actor,actor.x,actor.z,{x:actor.x+aim.x,z:actor.z+aim.z},75,.4,42,35,0x95eaff);
+      defensePulse(actor,1,0xb7ecff,.18);
+    };
+    if (shot===0) fire();
+    else schedule(actor,shot*.037,fire);
+  }
+}
+
+function defenseArc(actor,direction,radius,degrees,color) {
+  if (headless || !world) return;
+  const sweep=degrees*Math.PI/180;
+  const geo=new THREE.RingGeometry(radius-.44,radius,28,1,-sweep/2,sweep);
+  const arc=duelPart(world,geo,color,actor.x,.34,actor.z,.8);
+  arc.rotation.set(-Math.PI/2,0,-Math.atan2(direction.z,direction.x));
+  effects.push({mesh:arc,life:.22,total:.22,kind:"defenseArc"});
+}
+
+function defenseLine(origin,direction,length,halfWidth,height,life,color,warning=false) {
+  if (headless || !world || length<=0) return;
+  const group=new THREE.Group();
+  group.position.set(origin.x,height,origin.z);
+  group.rotation.y=Math.atan2(direction.x,direction.z);
+  if (warning) {
+    for (const x of [-halfWidth,halfWidth])
+      duelPart(group,new THREE.BoxGeometry(.07,.035,length),color,x,0,length/2,.78);
+    duelPart(group,new THREE.BoxGeometry(halfWidth*2,.02,length),color,0,0,length/2,.16);
+  } else {
+    duelPart(group,new THREE.BoxGeometry(halfWidth*2,.32,length),color,0,0,length/2,.54);
+  }
+  world.add(group);
+  effects.push({mesh:group,life,total:life,kind:warning?"defenseAim":"defenseBeam"});
+}
+
+function defenseBox(group,color,x,y,z,w,h,d) {
+  return duelPart(group,new THREE.BoxGeometry(w,h,d),color,x,y,z);
+}
+
+function defenseOval(group,color,x,y,z,w,h,d,opacity=0) {
+  const part=duelPart(group,new THREE.SphereGeometry(1,14,10),color,x,y,z,opacity);
+  part.scale.set(w,h,d);
+  return part;
+}
+
+function defenseBlade(group,x,y,z,tilt) {
+  const blade=new THREE.Group();
+  blade.position.set(x,y,z);
+  blade.rotation.set(-.21,.12,tilt);
+  defenseBox(blade,0x252831,0,-.78,0,.15,.45,.17);
+  defenseBox(blade,0x293240,0,-.49,0,.40,.11,.23);
+  defenseBox(blade,0x535d6c,0,.18,0,.25,1.27,.115);
+  defenseBox(blade,0xc6d7e1,.12,.18,.014,.05,1.28,.09);
+  duelPart(blade,new THREE.ConeGeometry(.148,.32,4),0x9faabd,0,.95,0).scale.z=.44;
+  group.add(blade);
+}
+
+function defenseKaijuHead(group) {
+  const form=new THREE.Group();
+  form.name="kafka-kaiju-form";
+  defenseOval(form,0x212b31,0,.01,0,1.11,1.16,1.08);
+  for (const side of [-1,1]) {
+    const horn=duelPart(form,new THREE.ConeGeometry(.25,.84,6),0xe0e3d9,side*.49,1.05,.44);
+    horn.rotation.z=-side*.25;
+    const plate=defenseOval(form,0xd7dfda,side*.31,.25,.81,.39,.47,.32);
+    plate.rotation.z=side*.38;
+    defenseOval(form,0x12eee0,side*.32,.25,1.08,.105,.082,.025,.95);
+    const cheek=defenseBox(form,0xf0f1e6,side*.46,-.24,.89,.30,.32,.11);
+    cheek.rotation.z=side*.34;
+    defenseOval(form,0x263640,side*.81,-.61,.34,.46,.29,.52);
+    defenseBox(form,0x4affee,side*.66,-.65,.67,.065,.26,.024).rotation.z=side*.4;
+    for (let i=0;i<4;i++) {
+      const tooth=duelPart(form,new THREE.ConeGeometry(.067,.16,3),0xe8eee3,side*(.075+.105*i),-.40,.976);
+      tooth.rotation.z=Math.PI;
+    }
+  }
+  defenseOval(form,0x111a23,0,-.42,.83,.58,.19,.19);
+  defenseBox(form,0xe0e3dc,0,-.57,.90,.68,.14,.13);
+  defenseBox(form,0x53fff1,0,-.88,.64,.56,.065,.042);
+  group.add(form);
+  form.visible=false;
+  return form;
+}
+
+function defenseAvatar(actor,root,appearance,sphere) {
+  const avatar=new THREE.Group();
+  avatar.name="defense-fighter-avatar";
+  avatar.add(appearance,sphere);
+  root.add(avatar);
+  actor.defenseAvatar=avatar;
+  const {id}=actor.d;
+  if (id==="milio") {
+    const phase=defenseOval(root,0xffd18c,0,0,0,.94,.99,.94,.36);
+    phase.name="milio-phase-silhouette";
+    phase.visible=false;
+    actor.phaseAvatar=phase;
+    for (let i=0;i<4;i++) {
+      const flap=defenseBox(avatar,i%2?0xb92832:0xe84438,(i-1.5)*.39,-.32,-.76,.45,1.48,.09);
+      flap.rotation.set(.50,0,(i-1.5)*.18);
+    }
+    for (const side of [-1,1]) {
+      defenseOval(avatar,0xffb644,side*.69,-.43,.46,.34,.18,.27);
+      defenseBox(avatar,0x38c5a3,side*.51,-.69,.72,.31,.095,.08);
+    }
+    const chest=defenseBox(avatar,0xcf8b30,0,-.61,.86,.49,.25,.065);
+    chest.name="milio-chest-emblem";
+    for (let i=0;i<5;i++) defenseBox(avatar,0xffe9a1,(i-2)*.078,-.61,.90,.025,.14,.022);
+    return;
+  }
+
+  for (const side of [-1,1]) {
+    defenseOval(avatar,0xc3c9bc,side*.71,-.51,.42,.38,.18,.34).rotation.z=-side*.24;
+    defenseOval(avatar,0x65734c,side*.30,-.66,.74,.28,.22,.10);
+  }
+  defenseBox(avatar,0xabb4b3,0,-.70,.845,.045,.41,.029);
+  if (id==="kafka") {
+    actor.kaijuAvatar=defenseKaijuHead(root);
+    const fist=new THREE.Group();
+    fist.name="kafka-kaiju-fist";
+    fist.position.set(.86,-.37,.85);
+    defenseOval(fist,0x273943,0,0,0,.43,.31,.41);
+    for(let i=0;i<3;i++) defenseBox(fist,0x42fbe4,(i-1)*.15,.19,.30,.075,.135,.15);
+    root.add(fist);
+    actor.kaijuFist=fist;
+    fist.visible=false;
+  }
+  if (id==="kikoru") {
+    for (const side of [-1,1]) {
+      const tail=defenseOval(avatar,0xefcc72,side*1.03,.35,-.37,.29,.88,.32);
+      tail.rotation.z=-side*.67;
+      defenseOval(avatar,0xa0bc87,side*.92,.60,-.25,.17,.13,.15);
+    }
+    const axe=new THREE.Group();
+    axe.name="kikoru-axe";
+    axe.position.set(.92,-.24,-.31);
+    axe.rotation.z=-.35;
+    defenseBox(axe,0x333a33,0,0,0,.14,2.4,.13);
+    const head=duelPart(axe,new THREE.CylinderGeometry(.56,.48,.21,5,1,false,-.32,4.55),0x73876e,.13,.86,0);
+    head.rotation.x=Math.PI/2;
+    defenseBox(axe,0xb5df94,.54,.87,.06,.08,.57,.11);
+    avatar.add(axe);
+  }
+  if (id==="hoshina") {
+    defenseBlade(avatar,-.85,-.22,-.29,-.47);
+    defenseBlade(avatar,.85,-.22,-.29,.47);
+    const tail=new THREE.Group();
+    tail.name="hoshina-numbers-ten-tail";
+    for (let i=0;i<6;i++) {
+      const x=Math.sin(i*.42)*.85,z=-.65-i*.25,y=-.27+i*.10;
+      defenseOval(tail,0x35263c,x,y,z,.19-i*.018,.17-i*.011,.23);
+      defenseBox(tail,0xd47afd,x,y+.11,z,.08,.055,.12);
+    }
+    root.add(tail);
+    tail.visible=false;
+    actor.hoshinaTail=tail;
+  }
+  if (id==="mina") {
+    const pony=defenseOval(avatar,0x181925,0,.13,-1.02,.32,.79,.30);
+    pony.rotation.x=.54;
+    defenseBox(avatar,0xd1d9da,-.38,.49,.96,.17,.073,.04).rotation.z=-.42;
+    const cannon=new THREE.Group();
+    cannon.name="mina-artillery";
+    cannon.position.set(.86,-.39,-.12);
+    defenseBox(cannon,0x424b45,0,0,.31,.32,.39,1.76);
+    defenseBox(cannon,0x657169,0,.23,.01,.42,.12,1.11);
+    defenseBox(cannon,0x242d2b,0,0,1.19,.42,.48,.26);
+    const emitter=defenseBox(cannon,0x91ddff,0,0,1.334,.22,.19,.032);
+    avatar.add(cannon);
+    actor.minaCannon=cannon;
+    actor.minaEmitter=emitter;
+  }
+}
+
+function updateDefenseAvatar(actor) {
+  const height=defenseMotionHeight(actor);
+  if (height!==0) {
+    actor.mesh.position.y+=height;
+    if (actor.groundShadow) actor.groundShadow.position.y=(.06-actor.mesh.position.y)/actor.mesh.scale.y;
+  }
+  const avatar=actor.defenseAvatar;
+  if (!avatar) return;
+  const facing=actor.minaFacing?.until>t ? actor.minaFacing : actor;
+  actor.mesh.rotation.y=Math.atan2(facing.dx ?? facing.x,facing.dz ?? facing.z);
+  const phased=milioPhasing(actor);
+  const kaiju=defenseActive(actor,"kaijuUntil");
+  avatar.visible=!phased && !kaiju;
+  if (actor.phaseAvatar) actor.phaseAvatar.visible=phased;
+  if (actor.kaijuAvatar) actor.kaijuAvatar.visible=kaiju;
+  if (actor.kaijuFist) actor.kaijuFist.visible=defenseActive(actor,"kaijuFistUntil");
+  if (actor.hoshinaTail) {
+    actor.hoshinaTail.visible=defenseActive(actor,"hoshinaTailUntil");
+    actor.hoshinaTail.rotation.y=.44*Math.sin(t*18);
+  }
+  if (actor.minaEmitter) {
+    const charging=defenseActive(actor,"minaChargeUntil");
+    actor.minaEmitter.material.color.setHex(charging?0xffc580:0x91ddff);
+    actor.minaCannon.rotation.x=charging?-.08:0;
+  }
+}
+
 // The default roster is organized for selection. New additions have their own release order.
-const RECENT_FIGHTER_IDS = ["renji", "uryu", "buggy", "sanji", "yuugi", "kaiba", "gaara", "shikamaru", "higuruma", "kenpachi", "aki_gun_fiend", "scar", "roy", "alphonse", "edward",
+const RECENT_FIGHTER_IDS = [...DEFENSE_IDS,"renji", "uryu", "buggy", "sanji", "yuugi", "kaiba", "gaara", "shikamaru", "higuruma", "kenpachi", "aki_gun_fiend", "scar", "roy", "alphonse", "edward",
   "metal_bat", "child_emperor", "silver_fang", "tatsumaki", "genos", "saitama",
   "toshiro", "aizen", "byakuya", "ichigo", "bucciarati", "dio", "kakashi", "pain"];
-const NEW_FIGHTER_IDS = new Set(["renji", "uryu", "buggy", "sanji"]);
+const NEW_FIGHTER_IDS = DEFENSE_IDS;
 for (const character of CHARACTER_DATABASE) Object.assign(character, character.id === "dio" ? CHARACTER_TAGS.jotaro : CHARACTER_TAGS[character.id]);
 
 const STARTING_MP_PERCENT = Object.freeze({
@@ -28412,6 +29157,7 @@ const STARTING_MP_PERCENT = Object.freeze({
   saitama: 10, genos: 40, tatsumaki: 10, silver_fang: 30, child_emperor: 40, metal_bat: 10,
   edward: 40, alphonse: 20, roy: 30, scar: 30,
   yuugi: 30, kaiba: 30,
+  milio:30, kafka:25, kikoru:35, hoshina:30, mina:40,
 });
 
 let rosterGrouping = "type";
@@ -28420,6 +29166,11 @@ const sharedTextures = new WeakSet(),
   disposedResources = new WeakSet();
 
 const AVATAR_STYLES = {
+  milio:{skin:0xecc4a2,hair:0xf0b860,tip:0xffe6a0,cut:"spiky",coat:0xf0f3f2,pattern:"zip",accent:0x258793,collar:0xbd403b},
+  kafka:{skin:0xd6a386,hair:0x25262c,tip:0x495057,cut:"spiky",coat:0x252930,pattern:"zip",accent:0x667052,collar:0x353b3a},
+  kikoru:{skin:0xefd1aa,hair:0xe0b65a,tip:0xffe498,cut:"swept",coat:0x303331,pattern:"zip",accent:0x9eac5f,collar:0x434742},
+  hoshina:{skin:0xe9c6a7,hair:0x2a2639,tip:0x494057,cut:"bob",coat:0x292b34,pattern:"zip",accent:0x687452,collar:0x3d3c43},
+  mina:{skin:0xecc7a7,hair:0x222226,tip:0x41423e,cut:"parted",coat:0x292e2e,pattern:"zip",accent:0x718953,collar:0x454b44},
   buggy: {skin:0xecc097,hair:0x17699f,tip:0x35b7ea,cut:"wild",coat:0xa62037,pattern:"open",accent:0xffd28c,collar:0x902036},
   sanji: {skin:0xeec397,hair:0xe6b44f,tip:0xffe491,cut:"swept",coat:0x173758,pattern:"suit",accent:0xe5b66b,collar:0x295f91},
   uryu: {skin:0xecc9af,hair:0x192133,tip:0x465d78,cut:"parted",coat:0xf0f4ff,pattern:"zip",accent:0x579ceb,collar:0xffffff},
@@ -29267,7 +30018,7 @@ function advanceDioTimeStop(dt) {
   }
   if (state.elapsed >= 4) {
     clearTimeStop();
-    for (const [target,damage] of state.damage) withDamageOrigin(state.a,true,()=>hurt(state.a,target,damage));
+    for (const [target,damage] of state.damage) withDamageOrigin(state.a,true,()=>hurt(state.a,target,damage, "skill", 0, {statsSkill:"DIO_THE_WORLD"}));
     state.a.busy=t;settle();
   }
 }
@@ -29412,7 +30163,7 @@ function advanceZipHand(shot,dt) {
   }
   if(hit) {
     const before=damageQueue.length;
-    hurt(a,hit,30);
+    hurt(a,hit,30, "skill", 0, {statsSkill:"ARI_RUSH"});
     if(damageQueue.length>before)damageQueue[damageQueue.length-1].zipHandHit=()=>{
       playVoiceAsset("ARI_RUSH",a);
       if(hit.hp>0)startZipGrab(a,hit,shot.specialSource);
@@ -29453,7 +30204,7 @@ function advanceZipGrab(b,dt) {
   b.x+=d.x*travel;b.z+=d.z*travel;
   if(gap-travel<=1e-8) {
     b.zipGrab=null;
-    withDamageOrigin(a,grab.specialSource,()=>zipRush(a,b));
+    withDamageOrigin(a,grab.specialSource,()=>zipRush(a,b),undefined,"ARI_RUSH");
   }
   return true;
 }
@@ -29621,7 +30372,7 @@ function runBleachTests(){return withIsolatedBattleState(()=>{
 });}
 
 
-function advanceKageBlade(s,dt){if(!s.a.alive)return removeMesh(s.mesh),false;const b=s.target?.alive?s.target:nearest(s.a);if(b){const q=Math.atan2(s.dz,s.dx),want=Math.atan2(b.z-s.z,b.x-s.x),diff=Math.atan2(Math.sin(want-q),Math.cos(want-q)),next=q+Math.max(-dt,Math.min(dt,diff));s.dx=Math.cos(next);s.dz=Math.sin(next);}const ox=s.x,oz=s.z,n=Math.min(s.remaining,50*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;const hit=opmProjectileActors().find(b=>b!==s.a&&bleachLive(b)&&segmentDistance(b.x,b.z,ox,oz,s.x,s.z)<=3+actorRadius(b));if(hit){if(reflectAlchemyShot(s,hit,ox,oz,40,3,50,"special"))return false;const count=s.cast.counts.get(hit)||0;if(count<4){s.cast.counts.set(hit,count+1);hurt(s.a,hit,40,'special');}for(const enemy of opmProjectileActors())if(enemy!==s.a&&bleachLive(enemy)&&!s.cast.burst.has(enemy)&&Math.hypot(enemy.x-s.x,enemy.z-s.z)<=3+actorRadius(enemy)){s.cast.burst.add(enemy);hurt(s.a,enemy,60,'special');}bleachPetals(s.x,s.z,3,.5);removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.5,s.z);s.mesh.rotation.y=Math.atan2(s.dx,s.dz);}if(s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2){removeMesh(s.mesh);return false;}return true;}
+function advanceKageBlade(s,dt){if(!s.a.alive)return removeMesh(s.mesh),false;const b=s.target?.alive?s.target:nearest(s.a);if(b){const q=Math.atan2(s.dz,s.dx),want=Math.atan2(b.z-s.z,b.x-s.x),diff=Math.atan2(Math.sin(want-q),Math.cos(want-q)),next=q+Math.max(-dt,Math.min(dt,diff));s.dx=Math.cos(next);s.dz=Math.sin(next);}const ox=s.x,oz=s.z,n=Math.min(s.remaining,50*dt);s.x+=s.dx*n;s.z+=s.dz*n;s.remaining-=n;const hit=opmProjectileActors().find(b=>b!==s.a&&bleachLive(b)&&segmentDistance(b.x,b.z,ox,oz,s.x,s.z)<=3+actorRadius(b));if(hit){if(reflectAlchemyShot(s,hit,ox,oz,40,3,50,"special"))return false;const count=s.cast.counts.get(hit)||0;if(count<4){s.cast.counts.set(hit,count+1);hurt(s.a,hit,40,'special', 0, {statsSkill:"SENBONZAKURA_KAGEYOSHI"});}for(const enemy of opmProjectileActors())if(enemy!==s.a&&bleachLive(enemy)&&!s.cast.burst.has(enemy)&&Math.hypot(enemy.x-s.x,enemy.z-s.z)<=3+actorRadius(enemy)){s.cast.burst.add(enemy);hurt(s.a,enemy,60,'special', 0, {statsSkill:"SENBONZAKURA_KAGEYOSHI"});}bleachPetals(s.x,s.z,3,.5);removeMesh(s.mesh);return false;}if(s.mesh){s.mesh.position.set(s.x,1.5,s.z);s.mesh.rotation.y=Math.atan2(s.dx,s.dz);}if(s.remaining<=0||Math.abs(s.x)>W/2||Math.abs(s.z)>H/2){removeMesh(s.mesh);return false;}return true;}
 function coffinTrackingVisual(f){if(headless)return;const g=new THREE.Group();g.name='aizen-tracking-coffin';const ring=bleachPart(g,new THREE.RingGeometry(3.9,4,48),0xa77aff,0,.06,0,.7);ring.rotation.x=-Math.PI/2;const box=bleachPart(g,new THREE.BoxGeometry(6,7,6),0x060310,0,3.5,0,.7),spears=new THREE.Group();for(let i=0;i<12;i++){const q=i*Math.PI/6,m=bleachPart(spears,new THREE.ConeGeometry(.18,8,4),0x9d78c4,Math.cos(q)*4,1+i%4,Math.sin(q)*4);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(-Math.cos(q),0,-Math.sin(q)));}g.add(spears);bleachEffect(g,2.3,()=>{g.position.set(f.x,0,f.z);ring.visible=!f.captured;box.visible=f.captured;spears.visible=t>=f.until-.15;});}
 for(const d of CHARACTER_DATABASE){if(d.id==='toshiro')d.maxMp=77;if(d.id==='ichigo')d.speed=42;if(d.id==='aizen')d.maxMp=85;}
 const bleachUpdatedDescriptions={
@@ -29686,7 +30437,7 @@ function akiGunFirstHit(actor, direction, range) {
   let first = null;
   let entry = range;
   for (const target of actors) {
-    if (target === actor || !target.alive || kamuiHidden(target) || opmPhasing(target)) continue;
+    if (target === actor || !target.alive || kamuiHidden(target) || opmPhasing(target) || milioPhasing(target)) continue;
     const dx = target.x - actor.x, dz = target.z - actor.z;
     const along = dx * direction.x + dz * direction.z;
     const across = dx * direction.z - dz * direction.x;
@@ -29735,7 +30486,7 @@ function fireAkiGun(actor, attack, range, aimed = false) {
   const gunHeadshot = aimed && Math.random() < .25;
   const damage = aimed ? (gunHeadshot ? 360 : 180) : 75;
   withAlchemyHitMode("ranged", () => hurt(actor, target, damage,
-    aimed ? "special" : "skill", 0, { gunHeadshot }));
+    aimed ? "special" : "skill", 0, { gunHeadshot, statsSkill:aimed ? "AKI_AIMED_SHOT" : "AKI_RAPID_FIRE" }));
 }
 
 function showAkiGunHeadshot(actor, target) {
@@ -29812,14 +30563,14 @@ function updateAkiGunAttacks() {
     }
     for (const target of actors) {
       if (target === actor || !target.alive) continue;
-      const inside = canFire && !kamuiHidden(target) && !opmPhasing(target) &&
+      const inside = canFire && !kamuiHidden(target) && !opmPhasing(target) && !milioPhasing(target) &&
         akiBarrageContains(actor, direction, target);
       const exposure = attack.exposure.get(target) || { total: 0, dealt: 0 };
       if (inside) exposure.total += elapsed;
       const raw = Math.min(2 * AKI_BARRAGE_RATE, Math.floor(exposure.total * AKI_BARRAGE_RATE + 1e-6));
       const due = raw - exposure.dealt;
       if (due > 0 && (due >= 12 || ended || !inside)) {
-        withAlchemyHitMode("ranged", () => hurt(actor, target, due, "skill", 0, { rush: true }));
+        withAlchemyHitMode("ranged", () => hurt(actor, target, due, "skill", 0, { rush: true, statsSkill:"AKI_BARRAGE" }));
         exposure.dealt = raw;
       }
       if (exposure.total > 0) attack.exposure.set(target, exposure);
@@ -29976,6 +30727,7 @@ function addAkiGunFiendDetails(group) {
 }
 
 const PRACTICE_VARIANTS={
+ ...Object.fromEntries(DEFENSE_ROSTER.map(({id,types})=>[id,types])),
  buggy:["BUGGY_BALL","BUGGY_ESCAPE","BUGGY_FESTIVAL"],
  sanji:["SANJI_MUTTON","SANJI_PARTY","SANJI_DIABLE","SANJI_IFRIT"],
  uryu:["URYU_SPRENGER","URYU_REGEN","URYU_ANTITHESIS"],
@@ -30043,7 +30795,7 @@ const PRACTICE_EXPLANATIONS={
  HEAVEN_ICE_WALL:'얼음벽을 세웁니다. 벽에 닿은 더미를 공격하고 이동을 막습니다.',FLASHFIRE_FIST:'불꽃 주먹을 날려 더미를 공격합니다.',FLASHFREEZE_HEATWAVE:'얼음길을 만든 뒤 강한 열파를 쏩니다. 두 공격에 각각 피해가 있습니다.',FIERCE_WINGS_SHOT:'깃털을 쏘아 더미를 공격합니다. 돌아온 깃털로 회복합니다.',FIERCE_WINGS_SWORD:'깃털 검을 들어 방어와 충돌 공격을 강화합니다.',FIERCE_WINGS_BARRAGE:'여러 깃털이 더미를 포위해 공격하고 움직임을 약화합니다.',
  AKI_FOX:'여우가 나타나 더미를 물어 피해를 주고 잠시 붙잡습니다.',AKI_FUTURE:'다음 직접 공격을 회피하고 반격합니다. 더미와 부딪혀 회피 연출을 확인하세요.',AKI_CURSE:'못을 맞혀 저주를 누적합니다. 저주가 완성되면 늦게 강한 피해가 들어갑니다.',POWER_WEAPON:'피로 만든 무기로 더미를 공격합니다. 남은 핏자국에 닿으면 회복합니다.',POWER_BLOOD:'피를 조작해 더미를 공격하고 피의 효과를 남깁니다.',REZE_SHOT:'불씨를 날립니다. 직접 적중과 주변 폭발이 각각 피해를 줍니다.',REZE_DASH:'폭발하며 돌진해 더미를 공격합니다.',REZE_BOMB:'잠시 힘을 모은 뒤 큰 폭발로 주변 더미를 공격합니다.',
  SHINRA_TENSEI:'접근 후 충격파로 더미를 밀쳐냅니다. 밀린 더미가 벽에 닿으면 추가 피해를 줍니다.',BANSHO_TENIN:'더미를 끌어당겨 가까이 도착하면 흑봉으로 추가 공격합니다.',CHIBAKU_TENSEI:'중력 핵으로 더미를 끌어당깁니다. 마지막 중심에 있는 더미를 가두며 피해를 줍니다.',RAIKIRI:'번개를 두르고 더미를 향해 돌진합니다. 처음 맞은 더미에 피해를 줍니다.',LIGHTNING_CLONE:'번개 분신을 남기고 이동합니다. 분신에 닿은 더미에 피해를 줍니다.',KAMUI:'잠시 사라졌다가 더미 뒤에 나타나 돌진으로 공격합니다.',
- GETSUGA:'초승달 검기를 날립니다. 중심에 맞으면 130, 가장자리에 맞으면 85 피해를 한 번 줍니다.',ICHIGO_SHUNPO:'더미 옆으로 순간 이동해 베어 115 피해를 줍니다. 너무 멀면 이동이 닿지 않을 수 있습니다.',TENSA_ZANGETSU:'8초 동안 이동이 빨라지고 충돌 피해가 20 증가합니다. 일반기는 검붉은 월아천충으로 바뀝니다.',BLACK_GETSUGA:'변신 상태의 검기입니다. 중심은 190, 가장자리는 130 피해를 한 번 줍니다.',
+ GETSUGA:'초승달 검기를 날립니다. 중심에 맞으면 130, 가장자리에 맞으면 85 피해를 한 번 줍니다.',ICHIGO_SHUNPO:'더미 옆으로 순간 이동해 베어 115 피해를 줍니다. 너무 멀면 이동이 닿지 않을 수 있습니다.',TENSA_ZANGETSU:'8초 동안 이동이 빨라지고 충돌 피해가 20 증가합니다. 일반기는 검붉은 월아천충으로 바뀝니다.',BLACK_GETSUGA:'변신 상태의 검기입니다. 중심은 190, 가장자리는 140 피해를 한 번 줍니다.',
  SENBONZAKURA:'꽃잎 칼날이 더미를 잠시 추적합니다. 1회 34, 최대 5번 맞아 총 170 피해를 줍니다.',BYAKUYA_SHUNPO:'더미 옆으로 순간 이동한 뒤 한 번 베어 110 피해를 줍니다.',SENBONZAKURA_KAGEYOSHI:'큰 칼날 네 개가 날아갑니다. 칼날마다 40 피해, 꽃잎 폭발 60 피해를 더해 최대 220 피해를 줍니다.',
  KYOKA_SUIGETSU:'직접 공격 한 번을 환영이 대신 맞습니다. 환영 위치로 돌아가 100 피해로 반격합니다. 더미와 부딪혀 확인하세요.',SOKATSUI:'푸른 화염을 쏩니다. 폭발 범위에 든 더미에 125 피해를 한 번 줍니다.',KUROHITSUGI:'1초간 더미를 쫓아간 관이 자리를 고정합니다. 안에 든 더미를 1초 가둔 뒤 240 피해를 줍니다.',
  RYOJIN_HYOHEKI:'빙벽에 처음 닿으면 80 피해와 잠깐 정지. 다시 닿으면 15 피해와 더 짧은 정지를 줍니다.',TENSO_JURIN:'자신을 따르던 눈보라가 닿은 더미를 추적합니다. 안에 있으면 1초마다 30, 최대 150 피해를 줍니다.',RYUSENKA:'돌진으로 60 피해를 주고 1초 뒤 얼음을 깨 180 피해를 더합니다. 눈보라에 맞는 더미에는 마무리가 240으로 증가합니다.',
@@ -30071,8 +30823,15 @@ Object.assign(PRACTICE_VARIANTS,{
     "SCAR_CHAIN"
   ]
 });
-function practiceName(type,character){return NEWCOMER_SKILLS[type]?.[0]||DUEL_SUMMONS[type]?.name||SAND_SHADOW_NAMES[type]||HIGURUMA_NAMES[type]||OPM_NAMES[type]||PRACTICE_LABELS[type]||BLEACH_NAMES[type]||TENGEN_NAMES[type]||GIYU_NAMES[type]||RENGOKU_NAMES[type]||TEACH_NAMES[type]||MAGMA_NAMES[type]||BORSALINO_NAMES[type]||KUZAN_NAMES[type]||KIRA_NAMES[type]||HEALTH_SKILL_NAMES[type]||MEGUMI_SUMMON_NAMES[type]||EMPEROR_NAMES[type]||(character.skillType===type?character.skill:character.specialType===type?character.special:type);}
+function practiceName(type,character){return DEFENSE_SKILLS[type]?.[0]||NEWCOMER_SKILLS[type]?.[0]||DUEL_SUMMONS[type]?.name||SAND_SHADOW_NAMES[type]||HIGURUMA_NAMES[type]||OPM_NAMES[type]||PRACTICE_LABELS[type]||BLEACH_NAMES[type]||TENGEN_NAMES[type]||GIYU_NAMES[type]||RENGOKU_NAMES[type]||TEACH_NAMES[type]||MAGMA_NAMES[type]||BORSALINO_NAMES[type]||KUZAN_NAMES[type]||KIRA_NAMES[type]||HEALTH_SKILL_NAMES[type]||MEGUMI_SUMMON_NAMES[type]||EMPEROR_NAMES[type]||(character.skillType===type?character.skill:character.specialType===type?character.special:type);}
 function practiceSkills(character){const list=PRACTICE_VARIANTS[character.id]||[character.skillType,character.specialType];return list.map(type=>({type,name:practiceName(type,character),special:NEWCOMER_SKILLS[type]?.[3]===true||type===character.specialType||['MILLENNIUM_EMPEROR_NOVA','HINOKAMI_ENBU','THUNDERCLAP_SIXFOLD','KURAMA_RASENGAN','AMATERASU','BLUE_SILVER_CHAOTIC_AFTERGLOW','MAHORAGA','HOLLOW_PURPLE','BOUND_MAN','GEAR_FIFTH','NIKA_GIGANT','SHEER_HEART_ATTACK','BITES_THE_DUST','ICE_BALL','AMA_NO_MURAKUMO','RYUSEI_KAZAN','GURASHI','RENGOKU','DEAD_CALM','STRING_PERFORMANCE','DAYTIME_TIGER','NIGHT_GUY','FROZEN_WATER_LILY_BODHISATTVA','BLACK_ANKH_BALDUR','DETROIT_120','FLASHFREEZE_HEATWAVE','FIERCE_WINGS_BARRAGE','AKI_CURSE','REZE_BOMB','CHIBAKU_TENSEI','KAMUI','TENSA_ZANGETSU','SENBONZAKURA_KAGEYOSHI','KUROHITSUGI','RYUSENKA','ARRIVEDERCI'].includes(type)}));}
+let skillNamesByType;
+function rosterSkillName(type) {
+  skillNamesByType ??= new Map(CHARACTER_DATABASE.flatMap(character =>
+    practiceSkills(character).map(({type,name}) => [type,name])));
+  return skillNamesByType.get(type);
+}
+
 function practiceSetup(index,preserve=false){
  const old=actors[0],previous=preserve&&old?.d===CHARACTER_DATABASE[index]?{bankai:Math.max(0,(old.bankaiUntil||0)-t),nika:old.nika,gates:old.guyGates,buff:old.buff?.until>t?{...old.buff,until:old.buff.until-t}:null}:null;
  clearWorld();practiceIndex=index;practiceUiSignature='';
@@ -30172,19 +30931,34 @@ const PRACTICE_DAMAGE_DETAILS = {...{
   "SCAR_ARM": "상대를 약하게 추적하며 거리 18·피해 판정 폭 6으로 돌진해 첫 상대에게 120 피해를 줍니다. 파괴 가능한 설치물은 충돌 피해 없이 부수고 남은 거리만큼 계속 돌진합니다.",
   "SCAR_GROUND": "전방 거리 20·폭 8의 지면을 연쇄 분해합니다. 대상당 최대 100 피해와 0.5초 이동 정지.",
   "SCAR_CHAIN": "0.45초 준비 후 거리 21·피해 판정 폭 6으로 돌진하며 받는 피해가 25% 감소합니다. 첫 상대에게 150 피해를 주고 벽까지 끌고 갑니다. 벽 충돌 시 90 피해와 0.5초 정지."
-},NORMAL_PUNCH:`직접 펀치${OPM_BALANCE.normalPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.normalPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.normalPunch.impulse}으로 밀쳐냅니다.`,CONSECUTIVE_PUNCHES:"18×10회, 최대180 피해입니다.",SERIOUS_PUNCH:`직접 펀치${OPM_BALANCE.seriousPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.seriousPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.seriousPunch.impulse}으로 밀쳐냅니다.`,INCINERATION:`폭3→${OPM_BALANCE.incineration.width}·길이${OPM_BALANCE.incineration.reach}의 빔${OPM_BALANCE.incineration.damage} 피해입니다.`,MACHINEGUN_BLOW:`${OPM_BALANCE.machinegun.damage}×${OPM_BALANCE.machinegun.hits}회, 최대${OPM_BALANCE.machinegun.damage*OPM_BALANCE.machinegun.hits} 피해입니다.`,INCINERATION_UPGRADE:`후퇴${OPM_BALANCE.upgradedIncineration.retreat} 후 폭3→${OPM_BALANCE.upgradedIncineration.width}·길이${OPM_BALANCE.upgradedIncineration.reach}의 빔${OPM_BALANCE.upgradedIncineration.damage} 피해입니다.`,PSYCHIC_THROW:"돌35×6개, 최대210 피해입니다.",PSYCHIC_SPEED:"6초간 관통할 때마다40 피해. 몸과 투사체는 통과하고 빔·설치형·지속 피해는 받습니다.",PSYCHOKINESIS:"6초간 적 벽 충돌당15,2초 후 중앙 반경12 운석170입니다.",BANG_ASSAULT:`돌진당${OPM_BALANCE.bangAssault.damage}, 대상당 최대${OPM_BALANCE.bangAssault.maxHits}회 ${OPM_BALANCE.bangAssault.damage*OPM_BALANCE.bangAssault.maxHits} 피해입니다.`,BANG_WALL_ART:"10초간 벽 충돌3회까지25 관통 돌진37입니다.",BANG_GUARD:"8초간 초당HP·MP10 회복, 기본 충돌·스킬 피해20% 증가입니다.",ROBOT_ARMS:`${OPM_BALANCE.robotArms.duration}초간 반경${OPM_BALANCE.robotArms.radius}. 진입·재진입 및 체류 ${OPM_BALANCE.robotArms.repeat}초마다 ${OPM_BALANCE.robotArms.damage} 피해입니다.`,OCTOPUS_TANK:`${OPM_BALANCE.octopusTank.duration}초 설치. ${OPM_BALANCE.octopusTank.interval}초마다 유도 미사일${OPM_BALANCE.octopusTank.damage}를 발사합니다.`,BRAVE_GIANT:"2초 무적 조립 후10초 탑승. HP200 회복·피해감소20%·MP회복2배·SP최대80입니다.",DELTA_SCALE_SABER:`거리${OPM_BALANCE.deltaSaber.dash} 돌진 충돌${OPM_BALANCE.deltaSaber.collision} / 전방 반경${OPM_BALANCE.deltaSaber.reach}·${OPM_BALANCE.deltaSaber.halfAngle*2}도 검기${OPM_BALANCE.deltaSaber.slash}. 대상당 1회 피해입니다.`,MILLENNIUM_EMPEROR_NOVA:`${OPM_BALANCE.nova.charge}초 무적 준비 후 폭${OPM_BALANCE.nova.width}·벽까지 이어지는 초록 빔${OPM_BALANCE.nova.damage}입니다.`,BAT_SLAM:"돌진 충돌50, 수직으로 날린 뒤 벽에 충돌하면50 추가 피해(1회)입니다.",BAT_BARRAGE:"6초간 기본 충돌 피해25 증가입니다.",BAT_DRAGON:`약하게 추적하며 거리${OPM_BALANCE.batDragon.dash} 돌진 후 ${OPM_BALANCE.batDragon.hold}초 붙잡기. 총${OPM_BALANCE.batDragon.damage}+기백 중첩당${OPM_BALANCE.batDragon.perStack}, 최대${OPM_BALANCE.batDragon.damage+OPM_BALANCE.batDragon.perStack*OPM_BALANCE.spirit.cap}입니다.`,"WATER_SLASH": "주변을 한 번 베어 170 피해를 줍니다. 같은 기술로 같은 대상에게 추가 피해는 없습니다.", "BURNING_BONES": "불꽃 돌진이나 앞쪽 검기에 맞으면 160 피해. 두 판정이 겹쳐도 대상당 1회입니다.", "HINOKAMI_ENBU": "돌진 200 + 마지막 원형 검기 100. 둘 다 맞으면 총 300 피해입니다.", "THUNDERCLAP_FLASH": "돌진 경로에 맞으면 165 피해를 1회 줍니다.", "THUNDER_GOD": "번개 돌진에 맞으면 195 피해를 1회 줍니다.", "THUNDERCLAP_SIXFOLD": "돌진 1회당 70 피해. 6회 모두 맞으면 최대 420입니다.", "BEAST_FANG_SLASH": "주변 베기 1회당 100, 2회 모두 맞으면 총 200입니다.", "BEAST_SPATIAL_RAMPAGE": "주변 베기 80 × 4회 = 최대 320. 강화 중 충돌 피해는 1회당 110입니다.", "RASENGAN_AURA": "다음 충돌에 나선환 80 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SAGE_RASENSHURIKEN": "나선수리검 110 피해 1회. 강화 중 충돌 피해는 1회당 72입니다.", "KURAMA_RASENGAN": "나선환 투사체가 160 피해를 줍니다. 5초간 충돌 피해가 기본값보다 15 증가합니다.", "CHIDORI_AURA": "다음 충돌에 치도리 60 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SUSANOO": "주변 공격 75 × 3회 = 최대 225. 5초간 받는 피해도 50% 줄어듭니다.", "AMATERASU": "매초 지속 피해를 줍니다. 흑염 1중첩 4, 2중첩 11, 3중첩 18이며 중첩마다 초당 7씩 증가합니다.", "GUM_GUM_GATLING": "주먹 1회당 30, 5회 모두 맞으면 최대 150입니다.", "GEAR_THIRD_GIANT_PISTOL": "거대한 주먹 110 × 2회 = 최대 220입니다.", "DESTRUCTIVE_DEATH_AIR_TYPE": "충격파 1개당 50. 같은 대상은 최대 3번 맞아 총 150 피해를 받습니다.", "COMPASS_NEEDLE_DISORDER": "주변 충격파 25 × 4회 = 100. 돌진 70 × 3회 = 210. 모두 맞으면 최대 310입니다.", "BLUE_SILVER_CHAOTIC_AFTERGLOW": "전방 연타 1회당 25, 10회 모두 맞으면 총 250입니다.", "CHAINSAW_RUSH": "돌진 적중 70. 출혈은 초당 3씩 3초간 추가됩니다. 연속 접촉 시 출혈 시간이 갱신됩니다.", "SHARK_RIDER": "충돌 1회당 90, 대상당 최대 4회로 직접 피해는 최대 360. 적중하면 출혈 피해가 추가됩니다.", "SMASH_KICK": "공기탄 45 × 4발 = 최대 180입니다. 각 탄환을 맞아야 피해가 들어갑니다.", "DELAWARE_SMASH": "길게 뻗는 충격파에 맞으면 140 피해를 1회 줍니다.", "BLACK_FLASH": "다음 충돌 피해가 2배가 됩니다. 적중하면 강화가 소모되며 중첩되지 않습니다.", "MALEVOLENT_SHRINE": "검기에 맞으면 170 피해. 검기 여러 개가 겹쳐도 같은 대상은 1회만 맞습니다.", "BOOGIE_WOOGIE": "위치 교환 경로의 잔상 110 × 3회 = 최대 330입니다. 이동 거리가 없으면 피해도 없습니다.", "BOOGIE_BLACK_FLASH": "잔상 1회당 90, 같은 대상 최대 4회로 총 360입니다.", "DIVINE_DOG": "옥견 두 마리가 각각 접촉할 때마다 30 피해를 줍니다. 다시 닿으면 재공격할 수 있습니다.", "NUE": "접촉 피해 30, 번개 1회당 25. 번개는 1.5초 간격으로 공격합니다.", "RABBIT_ESCAPE": "토끼 한 마리가 접촉할 때 12 피해. 여러 토끼에 맞으면 각각 합산됩니다.", "MAHORAGA": "일반 접촉 70, 돌진 적중 90. 재접촉과 다음 돌진은 다시 피해를 줄 수 있습니다.", "COPY_TECHNIQUE": "모방한 기술의 피해 방식을 따릅니다. 연습 더미에게서는 물의 호흡을 모방해 기본 170 피해를 줍니다.", "RIKA_MANIFESTATION": "리카의 빔은 대상당 150 피해 1회. 6초간 본인의 일반 기술·충돌 피해가 10% 증가합니다.", "SHUTTER_RUSH": "닫히는 셔터 범위에 있으면 80 피해를 1회 줍니다.", "IDLE_DEATH_GAMBLE": "직접 피해는 없습니다. 대박 중 충돌 피해가 15 증가하고, 6초간 초당 HP 50을 회복합니다.", "PURGATORY_ONIGIRI": "검기 1개당 70 피해. 세 갈래 검기가 각각 적중해야 피해가 합산됩니다.", "ASURA": "돌진 또는 전방 검기에 맞으면 180 피해. 같은 대상은 1회만 피해를 받습니다.", "EXPLOSION_DRIVE": "출발 폭발 60 + 돌진 90. 둘 다 맞으면 총 150입니다.", "HOWITZER_IMPACT": "돌진 끝의 큰 폭발에 맞으면 250 피해를 1회 줍니다.", "ORA_RUSH": "주먹 23 × 8회 = 최대 184입니다. 공격 범위에 들어온 타격만 적용됩니다.", "THE_WORLD": "시간정지 중 주먹 25 × 9회 = 최대 225. 정지 중 누적한 피해가 적용됩니다.", "MUDA_RUSH": "주먹 22 × 8회 = 최대 176입니다.", "DIO_THE_WORLD": "연속 주먹과 로드롤러 모두 24 × 9회 = 총 216. 시간정지가 끝나면 누적 피해를 줍니다.", "CRESCENT_SLASH": "검기 1개당 40. 같은 대상 최대 3회로 총 120입니다.", "MOONLIGHT_BARRAGE": "묶음당 65, 세 묶음 모두 맞으면 최대 195입니다. 같은 묶음은 대상당 1회만 적중합니다.", "STONE_FLAIL": "날아갈 때 100 + 돌아올 때 80 + 충격파 60. 세 공격을 모두 맞으면 최대 240입니다.", "STONE_WHIRLWIND": "충격파 50 × 4회 + 마지막 타격 80 = 최대 280입니다.", "PROJECTION_SORCERY": "직접 피해는 없습니다. 모은 분신 하나마다 충돌 피해가 10씩 증가합니다.", "PROJECTION_BARRAGE": "돌진 적중 1회당 80. 돌진 8회에서 각각 한 번씩 맞으면 최대 640입니다.", "CURSED_BLUE": "구체에 닿을 때 55 피해. 같은 대상은 0.25초 이상 간격을 두고 다시 맞을 수 있습니다.", "CURSED_RED": "붉은 공격 범위에 맞으면 110 피해를 1회 줍니다.", "HOLLOW_PURPLE": "보라색 구체가 닿으면 236 피해를 1회 줍니다.", "SHAMBLES": "위치 교환 경로의 공격에 맞으면 70 피해를 줍니다.", "ROOM": "룸 벽에 부딪힐 때마다 적에게 10 피해. 벽을 세우는 순간의 직접 피해는 없습니다.", "RED_ROC": "길게 뻗는 주먹에 맞으면 100 피해를 1회 줍니다.", "BOUND_MAN": "돌진 충돌 피해는 기본 충돌값 +15. 최대 5번의 돌진에서 각각 적중할 수 있습니다.", "GEAR_FIFTH": "변신 자체의 직접 피해는 없습니다. 니카 상태에서 기본 충돌 피해가 50으로 바뀝니다.", "NIKA_LIGHTNING": "던진 번개가 처음 맞은 대상에게 100 피해를 줍니다.", "NIKA_GIGANT": "5초간 거대화하며 충돌 피해가 1회당 95로 바뀝니다. 몸이 닿을 때 피해가 들어갑니다.", "KILLER_QUEEN_RUSH": "연속 주먹 27 × 8회 = 최대 216입니다.", "FIRST_BOMB": "다음 접촉으로 폭탄을 설치합니다. 다시 접촉하거나 3초가 지나면 100 피해로 폭발합니다.", "SHEER_HEART_ATTACK": "추적 폭탄의 폭발 범위에 들어오면 130 피해를 1회 줍니다.", "BITES_THE_DUST": "직접 피해는 없습니다. 과거의 HP·MP를 되돌리고, 캐릭터들을 3초간 새 위치로 이동시킵니다.", "ICE_AGE": "장판에 들어온 대상을 얼립니다. 얼음이 깨질 때 대상당 90 피해를 줍니다.", "PHEASANT_BEAK": "얼음 새 적중 80. 남은 빙벽에 부딪히면 접촉당 40 피해가 추가됩니다.", "ICE_BALL": "얼린 대상을 시전자가 부딪혀 깨면 80 피해. 자연스럽게 풀리면 추가 피해는 없습니다.", "YASAKANI_MAGATAMA": "빛 탄환 1개당 30. 같은 대상은 최대 120 피해까지 받습니다.", "YATA_MIRROR": "빛이 적중할 때마다 100 피해. 반사 후 다시 적중하면 추가 피해를 줄 수 있습니다.", "AMA_NO_MURAKUMO": "첫 검격은 대상당 200. 이후 같은 대상 적중은 현재 충돌 피해로 계산합니다.", "DAI_FUNKA": "마그마 주먹 120 + 초당 5씩 5초간 화상. 모두 받으면 총 145입니다.", "MEIGO": "직접 적중 120 + 초당 10씩 3초간 화상. 모두 받으면 총 150입니다.", "RYUSEI_KAZAN": "유성 1개당 70, 대상당 최대 3개 적중. 각 화상은 초당 5씩 4초간 이어집니다.", "TEACH_BLACK_HOLE": "검은 불꽃을 붙이면 매초 17 피해가 이어집니다. 끌어당김 자체에는 별도 피해가 없습니다.", "KUROUZU": "붙잡기 적중 50. 던진 상대가 다른 적과 충돌하면 그 적에게 50 추가 피해를 줍니다.", "GURASHI": "착지 충격파로 100~250 피해를 1회 줍니다. 중심에 가까울수록 피해가 큽니다.", "UNKNOWING_FIRE": "불꽃 돌진 또는 검기 적중 시 140 피해를 1회 줍니다.", "RISING_SCORCHING_SUN": "이동 중 전방의 불꽃 베기에 닿으면 140 피해. 같은 돌진에서는 대상당 1회입니다.", "RENGOKU": "돌진 230 + 남은 불길 30 × 최대 2회. 모두 맞으면 최대 290입니다.", "STRIKING_TIDE": "돌진 또는 물결 베기 적중 시 110 피해. 같은 대상은 한 번만 맞습니다.", "RIPPLE_THRUST": "찌르기 20 × 10회 = 최대 200입니다. 잔상 20개는 시각 효과이며 피해는 10회입니다.", "DEAD_CALM": "직접 피해는 없습니다. 7초간 받는 피해를 75% 줄이고, 줄인 만큼 MP를 얻습니다.", "ROAR": "자신 주변 폭발에 닿으면 110 피해를 1회 줍니다.", "CONSTANT_RESONANT_SLASHES": "첫 적중은 대상당 105. 이후 같은 대상을 맞히면 현재 충돌 피해를 줍니다.", "STRING_PERFORMANCE": "회전 칼날 90 × 최대 3회 = 총 270. 커지는 범위의 각 단계에서 한 번씩 적중합니다.", "MORNING_PEACOCK": "불꽃 주먹 16 × 10회 = 최대 160입니다.", "DAYTIME_TIGER": "호랑이 충격파에 맞으면 120 피해를 1회 줍니다.", "EVENING_ELEPHANT": "충격파 1회당 40. 네 번 발사하지만 같은 대상은 최대 3회로 총 120입니다.", "NIGHT_GUY": "돌진 적중 250 피해 1회. 사용자도 현재 HP의 10%에 해당하는 반동을 받습니다.", "LOTUS_ICE": "주변 첫 타격 80 + 얼음 고리 30 × 최대 2회 = 모두 맞으면 140입니다.", "SCATTERING_LOTUSES": "전방 꽃잎 베기 55 × 돌진 3회 = 최대 165입니다.", "FROZEN_WATER_LILY_BODHISATTVA": "보살에 닿으면 35씩 피해를 줍니다. 같은 대상은 일정 간격으로 다시 피해를 받습니다.", "SHADOW_SMASH": "뻗어나가는 다크 섀도에 맞으면 120 피해를 1회 줍니다.", "BLACK_ANKH": "직접 피해는 없습니다. 6초간 방어를 강화하고, 남은 방어 횟수가 있을 때 충돌 피해가 25 증가합니다.", "BLACK_ANKH_BALDUR": "다크 섀도의 큰 공격에 맞으면 200 피해. 한 번의 공격에서 같은 대상은 1회만 맞습니다.", "BLACK_WHIP": "채찍 적중 75 피해. 끌어온 상대와 다시 충돌하면 기본 충돌 피해에 25를 추가합니다.", "FA_JIN": "매초 다음 충돌의 추가 피해가 10씩 쌓여 최대 +100. 충돌하면 모은 추가 피해를 소모합니다.", "DETROIT_120": "두 번 전진한 뒤 날리는 마지막 주먹이 170 피해를 1회 줍니다.", "HEAVEN_ICE_WALL": "빙벽 충돌 40 × 대상당 최대 3회 = 총 120입니다.", "FLASHFIRE_FIST": "전방의 불꽃 공격에 맞으면 105 피해를 1회 줍니다.", "FLASHFREEZE_HEATWAVE": "얼음길 60 + 마지막 열파 140. 둘 다 맞으면 총 200입니다.", "FIERCE_WINGS_SHOT": "깃털 1개당 60. 대상당 최대 3개 적중해 총 180 피해를 줍니다.", "FIERCE_WINGS_SWORD": "돌진 검격은 대상당 110 피해 1회. 5초간 충돌 피해가 25 증가합니다.", "FIERCE_WINGS_BARRAGE": "깃털 35 × 대상당 최대 8개 = 총 280. 맞힌 깃털은 이동·충돌 공격도 약화합니다.", "AKI_FOX": "여우에게 물리면 130 피해를 1회 주고 잠깐 붙잡습니다.", "AKI_FUTURE": "직접 공격을 회피한 뒤 50 피해로 반격합니다. 두 번 회피하면 효과가 끝납니다.", "AKI_CURSE": "못으로 저주를 누적합니다. 3회 누적하면 잠시 뒤 400의 저주 피해가 추가됩니다. 못 적중 피해는 별도입니다.", "POWER_WEAPON": "무작위 무기: 망치는 충돌 +50, 낫은 대상당 80, 창은 한 발당 40 피해를 줍니다.", "POWER_BLOOD": "큰 피의 무기 피해는 100 + 회수한 핏자국 수 ×40, 최대 260입니다.", "REZE_SHOT": "불씨 직격 40 + 주변 폭발 120. 두 피해가 모두 적용되면 한 발당 160입니다. 벽에 남은 폭발은 90 피해입니다.", "REZE_DASH": "폭발 돌진에 처음 닿으면 150 피해를 줍니다.", "REZE_BOMB": "자신 주변 폭발에 맞으면 250 피해. 같은 폭발은 대상당 1회만 적중합니다.", "SHINRA_TENSEI": "충격파 96 + 밀린 뒤 벽 충돌 42. 두 조건을 만족하면 총 138입니다.", "BANSHO_TENIN": "더미를 끌어당겨 충분히 가까워지면 흑봉으로 144 피해를 1회 줍니다.", "CHIBAKU_TENSEI": "당기는 동안에는 직접 피해가 없습니다. 끝날 때 중심에 남은 상대에게 240 피해를 줍니다.", "RAIKIRI": "번개 돌진에 처음 맞은 상대에게 130 피해를 줍니다.", "LIGHTNING_CLONE": "분신에 처음 접촉하면 120 피해와 짧은 정지를 줍니다. 적중한 분신은 사라집니다.", "KAMUI": "재등장 후 돌진에 처음 맞은 대상에게 200 피해를 줍니다.", "GETSUGA": "검기 중심 130 / 가장자리 75. 한 번의 검기는 같은 대상에게 1회만 피해를 줍니다.", "ICHIGO_SHUNPO": "순간 이동 뒤 베기 115 피해 1회. 이동과 베기가 별도로 중복 타격하지는 않습니다.", "TENSA_ZANGETSU": "8초간 충돌 피해 +20. 일반기는 중심 190 / 가장자리 130 피해의 검붉은 월아천충으로 바뀝니다.", "BLACK_GETSUGA": "검기 중심 190 / 가장자리 130. 같은 대상에게 둘 중 하나만 1회 적용됩니다.", "SENBONZAKURA": "칼날 무리 34 × 대상당 최대 5회 = 총 170입니다.", "BYAKUYA_SHUNPO": "순간 이동 뒤 한 번 베어 110 피해를 줍니다.", "SENBONZAKURA_KAGEYOSHI": "칼날 40 × 최대 4개 + 꽃잎 폭발 60 = 최대 220. 꽃잎 폭발은 대상당 1회입니다.", "KYOKA_SUIGETSU": "직접 공격 한 번을 환영이 대신 맞고 100 피해로 반격합니다. 지속 피해에는 발동하지 않습니다.", "SOKATSUI": "푸른 화염 폭발로 125 피해 1회. 직격과 폭발이 중복 계산되지는 않습니다.", "KUROHITSUGI": "추적 1초 → 포획 1초 → 마지막에 240 피해 1회. 추적·흡인 중에는 별도 피해가 없습니다.", "RYOJIN_HYOHEKI": "첫 벽 충돌 80, 이후 재접촉 15. 첫 정지는 0.3초, 이후 정지는 0.2초입니다.", "TENSO_JURIN": "눈보라 안에서 초당 30 × 최대 5회 = 총 150. 범위를 벗어나면 해당 타격을 피합니다.", "RYUSENKA": "돌진 60 + 1초 뒤 얼음 파괴 180 = 총 240. 눈보라 피해 중인 적은 마무리 240으로 총 300입니다.", "ZIP_AMBUSH": "지퍼에서 나온 뒤 주먹으로 110 피해를 1회 줍니다.", "ARI_RUSH": "지퍼 손 30 + 연속 주먹 23 × 8회 = 모두 맞으면 총 214입니다.", "ARRIVEDERCI": "벽 주먹은 대상당 75 피해 1회. 이어지는 연타 23 × 8회까지 맞으면 총 259입니다."};
+},NORMAL_PUNCH:`직접 펀치${OPM_BALANCE.normalPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.normalPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.normalPunch.impulse}으로 밀쳐냅니다.`,CONSECUTIVE_PUNCHES:"18×10회, 최대180 피해입니다.",SERIOUS_PUNCH:`직접 펀치${OPM_BALANCE.seriousPunch.direct} / 뒤쪽 풍압${OPM_BALANCE.seriousPunch.wind}. 대상당 둘 중 1회입니다. 적중 시 속도${OPM_BALANCE.seriousPunch.impulse}으로 밀쳐냅니다.`,INCINERATION:`폭3→${OPM_BALANCE.incineration.width}·길이${OPM_BALANCE.incineration.reach}의 빔${OPM_BALANCE.incineration.damage} 피해입니다.`,MACHINEGUN_BLOW:`${OPM_BALANCE.machinegun.damage}×${OPM_BALANCE.machinegun.hits}회, 최대${OPM_BALANCE.machinegun.damage*OPM_BALANCE.machinegun.hits} 피해입니다.`,INCINERATION_UPGRADE:`후퇴${OPM_BALANCE.upgradedIncineration.retreat} 후 폭3→${OPM_BALANCE.upgradedIncineration.width}·길이${OPM_BALANCE.upgradedIncineration.reach}의 빔${OPM_BALANCE.upgradedIncineration.damage} 피해입니다.`,PSYCHIC_THROW:"돌35×6개, 최대210 피해입니다.",PSYCHIC_SPEED:"6초간 관통할 때마다40 피해. 몸과 투사체는 통과하고 빔·설치형·지속 피해는 받습니다.",PSYCHOKINESIS:"6초간 적 벽 충돌당15,2초 후 중앙 반경12 운석170입니다.",BANG_ASSAULT:`돌진당${OPM_BALANCE.bangAssault.damage}, 대상당 최대${OPM_BALANCE.bangAssault.maxHits}회 ${OPM_BALANCE.bangAssault.damage*OPM_BALANCE.bangAssault.maxHits} 피해입니다.`,BANG_WALL_ART:"10초간 벽 충돌3회까지25 관통 돌진37입니다.",BANG_GUARD:"8초간 초당HP·MP10 회복, 기본 충돌·스킬 피해20% 증가입니다.",ROBOT_ARMS:`${OPM_BALANCE.robotArms.duration}초간 반경${OPM_BALANCE.robotArms.radius}. 진입·재진입 및 체류 ${OPM_BALANCE.robotArms.repeat}초마다 ${OPM_BALANCE.robotArms.damage} 피해입니다.`,OCTOPUS_TANK:`${OPM_BALANCE.octopusTank.duration}초 설치. ${OPM_BALANCE.octopusTank.interval}초마다 유도 미사일${OPM_BALANCE.octopusTank.damage}를 발사합니다.`,BRAVE_GIANT:"2초 무적 조립 후10초 탑승. HP200 회복·피해감소20%·MP회복2배·SP최대80입니다.",DELTA_SCALE_SABER:`거리${OPM_BALANCE.deltaSaber.dash} 돌진 충돌${OPM_BALANCE.deltaSaber.collision} / 전방 반경${OPM_BALANCE.deltaSaber.reach}·${OPM_BALANCE.deltaSaber.halfAngle*2}도 검기${OPM_BALANCE.deltaSaber.slash}. 대상당 1회 피해입니다.`,MILLENNIUM_EMPEROR_NOVA:`${OPM_BALANCE.nova.charge}초 무적 준비 후 폭${OPM_BALANCE.nova.width}·벽까지 이어지는 초록 빔${OPM_BALANCE.nova.damage}입니다.`,BAT_SLAM:"돌진 충돌50, 수직으로 날린 뒤 벽에 충돌하면50 추가 피해(1회)입니다.",BAT_BARRAGE:"6초간 기본 충돌 피해25 증가입니다.",BAT_DRAGON:`약하게 추적하며 거리${OPM_BALANCE.batDragon.dash} 돌진 후 ${OPM_BALANCE.batDragon.hold}초 붙잡기. 총${OPM_BALANCE.batDragon.damage}+기백 중첩당${OPM_BALANCE.batDragon.perStack}, 최대${OPM_BALANCE.batDragon.damage+OPM_BALANCE.batDragon.perStack*OPM_BALANCE.spirit.cap}입니다.`,"WATER_SLASH": "주변을 한 번 베어 170 피해를 줍니다. 같은 기술로 같은 대상에게 추가 피해는 없습니다.", "BURNING_BONES": "불꽃 돌진이나 앞쪽 검기에 맞으면 160 피해. 두 판정이 겹쳐도 대상당 1회입니다.", "HINOKAMI_ENBU": "돌진 200 + 마지막 원형 검기 100. 둘 다 맞으면 총 300 피해입니다.", "THUNDERCLAP_FLASH": "돌진 경로에 맞으면 165 피해를 1회 줍니다.", "THUNDER_GOD": "번개 돌진에 맞으면 195 피해를 1회 줍니다.", "THUNDERCLAP_SIXFOLD": "돌진 1회당 70 피해. 6회 모두 맞으면 최대 420입니다.", "BEAST_FANG_SLASH": "주변 베기 1회당 100, 2회 모두 맞으면 총 200입니다.", "BEAST_SPATIAL_RAMPAGE": "주변 베기 80 × 4회 = 최대 320. 강화 중 충돌 피해는 1회당 110입니다.", "RASENGAN_AURA": "다음 충돌에 나선환 80 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SAGE_RASENSHURIKEN": "나선수리검 110 피해 1회. 강화 중 충돌 피해는 1회당 72입니다.", "KURAMA_RASENGAN": "나선환 투사체가 160 피해를 줍니다. 5초간 충돌 피해가 기본값보다 15 증가합니다.", "CHIDORI_AURA": "다음 충돌에 치도리 60 피해를 추가합니다. 기본 충돌 피해와 합산되며 1회 사용 후 해제됩니다.", "SUSANOO": "주변 공격 75 × 3회 = 최대 225. 5초간 받는 피해도 50% 줄어듭니다.", "AMATERASU": "매초 지속 피해를 줍니다. 흑염 1중첩 4, 2중첩 11, 3중첩 18이며 중첩마다 초당 7씩 증가합니다.", "GUM_GUM_GATLING": "주먹 1회당 30, 5회 모두 맞으면 최대 150입니다.", "GEAR_THIRD_GIANT_PISTOL": "거대한 주먹 110 × 2회 = 최대 220입니다.", "DESTRUCTIVE_DEATH_AIR_TYPE": "충격파 1개당 50. 같은 대상은 최대 3번 맞아 총 150 피해를 받습니다.", "COMPASS_NEEDLE_DISORDER": "주변 충격파 25 × 4회 = 100. 돌진 70 × 3회 = 210. 모두 맞으면 최대 310입니다.", "BLUE_SILVER_CHAOTIC_AFTERGLOW": "전방 연타 1회당 25, 10회 모두 맞으면 총 250입니다.", "CHAINSAW_RUSH": "돌진 적중 70. 출혈은 초당 3씩 3초간 추가됩니다. 연속 접촉 시 출혈 시간이 갱신됩니다.", "SHARK_RIDER": "충돌 1회당 90, 대상당 최대 4회로 직접 피해는 최대 360. 적중하면 출혈 피해가 추가됩니다.", "SMASH_KICK": "공기탄 45 × 4발 = 최대 180입니다. 각 탄환을 맞아야 피해가 들어갑니다.", "DELAWARE_SMASH": "길게 뻗는 충격파에 맞으면 140 피해를 1회 줍니다.", "BLACK_FLASH": "다음 충돌 피해가 2배가 됩니다. 적중하면 강화가 소모되며 중첩되지 않습니다.", "MALEVOLENT_SHRINE": "검기에 맞으면 170 피해. 검기 여러 개가 겹쳐도 같은 대상은 1회만 맞습니다.", "BOOGIE_WOOGIE": "위치 교환 경로의 잔상 110 × 3회 = 최대 330입니다. 이동 거리가 없으면 피해도 없습니다.", "BOOGIE_BLACK_FLASH": "잔상 1회당 90, 같은 대상 최대 4회로 총 360입니다.", "DIVINE_DOG": "옥견 두 마리가 각각 접촉할 때마다 30 피해를 줍니다. 다시 닿으면 재공격할 수 있습니다.", "NUE": "접촉 피해 30, 번개 1회당 25. 번개는 1.5초 간격으로 공격합니다.", "RABBIT_ESCAPE": "토끼 한 마리가 접촉할 때 12 피해. 여러 토끼에 맞으면 각각 합산됩니다.", "MAHORAGA": "일반 접촉 70, 돌진 적중 90. 재접촉과 다음 돌진은 다시 피해를 줄 수 있습니다.", "COPY_TECHNIQUE": "모방한 기술의 피해 방식을 따릅니다. 연습 더미에게서는 물의 호흡을 모방해 기본 170 피해를 줍니다.", "RIKA_MANIFESTATION": "리카의 빔은 대상당 150 피해 1회. 6초간 본인의 일반 기술·충돌 피해가 10% 증가합니다.", "SHUTTER_RUSH": "닫히는 셔터 범위에 있으면 80 피해를 1회 줍니다.", "IDLE_DEATH_GAMBLE": "직접 피해는 없습니다. 대박 중 충돌 피해가 15 증가하고, 6초간 초당 HP 50을 회복합니다.", "PURGATORY_ONIGIRI": "검기 1개당 70 피해. 세 갈래 검기가 각각 적중해야 피해가 합산됩니다.", "ASURA": "돌진 또는 전방 검기에 맞으면 180 피해. 같은 대상은 1회만 피해를 받습니다.", "EXPLOSION_DRIVE": "출발 폭발 60 + 돌진 90. 둘 다 맞으면 총 150입니다.", "HOWITZER_IMPACT": "돌진 끝의 큰 폭발에 맞으면 250 피해를 1회 줍니다.", "ORA_RUSH": "주먹 23 × 8회 = 최대 184입니다. 공격 범위에 들어온 타격만 적용됩니다.", "THE_WORLD": "시간정지 중 주먹 25 × 9회 = 최대 225. 정지 중 누적한 피해가 적용됩니다.", "MUDA_RUSH": "주먹 22 × 8회 = 최대 176입니다.", "DIO_THE_WORLD": "연속 주먹과 로드롤러 모두 24 × 9회 = 총 216. 시간정지가 끝나면 누적 피해를 줍니다.", "CRESCENT_SLASH": "검기 1개당 40. 같은 대상 최대 3회로 총 120입니다.", "MOONLIGHT_BARRAGE": "묶음당 65, 세 묶음 모두 맞으면 최대 195입니다. 같은 묶음은 대상당 1회만 적중합니다.", "STONE_FLAIL": "날아갈 때 100 + 돌아올 때 80 + 충격파 60. 세 공격을 모두 맞으면 최대 240입니다.", "STONE_WHIRLWIND": "충격파 50 × 4회 + 마지막 타격 80 = 최대 280입니다.", "PROJECTION_SORCERY": "직접 피해는 없습니다. 모은 분신 하나마다 충돌 피해가 10씩 증가합니다.", "PROJECTION_BARRAGE": "돌진 적중 1회당 80. 돌진 8회에서 각각 한 번씩 맞으면 최대 640입니다.", "CURSED_BLUE": "구체에 닿을 때 55 피해. 같은 대상은 0.25초 이상 간격을 두고 다시 맞을 수 있습니다.", "CURSED_RED": "붉은 공격 범위에 맞으면 110 피해를 1회 줍니다.", "HOLLOW_PURPLE": "보라색 구체가 닿으면 236 피해를 1회 줍니다.", "SHAMBLES": "위치 교환 경로의 공격에 맞으면 70 피해를 줍니다.", "ROOM": "룸 벽에 부딪힐 때마다 적에게 10 피해. 벽을 세우는 순간의 직접 피해는 없습니다.", "RED_ROC": "길게 뻗는 주먹에 맞으면 100 피해를 1회 줍니다.", "BOUND_MAN": "돌진 충돌 피해는 기본 충돌값 +15. 최대 5번의 돌진에서 각각 적중할 수 있습니다.", "GEAR_FIFTH": "변신 자체의 직접 피해는 없습니다. 니카 상태에서 기본 충돌 피해가 50으로 바뀝니다.", "NIKA_LIGHTNING": "던진 번개가 처음 맞은 대상에게 100 피해를 줍니다.", "NIKA_GIGANT": "5초간 거대화하며 충돌 피해가 1회당 95로 바뀝니다. 몸이 닿을 때 피해가 들어갑니다.", "KILLER_QUEEN_RUSH": "연속 주먹 27 × 8회 = 최대 216입니다.", "FIRST_BOMB": "다음 접촉으로 폭탄을 설치합니다. 다시 접촉하거나 3초가 지나면 100 피해로 폭발합니다.", "SHEER_HEART_ATTACK": "추적 폭탄의 폭발 범위에 들어오면 130 피해를 1회 줍니다.", "BITES_THE_DUST": "직접 피해는 없습니다. 과거의 HP·MP를 되돌리고, 캐릭터들을 3초간 새 위치로 이동시킵니다.", "ICE_AGE": "장판에 들어온 대상을 얼립니다. 얼음이 깨질 때 대상당 90 피해를 줍니다.", "PHEASANT_BEAK": "얼음 새 적중 80. 남은 빙벽에 부딪히면 접촉당 40 피해가 추가됩니다.", "ICE_BALL": "얼린 대상을 시전자가 부딪혀 깨면 80 피해. 자연스럽게 풀리면 추가 피해는 없습니다.", "YASAKANI_MAGATAMA": "빛 탄환 1개당 30. 같은 대상은 최대 120 피해까지 받습니다.", "YATA_MIRROR": "빛이 적중할 때마다 100 피해. 반사 후 다시 적중하면 추가 피해를 줄 수 있습니다.", "AMA_NO_MURAKUMO": "첫 검격은 대상당 200. 이후 같은 대상 적중은 현재 충돌 피해로 계산합니다.", "DAI_FUNKA": "마그마 주먹 120 + 초당 5씩 5초간 화상. 모두 받으면 총 145입니다.", "MEIGO": "직접 적중 120 + 초당 10씩 3초간 화상. 모두 받으면 총 150입니다.", "RYUSEI_KAZAN": "유성 1개당 70, 대상당 최대 3개 적중. 각 화상은 초당 5씩 4초간 이어집니다.", "TEACH_BLACK_HOLE": "검은 불꽃을 붙이면 매초 17 피해가 이어집니다. 끌어당김 자체에는 별도 피해가 없습니다.", "KUROUZU": "붙잡기 적중 50. 던진 상대가 다른 적과 충돌하면 그 적에게 50 추가 피해를 줍니다.", "GURASHI": "착지 충격파로 100~250 피해를 1회 줍니다. 중심에 가까울수록 피해가 큽니다.", "UNKNOWING_FIRE": "불꽃 돌진 또는 검기 적중 시 140 피해를 1회 줍니다.", "RISING_SCORCHING_SUN": "이동 중 전방의 불꽃 베기에 닿으면 140 피해. 같은 돌진에서는 대상당 1회입니다.", "RENGOKU": "돌진 230 + 남은 불길 30 × 최대 2회. 모두 맞으면 최대 290입니다.", "STRIKING_TIDE": "돌진 또는 물결 베기 적중 시 110 피해. 같은 대상은 한 번만 맞습니다.", "RIPPLE_THRUST": "찌르기 20 × 10회 = 최대 200입니다. 잔상 20개는 시각 효과이며 피해는 10회입니다.", "DEAD_CALM": "직접 피해는 없습니다. 7초간 받는 피해를 75% 줄이고, 줄인 만큼 MP를 얻습니다.", "ROAR": "자신 주변 폭발에 닿으면 110 피해를 1회 줍니다.", "CONSTANT_RESONANT_SLASHES": "첫 적중은 대상당 105. 이후 같은 대상을 맞히면 현재 충돌 피해를 줍니다.", "STRING_PERFORMANCE": "회전 칼날 90 × 최대 3회 = 총 270. 커지는 범위의 각 단계에서 한 번씩 적중합니다.", "MORNING_PEACOCK": "불꽃 주먹 16 × 10회 = 최대 160입니다.", "DAYTIME_TIGER": "호랑이 충격파에 맞으면 120 피해를 1회 줍니다.", "EVENING_ELEPHANT": "충격파 1회당 40. 네 번 발사하지만 같은 대상은 최대 3회로 총 120입니다.", "NIGHT_GUY": "돌진 적중 250 피해 1회. 사용자도 현재 HP의 10%에 해당하는 반동을 받습니다.", "LOTUS_ICE": "주변 첫 타격 80 + 얼음 고리 30 × 최대 2회 = 모두 맞으면 140입니다.", "SCATTERING_LOTUSES": "전방 꽃잎 베기 55 × 돌진 3회 = 최대 165입니다.", "FROZEN_WATER_LILY_BODHISATTVA": "보살에 닿으면 35씩 피해를 줍니다. 같은 대상은 일정 간격으로 다시 피해를 받습니다.", "SHADOW_SMASH": "뻗어나가는 다크 섀도에 맞으면 120 피해를 1회 줍니다.", "BLACK_ANKH": "직접 피해는 없습니다. 6초간 방어를 강화하고, 남은 방어 횟수가 있을 때 충돌 피해가 25 증가합니다.", "BLACK_ANKH_BALDUR": "다크 섀도의 큰 공격에 맞으면 200 피해. 한 번의 공격에서 같은 대상은 1회만 맞습니다.", "BLACK_WHIP": "채찍 적중 75 피해. 끌어온 상대와 다시 충돌하면 기본 충돌 피해에 25를 추가합니다.", "FA_JIN": "매초 다음 충돌의 추가 피해가 10씩 쌓여 최대 +100. 충돌하면 모은 추가 피해를 소모합니다.", "DETROIT_120": "두 번 전진한 뒤 날리는 마지막 주먹이 170 피해를 1회 줍니다.", "HEAVEN_ICE_WALL": "빙벽 충돌 40 × 대상당 최대 3회 = 총 120입니다.", "FLASHFIRE_FIST": "전방의 불꽃 공격에 맞으면 105 피해를 1회 줍니다.", "FLASHFREEZE_HEATWAVE": "얼음길 60 + 마지막 열파 140. 둘 다 맞으면 총 200입니다.", "FIERCE_WINGS_SHOT": "깃털 1개당 60. 대상당 최대 3개 적중해 총 180 피해를 줍니다.", "FIERCE_WINGS_SWORD": "돌진 검격은 대상당 110 피해 1회. 5초간 충돌 피해가 25 증가합니다.", "FIERCE_WINGS_BARRAGE": "깃털 35 × 대상당 최대 8개 = 총 280. 맞힌 깃털은 이동·충돌 공격도 약화합니다.", "AKI_FOX": "여우에게 물리면 145 피해를 1회 주고 잠깐 붙잡습니다.", "AKI_FUTURE": "직접 공격을 회피한 뒤 50 피해로 반격합니다. 두 번 회피하면 효과가 끝납니다.", "AKI_CURSE": "못으로 저주를 누적합니다. 3회 누적하면 잠시 뒤 400의 저주 피해가 추가됩니다. 못 적중 피해는 별도입니다.", "POWER_WEAPON": "무작위 무기: 망치는 충돌 +50, 낫은 대상당 80, 창은 한 발당 40 피해를 줍니다.", "POWER_BLOOD": "큰 피의 무기 피해는 100 + 회수한 핏자국 수 ×40, 최대 260입니다.", "REZE_SHOT": "불씨 직격 40 + 주변 폭발 120. 두 피해가 모두 적용되면 한 발당 160입니다. 벽에 남은 폭발은 90 피해입니다.", "REZE_DASH": "폭발 돌진에 처음 닿으면 150 피해를 줍니다.", "REZE_BOMB": "자신 주변 폭발에 맞으면 250 피해. 같은 폭발은 대상당 1회만 적중합니다.", "SHINRA_TENSEI": "충격파 96 + 밀린 뒤 벽 충돌 42. 두 조건을 만족하면 총 138입니다.", "BANSHO_TENIN": "더미를 끌어당겨 충분히 가까워지면 흑봉으로 144 피해를 1회 줍니다.", "CHIBAKU_TENSEI": "당기는 동안에는 직접 피해가 없습니다. 끝날 때 중심에 남은 상대에게 240 피해를 줍니다.", "RAIKIRI": "번개 돌진에 처음 맞은 상대에게 130 피해를 줍니다.", "LIGHTNING_CLONE": "분신에 처음 접촉하면 120 피해와 짧은 정지를 줍니다. 적중한 분신은 사라집니다.", "KAMUI": "재등장 후 돌진에 처음 맞은 대상에게 200 피해를 줍니다.", "GETSUGA": "검기 중심 130 / 가장자리 85. 한 번의 검기는 같은 대상에게 1회만 피해를 줍니다.", "ICHIGO_SHUNPO": "순간 이동 뒤 베기 115 피해 1회. 이동과 베기가 별도로 중복 타격하지는 않습니다.", "TENSA_ZANGETSU": "8초간 충돌 피해 +20. 일반기는 중심 190 / 가장자리 140 피해의 검붉은 월아천충으로 바뀝니다.", "BLACK_GETSUGA": "검기 중심 190 / 가장자리 140. 같은 대상에게 둘 중 하나만 1회 적용됩니다.", "SENBONZAKURA": "칼날 무리 34 × 대상당 최대 5회 = 총 170입니다.", "BYAKUYA_SHUNPO": "순간 이동 뒤 한 번 베어 110 피해를 줍니다.", "SENBONZAKURA_KAGEYOSHI": "칼날 40 × 최대 4개 + 꽃잎 폭발 60 = 최대 220. 꽃잎 폭발은 대상당 1회입니다.", "KYOKA_SUIGETSU": "직접 공격 한 번을 환영이 대신 맞고 100 피해로 반격합니다. 지속 피해에는 발동하지 않습니다.", "SOKATSUI": "푸른 화염 폭발로 125 피해 1회. 직격과 폭발이 중복 계산되지는 않습니다.", "KUROHITSUGI": "추적 1초 → 포획 1초 → 마지막에 240 피해 1회. 추적·흡인 중에는 별도 피해가 없습니다.", "RYOJIN_HYOHEKI": "첫 벽 충돌 80, 이후 재접촉 15. 첫 정지는 0.3초, 이후 정지는 0.2초입니다.", "TENSO_JURIN": "눈보라 안에서 초당 30 × 최대 5회 = 총 150. 범위를 벗어나면 해당 타격을 피합니다.", "RYUSENKA": "돌진 60 + 1초 뒤 얼음 파괴 180 = 총 240. 눈보라 피해 중인 적은 마무리 240으로 총 300입니다.", "ZIP_AMBUSH": "지퍼에서 나온 뒤 주먹으로 110 피해를 1회 줍니다.", "ARI_RUSH": "지퍼 손 30 + 연속 주먹 23 × 8회 = 모두 맞으면 총 214입니다.", "ARRIVEDERCI": "벽 주먹은 대상당 75 피해 1회. 이어지는 연타 23 × 8회까지 맞으면 총 259입니다."};
+const LIVE_SKILL_DESCRIPTIONS = {
+  HOLLOW_PURPLE: `MP ${HOLLOW_PURPLE.mp} 이상, SP ${HOLLOW_PURPLE.spMin}~${HOLLOW_PURPLE.spMax}에서 일반·스페셜 입력에 우선합니다. 두 자원을 모두 소모하고, 몸 반경의 ${HOLLOW_PURPLE.radiusFactor}배인 구체가 대상당 ${HOLLOW_PURPLE.damage} 피해를 줍니다.`,
+  RED_ROC: `0.15초 준비 후 사거리 ${EMPEROR_CONFIG.redRocDistance}·폭 6의 불꽃 주먹이 첫 대상에게 ${EMPEROR_CONFIG.redRocDamage} 피해를 줍니다.`,
+  BOUND_MAN: `HP 50% 초과 시 SP로 발동합니다. ${EMPEROR_CONFIG.boundDuration}초 동안 이동과 충돌 피해가 강화되고 받는 피해가 20% 감소합니다. 0.5초 뒤 상대를 다시 조준하며 거리 ${EMPEROR_CONFIG.boundDashDistance}의 돌진을 ${EMPEROR_CONFIG.boundDashes}번 합니다.`,
+  GEAR_FIFTH: `HP 50% 이하에서 SP를 사용하면 니카로 전환하고 HP를 최대 ${EMPEROR_CONFIG.nikaHeal} 회복합니다. 전투가 끝날 때까지 MP 기술은 번개, SP 기술은 기간트로 바뀝니다.`,
+  NIKA_LIGHTNING: `니카 상태의 일반 기술입니다. 속도 ${EMPEROR_CONFIG.lightningSpeed}·거리 ${EMPEROR_CONFIG.lightningRange}로 번개를 던져 첫 대상에게 ${EMPEROR_CONFIG.lightningDamage} 피해를 줍니다.`,
+  NIKA_GIGANT: `니카 상태의 스페셜 스킬입니다. ${EMPEROR_CONFIG.gigantDuration}초 동안 크기가 ${EMPEROR_CONFIG.gigantScale}배로 커지고, 기본 충돌 피해는 ${EMPEROR_CONFIG.gigantCollisionDamage}입니다.`,
+};
+
+function skillDescription(type, character) {
+  return DEFENSE_SKILLS[type]?.[1] || LIVE_SKILL_DESCRIPTIONS[type] || PRACTICE_DAMAGE_DETAILS[type] ||
+    PRACTICE_EXPLANATIONS[type]?.replaceAll("더미", "상대") ||
+    (type === character.specialType ? character.spDesc : character.desc);
+}
+
 function renderPracticeDamageInfo(){
  if(headless)return;
  const box=$('practiceDamageInfo');
  const type=practiceSelectedType;
  box.classList.toggle('hidden',!type);
  $('practiceDamageName').textContent=type?practiceName(type,CHARACTER_DATABASE[practiceIndex]):'';
- $('practiceDamageText').textContent=type?(PRACTICE_DAMAGE_DETAILS[type]||PRACTICE_EXPLANATIONS[type]||'선택한 기술의 공격이 적중하면 피해를 줍니다.'):'';
+  $('practiceDamageText').textContent=type?skillDescription(type,CHARACTER_DATABASE[practiceIndex]):'';
 }
 
 
 function opmPhasing(actor) { return !!actor && actor.opmPhaseUntil > t; }
-function opmProjectileActors() { return actors.filter(actor => !opmPhasing(actor)); }
+function opmProjectileActors() { return actors.filter(actor => !opmPhasing(actor) && !milioPhasing(actor)); }
 function opmScale(actor) { return actor.d.id === 'tatsumaki' ? .85 : 1; }
 function randomOpmSkill(type) {
   const choices = OPM_CHOICES[type];
@@ -32381,7 +33155,7 @@ function reflectAlchemy(actor, normal) {
 function constrainAlchemyActors() {
   if (!alchemyWalls.length) return;
   for (const actor of actors) {
-    if (!actor.alive || !actor.opmPrevious || actor.alchemyCarry || alchemyLocked(actor)) continue;
+    if (!actor.alive || !actor.opmPrevious || actor.alchemyCarry || alchemyLocked(actor) || milioPhasing(actor) || actor.defenseMotion?.kind==="jump") continue;
     const previous=actor.opmPrevious;
     const x=actor.x-previous.x,z=actor.z-previous.z,length=Math.hypot(x,z);
     if (length<1e-8) continue;
@@ -32407,7 +33181,7 @@ function damageFromAlchemyPillar(wall,target) {
   if(count>=4||damage.lastContacts.get(target)===t) return;
   damage.lastContacts.set(target,t);
   const before=damageQueue.length;
-  withAlchemyHitMode("ranged",()=>hurt(wall.owner,target,35));
+  withAlchemyHitMode("ranged",()=>hurt(wall.owner,target,35, "skill", 0, {statsSkill:"EDWARD_GROUND"}));
   if(damageQueue[before]?.a===wall.owner&&damageQueue[before].b===target)
     damage.hits.set(target,count+1);
 }
@@ -32520,7 +33294,7 @@ function applyAlchemyGuard(hit) {
   if (!directMelee && damageKind!=="collision" && damageKind!=="summon") return;
   hit.n=Math.round(hit.n*.6);
   alchemyLightning(defender.x,defender.z,2.8);
-  withAlchemyHitMode("ranged",()=>hurt(defender,attacker,60,"skill"));
+  withAlchemyHitMode("ranged",()=>hurt(defender,attacker,60,"skill", 0, {statsSkill:"ALPHONSE_GUARD"}));
 }
 
 let alchemyReflections=[];
@@ -32595,7 +33369,7 @@ function advanceAlchemyReflections(dt) {
     if(victim){
       const baseDamage=shot.damage/shot.a.power;
       if(!reflectAlchemyShot(shot,victim,x,z,baseDamage,shot.r,shot.speed,shot.kind)){
-        withDamageOrigin(shot.a,shot.specialSource,()=>withAlchemyHitMode("ranged",()=>hurt(shot.a,victim,baseDamage,shot.kind)));
+        withDamageOrigin(shot.a,shot.specialSource,()=>withAlchemyHitMode("ranged",()=>hurt(shot.a,victim,baseDamage,shot.kind, 0, {statsSkill:"ALPHONSE_GUARD"})));
         removeMesh(shot.mesh);
       }
     }else if (shot.remaining<=1e-8 || length<shot.speed*dt-1e-8){
@@ -32882,7 +33656,7 @@ function createAlphonseWall(owner,target) {
 function contactAlphonseWall(wall,actor,direction) {
   if(wall.owner!==actor || !alchemyGuardActive(actor)){
     shatterAlchemyObstacle(wall);
-    if(wall.owner!==actor) withAlchemyHitMode("ranged",()=>hurt(wall.owner,actor,50));
+    if(wall.owner!==actor) withAlchemyHitMode("ranged",()=>hurt(wall.owner,actor,50, "skill", 0, {statsSkill:"ALPHONSE_GUARD"}));
     return;
   }
   // Transfer the mesh to the moving wall. The stationary collider is retired immediately.
@@ -32920,7 +33694,7 @@ function updateAlphonseWallFlights(dt) {
     wall.x+=direction.x*moved;
     wall.z+=direction.z*moved;
     wall.remaining-=moved;
-    if(first) withAlchemyHitMode("ranged",()=>hurt(wall.owner,first,100));
+    if(first) withAlchemyHitMode("ranged",()=>hurt(wall.owner,first,100, "skill", 0, {statsSkill:"ALPHONSE_GUARD"}));
     if(first || wall.remaining<=1e-8 || length<travel-1e-8){
       shatterAlchemyObstacle(wall);
       return false;
@@ -33078,7 +33852,7 @@ function updateRoyBurns() {
     const burn=victim.royBurn;
     if(!burn||!victim.alive) continue;
     while(burn.remaining && burn.next<=t+1e-8){
-      damageQueue.push({a:burn.actor,b:victim,damageKind:"royBurn",...reducedHit(victim,30*burn.actor.power)});
+      damageQueue.push({a:burn.actor,b:victim,damageKind:"royBurn",statsSkill:"ROY_INFERNO",...reducedHit(victim,30*burn.actor.power)});
       burn.next+=1;
       burn.remaining--;
       alchemyPlume(victim.x,victim.z,.9,.53);
@@ -33703,6 +34477,7 @@ function matchAssetUrls(indices, track) {
     urls.push(officialPortraits[character.id]);
     if (character.id === "kenpachi") urls.push(officialPortraits.kenpachi_bankai);
     if (character.id === "emperor_luffy") urls.push(officialPortraits.emperor_nika);
+    if (character.id === "kafka") urls.push(officialPortraits.kafka_kaiju);
     if (character.id === "aki_gun_fiend") types.add("AKI_HEADSHOT");
     if (character.id === "kira") types.add("BITES_TIME");
     const additionalVoices = MATCH_VOICE_VARIANTS[character.id] || [];
@@ -33868,7 +34643,7 @@ function advanceHigurumaGavels(dt) {
       impacts.set(first, (impacts.get(first) || 0) + 1);
       const queued = damageQueue.length;
       withDamageOrigin(owner, false, () => {
-        withAlchemyHitMode("ranged", () => hurt(owner, first, 34));
+        withAlchemyHitMode("ranged", () => hurt(owner, first, 34, "skill", 0, {statsSkill:"HIGURUMA_GAVEL_VOLLEY"}));
       }, HIGURUMA_NAMES.HIGURUMA_GAVEL_VOLLEY);
       if (!headless && world && damageQueue.length > queued) {
         const { x, z } = first;
@@ -34554,7 +35329,7 @@ function enterOnlineSelection(session) {
   if (session.slot === 0) {
     listenOnlineRoom(session, "guestInput", input => {
       if (session.phase !== "battle" || !Number.isSafeInteger(input?.seq) ||
-          input.seq <= (session.lastInputSeq ?? 0) || !["mp", "sp", "rare"].includes(input.skill)) return;
+          input.seq <= (session.lastInputSeq ?? 0) || !["mp", "sp"].includes(input.skill)) return;
       session.lastInputSeq = input.seq;
       const now = performance.now();
       if (now - (session.lastInputAt ?? -Infinity) < 35) return;
@@ -34579,6 +35354,8 @@ function enterOnlineSelection(session) {
         session.phase = "result";
         showModal("온라인 2P · 경기 결과", result.title, result.summary,
           [["모드 선택", () => closeOnlineRoom(session), true]]);
+        const fighters = session.picks.map(id => CHARACTER_DATABASE[onlineFighterIndex(id)]);
+        renderTopSkillDamage(result.topSkill, fighters);
       });
     });
   }
@@ -34687,7 +35464,6 @@ function openOnlineViewer(session, track) {
   applyOnlineHud(collectOnlineHud());
   for (const slot of [0, 1]) {
     for (const resource of ["mp", "sp"]) $(resource + "b" + slot).disabled = true;
-    if ($("f" + slot).querySelector(".rare-cast")) $("rareb" + slot).disabled = true;
   }
   $("battle").parentElement.scrollTop = 0;
   resize();
@@ -34711,13 +35487,7 @@ function routeOnlineCast(slot, skill) {
 }
 
 function applyOnlineCast(slot, skill) {
-  if (skill === "rare") {
-    if (!running || paused || cinema.ending || !hollowPurpleReady(actors[slot])) return;
-    castHollowPurple(actors[slot]);
-    updateHud();
-    return;
-  }
-  applyLocalCast(slot, skill === "sp");
+  if (skill === "mp" || skill === "sp") applyLocalCast(slot, skill === "sp");
 }
 
 function collectOnlineHud() {
@@ -34735,7 +35505,7 @@ function applyOnlineHud(msg, remote=true) {
       Array.isArray(row) && Object.hasOwn(HUD_STATUS_NAMES, row[0]) && Number.isSafeInteger(row[1]) && row[1] > 0
     ));
     if (typeof fighter.speed === "string") $("speed" + slot).textContent = fighter.speed;
-    const alternate = ["emperor_nika", "kenpachi_bankai"].includes(fighter.portrait) && readyPortrait(fighter.portrait);
+    const alternate = ["emperor_nika", "kenpachi_bankai", "kafka_kaiju"].includes(fighter.portrait) && readyPortrait(fighter.portrait);
     const portrait = alternate || fighterPortrait(data);
     if ($("fighterPortrait" + slot).getAttribute("src") !== portrait) $("fighterPortrait" + slot).src = portrait;
     ["hp", "mp", "sp"].forEach((resource, index) => {
@@ -34757,7 +35527,13 @@ function applyOnlineHud(msg, remote=true) {
       button.setAttribute("aria-label",(slot+1)+"P "+(index?"스페셜":"일반")+" 스킬 · "+skill[0]+(skill[1]?" · 준비":""));
       button.classList.toggle("skill-ready", skill[1] === true);
     });
-    if (data.id === "gojo") $("rareb" + slot).disabled = fighter.rare !== true || (remote && slot !== 1);
+    if (data.id === "gojo") {
+      const status = $("rareStatus" + slot);
+      const ready = fighter.alive && fighter.rare === true;
+      const text = "허식 무라사키 · " + (ready ? "사용 가능" : "사용 불가");
+      if (status.textContent !== text) status.textContent = text;
+      status.classList.toggle("is-ready", ready);
+    }
   });
 }
 
@@ -34789,16 +35565,20 @@ function publishOnlineResult(title, summary) {
   if (session?.slot !== 0 || session.phase !== "battle") return false;
   updateHud();
   session.phase = "result";
-  writeOnlineRoom(session, "result", { title, summary, hud: collectOnlineHud(), frame: collectOnlineScene(session) })
+  const topSkill = highestSkillDamage();
+  writeOnlineRoom(session, "result", {
+    title, summary, topSkill, hud: collectOnlineHud(), frame: collectOnlineScene(session)
+  })
     .catch(error => console.warn("Online result:", error));
   showModal("온라인 2P · 경기 결과", title, summary, [["모드 선택", () => closeOnlineRoom(session), true]]);
+  renderTopSkillDamage(topSkill);
   return true;
 }
 
 // Send world-space draw state. The guest only interpolates presentation between host samples.
 const ONLINE_SCENE_INTERVAL = 80;
 const ONLINE_SCENE_LIMIT = 16400;
-const ONLINE_SCENE_VERSION = 1;
+const ONLINE_SCENE_VERSION = 2;
 const ONLINE_EFFECT_LIMIT = 120;
 const onlineTransform = new THREE.Object3D();
 const onlineWorldPose = new THREE.Matrix4();
