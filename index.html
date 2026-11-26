@@ -2995,7 +2995,9 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 방위대 스킬 연출</strong>
+                <strong>최신 패치 · 방위대 전투 밸런스</strong>
+                <p>키코루의 도끼 사거리와 착지 추적, 호시나의 돌진과 반격, 미나의 포격과 조준을 강화했습니다.</p>
+                <strong>이전 패치 · 방위대 스킬 연출</strong>
                 <p>호시나의 초승달 검기와 꼬리 휘두르기, 미나의 붉은 포격, 키코루의 도끼 검기와 갈라지는 번개를 개선했습니다. 키코루의 일반 스킬을 맞으면 3초간 이동 속도가 20 감소합니다.</p>
                 <strong>이전 패치 · 투과 기동과 방위대 무장</strong><p>신규 5인의 스킬 배너와 고유 타격 연출을 적용했습니다. 팬텀 메너스, 괴수화 정권, 완전 변신을 조정하고 키코루와 미나의 조준을 개선했습니다.</p><strong>이전 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
                 <p>토오가타 밀리오, 히비노 카프카, 시노미야 키코루, 호시나 소시로, 아시로 미나를 추가했습니다. 변신과 관통, 착지 예고, 반격, 포격을 각 캐릭터의 3D 모델과 함께 구현했습니다.</p>
@@ -10707,6 +10709,15 @@ function advanceExtraDash(e, a) {
   aimAsuraDash(e,a);
   aimRaikiriDash(e,a);
   const dash=e.dash;
+  const target=dash.defenseTarget;
+  if (target?.alive && !dash.hit.has(target)) {
+    const current=Math.atan2(e.dz,e.dx);
+    const desired=Math.atan2(target.z-e.z,target.x-e.x);
+    const delta=Math.atan2(Math.sin(desired-current),Math.cos(desired-current));
+    const limit=2.5*a;
+    const angle=current+Math.max(-limit,Math.min(limit,delta));
+    defenseFacing(e,{x:Math.cos(angle),z:Math.sin(angle)});
+  }
   // A destroyed wall consumes only the distance already travelled this step.
   while(a>1e-8 && e.dash===dash) a=advanceExtraDashSegment(e,a);
 }
@@ -28567,6 +28578,7 @@ function addNewcomerFighters() {
 
 addNewcomerFighters();
 
+const HOSHINA_TAIL_RADIUS = 9;
 const DEFENSE_SKILLS = {
   MILIO_AMBUSH:["투과 기습","0.5초간 지하로 돌진합니다. 상대 위치에서 솟아오른 뒤 첫 주먹에 95 피해를 줍니다."],
   MILIO_PHASE:["투과 돌진","5초 동안 적과 설치 지형을 관통하고 적의 공격 피해를 받지 않습니다. 적을 관통할 때마다 기본 충돌 피해를 줍니다. 같은 접촉에서는 한 번만 적중합니다."],
@@ -28574,22 +28586,22 @@ const DEFENSE_SKILLS = {
   KAFKA_PUNCH:["괴수화 정권","거리 10을 돌진한 뒤 상대 방향으로 괴수화된 팔을 내질러 120 피해를 주고 밀쳐냅니다."],
   KAFKA_REGEN:["조직 재생","HP가 50% 이하일 때 일반 스킬의 50% 확률로 발동합니다. 10초 동안 초당 HP 8과 MP 4를 회복합니다."],
   KAFKA_KAIJU:["괴수 8호 완전 변신","8초간 괴수 8호가 됩니다. 받는 피해 25% 감소, 속도 +13, 기본 충돌 피해 +15. 변신 2초 뒤 거리 13 돌진을 두 번 하며 첫 적중에 170 피해를 줍니다."],
-  KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 5를 돌진한 뒤 반경 6·전방 120° 부채꼴에 110 피해를 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
-  KIKORU_DROP:["도약 내려찍기","예고한 지점에 도끼를 내려찍습니다. 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
-  KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초간 상대를 추적한 뒤 도약 직전에 확정한 지점으로 뛰어내려 반경 5에 145 피해를 줍니다. 이어 반경 10까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
-  HOSHINA_CROSS:["호시나류 쌍검 교차 베기","짧게 두 번 돌진해 각 55 피해를 줍니다. 대상당 최대 110 피해. 돌진 중 받는 피해가 20% 감소합니다."],
-  HOSHINA_COUNTER:["파쇄 반격","5초 안에 받는 첫 적 공격의 피해를 50% 줄입니다. 생존하면 공격자 뒤로 뛰어들어 80 피해로 반격합니다."],
-  HOSHINA_NUMBERS:["넘버즈 10 연계","적을 향해 거리 15씩 두 번 돌진하며 쌍검으로 각 60 피해를 줍니다. 마지막 꼬리 공격은 100 피해이며 대상당 최대 220입니다."],
-  MINA_CANNON:["대형 괴수포","0.4초간 상대를 조준선으로 추적한 뒤 발사 순간의 직선으로 90 피해를 줍니다."],
-  MINA_RETREAT:["후퇴 사격","뒤로 거리 6을 이동하면서 세 발을 쏩니다. 발당 35 피해, 대상당 최대 105입니다."],
-  MINA_KERAUNOS:["케라우노스","제자리에서 0.9초간 포격을 준비합니다. 넓은 사격선의 중심은 245, 가장자리는 135 피해를 주며 대상당 한 번 적용됩니다."],
+  KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 8을 돌진하고, 베기 직전 상대 방향으로 반경 7.5·전방 120°를 휩쓸어 120 피해를 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
+  KIKORU_DROP:["도약 내려찍기","0.41초 동안 도약해 도끼를 내려찍습니다. 착지 0.10초 전까지 상대를 추적하며, 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
+  KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초간 준비하고 0.39초 동안 도약합니다. 착지 0.10초 전까지 상대를 추적하며, 착지 반경 6에 145 피해를 줍니다. 이어 반경 11까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
+  HOSHINA_CROSS:["호시나류 쌍검 교차 베기","적을 약하게 추적하며 거리 12씩 두 번 돌진해 각 75 피해를 줍니다. 대상당 최대 150 피해. 돌진 중 받는 피해가 20% 감소합니다."],
+  HOSHINA_COUNTER:["파쇄 반격","5초 안에 받는 첫 적 공격의 피해를 60% 줄입니다. 생존하면 공격자 뒤로 뛰어들어 95 피해로 반격합니다."],
+  HOSHINA_NUMBERS:["넘버즈 10 연계","적을 약하게 추적하며 거리 18씩 두 번 돌진해 각 70 피해를 줍니다. 이어 반경 9의 꼬리 공격으로 100 피해를 줍니다. 대상당 최대 240입니다."],
+  MINA_CANNON:["대형 괴수포","0.4초간 상대를 조준선으로 추적한 뒤 발사 순간의 직선으로 135 피해를 줍니다."],
+  MINA_RETREAT:["후퇴 사격","뒤로 거리 6을 이동하면서 탄속 110·판정 반경 0.82의 탄환을 세 발 쏩니다. 발당 55 피해, 대상당 최대 165입니다."],
+  MINA_KERAUNOS:["케라우노스","제자리에서 0.9초간 포격을 준비하며 첫 0.82초 동안 상대를 추적합니다. 넓은 사격선의 중심은 245, 가장자리는 155 피해를 주며 대상당 한 번 적용됩니다."],
 };
 const DEFENSE_ROSTER = [
   {id:"milio", name:"토오가타 밀리오", short:"밀리오", anime:"나의 히어로 아카데미아", battleType:"변칙형", role:"지하 기습 · 관통", color:0xffb851, maxHp:1120, maxMp:82, maxSp:125, speed:40, baseDamage:45, types:["MILIO_AMBUSH","MILIO_PHASE","MILIO_PHANTOM"]},
   {id:"kafka", name:"히비노 카프카", short:"카프카", anime:"괴수 8호", battleType:"내구형", role:"재생 · 괴수화 · 돌진", color:0x26ddcf, maxHp:1340, maxMp:95, maxSp:145, speed:34, baseDamage:52, types:["KAFKA_PUNCH","KAFKA_REGEN","KAFKA_KAIJU"]},
-  {id:"kikoru", name:"시노미야 키코루", short:"키코루", anime:"괴수 8호", battleType:"밸런스형", role:"도끼 · 착지 충격파", color:0xb7df6e, maxHp:1180, maxMp:85, maxSp:138, speed:38, baseDamage:48, types:["KIKORU_SWEEP","KIKORU_DROP","KIKORU_NUMBERS"]},
-  {id:"hoshina", name:"호시나 소시로", short:"호시나", anime:"괴수 8호", battleType:"기동형", role:"쌍검 · 반격 · 꼬리 연계", color:0xc48cff, maxHp:1150, maxMp:78, maxSp:145, speed:41, baseDamage:45, types:["HOSHINA_CROSS","HOSHINA_COUNTER","HOSHINA_NUMBERS"]},
-  {id:"mina", name:"아시로 미나", short:"미나", anime:"괴수 8호", battleType:"원거리형", role:"후퇴 사격 · 장거리 포격", color:0x77c5ff, maxHp:1090, maxMp:90, maxSp:160, speed:34, baseDamage:42, types:["MINA_CANNON","MINA_RETREAT","MINA_KERAUNOS"]},
+  {id:"kikoru", name:"시노미야 키코루", short:"키코루", anime:"괴수 8호", battleType:"밸런스형", role:"도끼 · 착지 충격파", color:0xb7df6e, maxHp:1250, maxMp:79, maxSp:122, speed:38, baseDamage:48, types:["KIKORU_SWEEP","KIKORU_DROP","KIKORU_NUMBERS"]},
+  {id:"hoshina", name:"호시나 소시로", short:"호시나", anime:"괴수 8호", battleType:"기동형", role:"쌍검 · 반격 · 꼬리 연계", color:0xc48cff, maxHp:1200, maxMp:70, maxSp:120, speed:41, baseDamage:45, types:["HOSHINA_CROSS","HOSHINA_COUNTER","HOSHINA_NUMBERS"]},
+  {id:"mina", name:"아시로 미나", short:"미나", anime:"괴수 8호", battleType:"원거리형", role:"후퇴 사격 · 장거리 포격", color:0x77c5ff, maxHp:1130, maxMp:78, maxSp:130, speed:34, baseDamage:48, types:["MINA_CANNON","MINA_RETREAT","MINA_KERAUNOS"]},
 ];
 const DEFENSE_IDS = new Set(DEFENSE_ROSTER.map(({id})=>id));
 const DEFENSE_SPECIALS = new Set(DEFENSE_ROSTER.map(({types})=>types[2]));
@@ -28647,9 +28659,9 @@ function defensePulse(point,radius,color,life=.36) {
   }
 }
 
-function defenseMotion(actor,point,duration,kind,finish,destination=null) {
+function defenseMotion(actor,point,duration,kind,finish,destination=null,lockBefore=0) {
   const start = {x:actor.x,z:actor.z};
-  actor.defenseMotion = {kind,start,end:defenseClamp(actor,point),destination,from:t,until:t+duration,finish};
+  actor.defenseMotion = {kind,start,end:defenseClamp(actor,point),destination,from:t,until:t+duration,finish,lockBefore};
   hold(actor,duration);
   actor.noContactUntil = Math.max(actor.noContactUntil||0,t+duration+STEP);
 }
@@ -28658,7 +28670,8 @@ function advanceDefenseMotion(actor) {
   const motion = actor.defenseMotion;
   if (!motion) return false;
   const progress = Math.min(1,Math.max(0,(t-motion.from)/(motion.until-motion.from)));
-  if (motion.destination?.alive) motion.end = defenseClamp(actor,motion.destination);
+  if (motion.destination?.alive && (!motion.lockBefore || t < motion.until-motion.lockBefore))
+    motion.end=defenseClamp(actor,motion.destination);
   actor.x=motion.start.x+(motion.end.x-motion.start.x)*progress;
   actor.z=motion.start.z+(motion.end.z-motion.start.z)*progress;
   if (t>=motion.until-1e-8) {
@@ -28784,11 +28797,12 @@ function defenseFacing(actor,direction) {
 }
 
 function defenseDash(actor,point,distance,options) {
-  const {type,damage=0,reduce=0,onEnd,onHit,series,final=false} = options;
+  const {type,target,damage=0,reduce=0,onEnd,onHit,series,final=false} = options;
   const special=DEFENSE_SPECIALS.has(type);
   withDamageOrigin(actor,special,()=>{
     dash(actor,point,distance,47,2.8,0,reduce,false,onEnd);
     actor.dash.extraType="defense";
+    actor.dash.defenseTarget=target;
     actor.dash.onHit=target=>{
       if (onHit) onHit(target);
       else if (damage) defenseHit(actor,target,type,damage,"melee",{rush:true,final,series});
@@ -28825,43 +28839,42 @@ function kafkaKaiju(actor) {
 }
 
 function kikoruSweep(actor,target) {
-  const direction=unit(target.x-actor.x,target.z-actor.z);
-  defenseDash(actor,target,5,{type:"KIKORU_SWEEP",onEnd:()=>{
+  defenseDash(actor,target,8,{type:"KIKORU_SWEEP",onEnd:()=>{
+    const current=target.alive?target:nearest(actor);
+    const direction=current?unit(current.x-actor.x,current.z-actor.z):{x:actor.dx,z:actor.dz};
     defenseFacing(actor,direction);
     actor.axeSweepUntil=t+.23;
-    defenseCrescent(actor,direction,6,Math.PI/3,1.72,0xffc329,0xfff4b1);
+    const radius=7.5;
+    defenseCrescent(actor,direction,radius,Math.PI/3,1.72,0xffc329,0xfff4b1);
     for (const victim of actors)
-      if (victim!==actor && oraHits(actor,victim,direction,6,60)) defenseHit(actor,victim,"KIKORU_SWEEP",110);
+      if (victim!==actor && oraHits(actor,victim,direction,radius,60)) defenseHit(actor,victim,"KIKORU_SWEEP",120);
   }});
 }
 
 function kikoruLeap(actor,target,special=false) {
-  let point=defenseClamp(actor,target);
   const type=special?"KIKORU_NUMBERS":"KIKORU_DROP";
-  const radius=special?5:4;
-  const duration=special?.42:.44;
-  if (special) defenseLandingSight(actor,target,.5);
-  else fx("warning",point.x,point.z,radius,0xd1fa73,duration);
-  if (!special) fx("warning",point.x,point.z,7,0x91bd52,duration);
+  const radius=special?6:4;
+  const outerRadius=special?11:7;
+  const duration=special?.39:.41;
   const series={};
-  const start=()=>defenseMotion(actor,point,duration,"jump",()=>{
-    defenseFracture(point,special?10:7);
-    defenseArea(actor,point,radius,type,special?145:120,special?null:{radius:7,damage:65},
-      {rush:special,final:!special,series});
-    if (special) {
-      hold(actor,.19);
-      schedule(actor,.19,()=>{
-        defenseShockwave(actor,point,type,65,10,series);
-      });
-    }
-  });
+  const targetPoint=()=>defenseClamp(actor,target.alive?target:(nearest(actor)||target));
+  const start=()=>{
+    defenseMotion(actor,targetPoint(),duration,"jump",point=>{
+      defenseFracture(point,outerRadius);
+      defenseArea(actor,point,radius,type,special?145:120,special?null:{radius:outerRadius,damage:65},
+        {rush:special,final:!special,series});
+      if (special) {
+        hold(actor,.19);
+        schedule(actor,.19,()=>defenseShockwave(actor,point,type,65,outerRadius,series));
+      }
+    },target,.10);
+    const motion=actor.defenseMotion;
+    defenseLandingSight(()=>motion.end,duration,radius,special?null:outerRadius);
+  };
   if (special) {
     hold(actor,.5);
-    schedule(actor,.5,()=>{
-      point=defenseClamp(actor,target.alive?target:(nearest(actor)||point));
-      fx("warning",point.x,point.z,radius,0xffdc63,duration);
-      start();
-    });
+    defenseLandingSight(targetPoint,.5,radius);
+    schedule(actor,.5,start);
   } else start();
 }
 
@@ -28890,10 +28903,10 @@ function hoshinaRush(actor,target,special=false) {
     const victim=nearest(actor) || target;
     if (!victim.alive) return;
     const direction=unit(victim.x-actor.x,victim.z-actor.z);
-    defenseDash(actor,victim,special?15:7,{
-      type,damage:special?60:55,reduce:special?0:.2,series,
+    defenseDash(actor,victim,special?18:12,{
+      type,target:victim,damage:special?70:75,reduce:special?0:.2,series,
       onEnd:()=>{
-        if (!special) defenseCrescent(actor,direction,3.45,Math.PI*.36,1.04,0xa54afa,0xf1c9ff,true);
+        if (!special) defenseCrescent(actor,{x:actor.dx,z:actor.dz},3.45,Math.PI*.36,1.04,0xa54afa,0xf1c9ff,true);
         if (!index) {
           hold(actor,.1);
           schedule(actor,.1,()=>start(1));
@@ -28906,7 +28919,7 @@ function hoshinaRush(actor,target,special=false) {
             actor.hoshinaTailSweep={from:t,facing};
             actor.hoshinaTailUntil=Math.max(actor.hoshinaTailUntil,t+.24);
             for (const other of actors)
-              if (other!==actor && oraHits(actor,other,facing,7,95))
+              if (other!==actor && oraHits(actor,other,facing,HOSHINA_TAIL_RADIUS,95))
                 defenseHit(actor,other,type,100,"melee",{rush:true,final:true,series});
           });
         }
@@ -28926,7 +28939,7 @@ function consumeHoshinaCounter(hit) {
   if (!defenseActive(actor,"hoshinaGuardUntil") || hit.n<=0 || actor.hp<=0 ||
       attacker===actor || !actors.includes(attacker)) return;
   actor.hoshinaGuardUntil=0;
-  hit.n=Math.round(hit.n*.5);
+  hit.n=Math.round(hit.n*.4);
   return attacker;
 }
 
@@ -28946,7 +28959,7 @@ function triggerHoshinaCounter(actor,attacker) {
     defenseFacing(actor,facing);
     defenseSwordAura(actor);
     defenseArc(actor,facing,4.1,125,0xf1c7ff);
-    defenseHit(actor,attacker,"HOSHINA_COUNTER",80);
+    defenseHit(actor,attacker,"HOSHINA_COUNTER",95);
   });
 }
 
@@ -28960,23 +28973,24 @@ function minaFire(actor,target,special=false) {
   actor.minaChargeUntil=t+duration;
   let reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
   const sight=defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0xff7186);
-  const initialReach=reach;
+  const coreSight=special?defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3):null;
   const track=()=>{
     const victim=target.alive?target:nearest(actor);
     if (!victim) return;
     direction=unit(victim.x-origin.x,victim.z-origin.z);
     defenseFacing(actor,direction);
     reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
-    if (sight) {
-      sight.rotation.y=Math.atan2(direction.x,direction.z);
-      sight.scale.z=reach/Math.max(.001,initialReach);
+    for (const line of [sight,coreSight]) {
+      if (!line) continue;
+      line.rotation.y=Math.atan2(direction.x,direction.z);
+      line.scale.z=reach;
     }
   };
-  if (!special) actor.defenseSight={until:t+duration,track};
-  else actor.minaSiegeUntil=t+duration+.21;
-  if (special) defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3);
+  actor.defenseSight={until:t+(special?.82:duration),track};
+  if (special) actor.minaSiegeUntil=t+duration+.21;
   schedule(actor,duration,()=>{
-    if (!special) { track(); actor.defenseSight=null; }
+    if (!special) track();
+    actor.defenseSight=null;
     const obstacle=alchemyObstacle(actor,origin,direction,reach,false,true,true);
     const length=obstacle?.distance ?? reach;
     minaRedBeam(actor,origin,direction,length,special);
@@ -28986,7 +29000,7 @@ function minaFire(actor,target,special=false) {
       const along=x*direction.x+z*direction.z;
       const across=Math.abs(x*direction.z-z*direction.x);
       if (along<0 || along>length || across>halfWidth+actorRadius(victim)) continue;
-      defenseHit(actor,victim,type,special?(across<=1.55?245:135):90,"ranged",{final:true});
+      defenseHit(actor,victim,type,special?(across<=1.55?245:155):135,"ranged",{final:true});
     }
   });
 }
@@ -29001,7 +29015,7 @@ function minaRetreat(actor,target) {
     const fire=()=>{
       const aim=target.alive?unit(target.x-actor.x,target.z-actor.z):direction;
       actor.minaFacing={...aim,until:t+.12};
-      projectile(actor,actor.x,actor.z,{x:actor.x+aim.x,z:actor.z+aim.z},75,.4,42,35,0xff91a1);
+      projectile(actor,actor.x,actor.z,{x:actor.x+aim.x,z:actor.z+aim.z},110,.82,42,55,0xff91a1);
       const shot=shots.at(-1);
       shot.animeSkill="MINA_RETREAT";
       if (shot.mesh) { shot.mesh.scale.set(.65,.65,2.5); shot.mesh.rotation.y=Math.atan2(aim.x,aim.z); }
@@ -29021,13 +29035,14 @@ function defenseArc(actor,direction,radius,degrees,color) {
 }
 
 function defenseLine(origin,direction,length,halfWidth,height,life,color) {
-  if (headless || !world || length<=0) return;
+  if (headless || !world) return;
   const group=new THREE.Group();
   group.position.set(origin.x,height,origin.z);
   group.rotation.y=Math.atan2(direction.x,direction.z);
+  group.scale.z=length;
   for (const x of [-halfWidth,halfWidth])
-    duelPart(group,new THREE.BoxGeometry(.07,.035,length),color,x,0,length/2,.78);
-  duelPart(group,new THREE.BoxGeometry(halfWidth*2,.02,length),color,0,0,length/2,.16);
+    duelPart(group,new THREE.BoxGeometry(.07,.035,1),color,x,0,.5,.78);
+  duelPart(group,new THREE.BoxGeometry(halfWidth*2,.02,1),color,0,0,.5,.16);
   world.add(group);
   effects.push({mesh:group,life,total:life,kind:"defenseAim"});
   return group;
@@ -29238,16 +29253,23 @@ function defensePunchVisual(actor,aim,reach) {
   animeSonicBoom(actor.x+aim.x*reach*.74,actor.z+aim.z*reach*.74,aim,0x60eddd,1.42);
 }
 
-function defenseLandingSight(actor,target,life) {
+function defenseLandingSight(getPoint,life,radius,outerRadius=null) {
   if (headless || !world) return;
   const group=new THREE.Group();
-  for (let i=0;i<4;i++) {
-    const marker=duelPart(group,new THREE.RingGeometry(4.74,5,10,1,i*Math.PI/2+.17,.95),0xe7d661,0,.13,0,.57);
-    marker.rotation.x=-Math.PI/2;
+  const point=getPoint();
+  group.position.set(point.x,0,point.z);
+  const rings=[[radius,0xe7d661,.57]];
+  if (outerRadius) rings.push([outerRadius,0x91bd52,.36]);
+  for (const [size,color,opacity] of rings) {
+    for (let i=0;i<4;i++) {
+      const marker=duelPart(group,new THREE.RingGeometry(size-.26,size,10,1,i*Math.PI/2+.17,.95),color,0,.13,0,opacity);
+      marker.rotation.x=-Math.PI/2;
+    }
   }
   animeEffect(group,life,"landing-sight",p=>{
-    const point=defenseClamp(actor,target.alive?target:(nearest(actor)||target));
-    group.position.set(point.x,0,point.z); group.rotation.y=.53*p;
+    const point=getPoint();
+    group.position.set(point.x,0,point.z);
+    group.rotation.y=.53*p;
   });
 }
 
@@ -29531,7 +29553,7 @@ function updateHoshinaTailPose(actor) {
     const idleX=Math.sin(i*.41+idle)*.56;
     const idleY=-.31+i*.062;
     const idleZ=-.55-u*1.95;
-    const reach=u*6.7*scale;
+    const reach=u*(HOSHINA_TAIL_RADIUS-.3)*scale;
     const extendedX=Math.sin(bend)*reach;
     const extendedY=-.32+.66*Math.sin(u*Math.PI*.7);
     const extendedZ=Math.cos(bend)*reach-.37*(1-u);
