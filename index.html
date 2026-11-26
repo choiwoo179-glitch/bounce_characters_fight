@@ -2995,7 +2995,9 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 투과 기동과 방위대 무장</strong><p>신규 5인의 스킬 배너와 고유 타격 연출을 적용했습니다. 팬텀 메너스, 괴수화 정권, 완전 변신을 조정하고 키코루와 미나의 조준을 개선했습니다.</p><strong>이전 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
+                <strong>최신 패치 · 방위대 스킬 연출</strong>
+                <p>호시나의 초승달 검기와 꼬리 휘두르기, 미나의 붉은 포격, 키코루의 도끼 검기와 갈라지는 번개를 개선했습니다. 키코루의 일반 스킬을 맞으면 3초간 이동 속도가 20 감소합니다.</p>
+                <strong>이전 패치 · 투과 기동과 방위대 무장</strong><p>신규 5인의 스킬 배너와 고유 타격 연출을 적용했습니다. 팬텀 메너스, 괴수화 정권, 완전 변신을 조정하고 키코루와 미나의 조준을 개선했습니다.</p><strong>이전 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
                 <p>토오가타 밀리오, 히비노 카프카, 시노미야 키코루, 호시나 소시로, 아시로 미나를 추가했습니다. 변신과 관통, 착지 예고, 반격, 포격을 각 캐릭터의 3D 모델과 함께 구현했습니다.</p>
                 <strong>이전 패치 · 애니메이션 그래픽 4·5차</strong>
                 <p>타격 스파크의 짙은 외곽선과 명암 대비를 완화하고 반투명도를 조정했습니다. 확정된 스페셜 적중 시 연출 강도에 따라 0.05초 / 0.075초 / 0.10초의 히트스톱을 적용합니다. 연속 공격은 마지막 단계의 적중에만 적용하며 동시에 명중한 경우 가장 강한 정지를 한 번 적용합니다.</p>
@@ -5016,7 +5018,7 @@ function useProjectionBarrage(e) {
 
 function advanceReflectingDash(e, a) {
   const o = e.dash;
-  let n = Math.min(o.remaining, Math.max(0, o.speed + iceSpeedOffset(e)) * a);
+  let n = Math.min(o.remaining, applyKikoruSlow(e,o.speed + iceSpeedOffset(e)) * a);
   /* ponytail: cap 16 reflections per frame to avoid a loop between touching barriers; carry remaining dash distance to next frame. */ for (
     let bounce = 0;
     n > 1e-8 && bounce < 16;
@@ -8407,6 +8409,10 @@ function nearest(e) {
   return nearestOpponent(e);
 }
 
+function applyKikoruSlow(actor,speed) {
+  return Math.max(0,speed-(defenseActive(actor,"kikoruSlowUntil")?20:0));
+}
+
 function speedOf(e) {
   if (duelCardActive(e) || sandShadowLocked(e)) return 0;
   if (e.higurumaSpotlight?.until > t + 1e-8) return 0;
@@ -8414,11 +8420,11 @@ function speedOf(e) {
   if (e.guyTransformUntil > t) return 0;
   if (ballFrozen(e)) return 0;
   if (e.rootUntil > t || teachLocked(e)) return 0;
-  if (e.bleachDash) return e.bleachDash.speed * (bleachSnowSlow(e)?.75:1);
-  if (e.teachJump) return e.teachJump.speed;
-  if (e.akazaFlurryUntil > t) return 10;
+  if (e.bleachDash) return applyKikoruSlow(e,e.bleachDash.speed * (bleachSnowSlow(e)?.75:1));
+  if (e.teachJump) return applyKikoruSlow(e,e.teachJump.speed);
+  if (e.akazaFlurryUntil > t) return applyKikoruSlow(e,10);
   if (e.giyuThrust?.active && t < e.giyuThrust.until - 1e-8)
-    return Math.max(0, 15 + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1);
+    return applyKikoruSlow(e,Math.max(0, 15 + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1));
   const a =
     (e.nika
       ? 65
@@ -8428,7 +8434,10 @@ function speedOf(e) {
     6 * (e.projectionStacks || 0) +
     (tengenFestivalActive(e) ? 15 : 0) + 2*metalStacks(e) +
     (defenseActive(e,"kaijuUntil") ? 13 : 0);
-  return Math.max(0, (e.dash ? e.dash.speed : a) + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1) * (e.bankaiUntil>t?1.25:1) * (kenpachiBankaiActive(e) ? 1.2 : 1) * (opmPhasing(e)?1.5:1) * (bleachSnowSlow(e)?.75:1);
+  const movementSpeed=Math.max(0, (e.dash ? e.dash.speed : a) + iceSpeedOffset(e)) *
+    (e.slow > t ? 0.8 : 1) * (e.bankaiUntil>t?1.25:1) *
+    (kenpachiBankaiActive(e) ? 1.2 : 1) * (opmPhasing(e)?1.5:1) * (bleachSnowSlow(e)?.75:1);
+  return applyKikoruSlow(e,movementSpeed);
 }
 
 function reduction(e) {
@@ -10706,7 +10715,7 @@ function advanceExtraDashSegment(e,a) {
   const o = e.dash,
     n = { x: e.dx, z: e.dz },
     s = { x: e.x, z: e.z },
-    speed = Math.max(0, o.speed + iceSpeedOffset(e)),
+    speed = applyKikoruSlow(e,o.speed + iceSpeedOffset(e)),
     i = Math.min(o.remaining, speed * a),
     arenaReach = boundedTravel(e, n, i),
     obstruction = milioPhasing(e) ? null : alchemyObstacle(e,s,n,arenaReach,o.breakAlchemyObstacle),
@@ -28565,8 +28574,8 @@ const DEFENSE_SKILLS = {
   KAFKA_PUNCH:["괴수화 정권","거리 10을 돌진한 뒤 상대 방향으로 괴수화된 팔을 내질러 120 피해를 주고 밀쳐냅니다."],
   KAFKA_REGEN:["조직 재생","HP가 50% 이하일 때 일반 스킬의 50% 확률로 발동합니다. 10초 동안 초당 HP 8과 MP 4를 회복합니다."],
   KAFKA_KAIJU:["괴수 8호 완전 변신","8초간 괴수 8호가 됩니다. 받는 피해 25% 감소, 속도 +13, 기본 충돌 피해 +15. 변신 2초 뒤 거리 13 돌진을 두 번 하며 첫 적중에 170 피해를 줍니다."],
-  KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 5를 돌진한 뒤 반경 6·전방 120° 부채꼴에 110 피해를 줍니다."],
-  KIKORU_DROP:["도약 내려찍기","예고한 지점에 도끼를 내려찍습니다. 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다."],
+  KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 5를 돌진한 뒤 반경 6·전방 120° 부채꼴에 110 피해를 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
+  KIKORU_DROP:["도약 내려찍기","예고한 지점에 도끼를 내려찍습니다. 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다. 적중 시 3초간 대상의 이동 속도가 20 감소합니다."],
   KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초간 상대를 추적한 뒤 도약 직전에 확정한 지점으로 뛰어내려 반경 5에 145 피해를 줍니다. 이어 반경 10까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
   HOSHINA_CROSS:["호시나류 쌍검 교차 베기","짧게 두 번 돌진해 각 55 피해를 줍니다. 대상당 최대 110 피해. 돌진 중 받는 피해가 20% 감소합니다."],
   HOSHINA_COUNTER:["파쇄 반격","5초 안에 받는 첫 적 공격의 피해를 50% 줄입니다. 생존하면 공격자 뒤로 뛰어들어 80 피해로 반격합니다."],
@@ -28615,7 +28624,10 @@ function defenseHit(actor,target,type,damage,mode="melee",stage={}) {
   withDamageOrigin(actor,special,()=>withAlchemyHitMode(mode,()=>
     hurt(actor,target,damage,special?"special":"skill",0,{type,...stage})),DEFENSE_SKILLS[type][0],type);
   const hit = damageQueue.length > before ? damageQueue.at(-1) : null;
-  if (hit?.a===actor && hit.b===target) return hit;
+  if (hit?.a!==actor || hit.b!==target) return;
+  if (type==="KIKORU_SWEEP" || type==="KIKORU_DROP")
+    hit.onConfirmedHit=()=>{target.kikoruSlowUntil=t+3;};
+  return hit;
 }
 
 function defenseArea(actor,point,radius,type,damage,edge=null,stage={}) {
@@ -28782,7 +28794,7 @@ function defenseDash(actor,point,distance,options) {
       else if (damage) defenseHit(actor,target,type,damage,"melee",{rush:true,final,series});
     };
     if (damage===0 && !onHit) actor.dash.fanOnly=true;
-    if (actor.d.id==="hoshina") defenseSwordAura(actor);
+    if (type==="HOSHINA_NUMBERS") defenseSwordAura(actor);
   },DEFENSE_SKILLS[type][0],type);
 }
 
@@ -28817,7 +28829,7 @@ function kikoruSweep(actor,target) {
   defenseDash(actor,target,5,{type:"KIKORU_SWEEP",onEnd:()=>{
     defenseFacing(actor,direction);
     actor.axeSweepUntil=t+.23;
-    defenseArc(actor,direction,6,120,0xdcff89);
+    defenseCrescent(actor,direction,6,Math.PI/3,1.72,0xffc329,0xfff4b1);
     for (const victim of actors)
       if (victim!==actor && oraHits(actor,victim,direction,6,60)) defenseHit(actor,victim,"KIKORU_SWEEP",110);
   }});
@@ -28881,7 +28893,7 @@ function hoshinaRush(actor,target,special=false) {
     defenseDash(actor,victim,special?15:7,{
       type,damage:special?60:55,reduce:special?0:.2,series,
       onEnd:()=>{
-        defenseArc(actor,direction,3.2,130,0xc095ff);
+        if (!special) defenseCrescent(actor,direction,3.45,Math.PI*.36,1.04,0xa54afa,0xf1c9ff,true);
         if (!index) {
           hold(actor,.1);
           schedule(actor,.1,()=>start(1));
@@ -28891,7 +28903,8 @@ function hoshinaRush(actor,target,special=false) {
             const current=nearest(actor);
             const facing=current?unit(current.x-actor.x,current.z-actor.z):direction;
             defenseFacing(actor,facing);
-            defenseArc(actor,facing,7,190,0xf780ea);
+            actor.hoshinaTailSweep={from:t,facing};
+            actor.hoshinaTailUntil=Math.max(actor.hoshinaTailUntil,t+.24);
             for (const other of actors)
               if (other!==actor && oraHits(actor,other,facing,7,95))
                 defenseHit(actor,other,type,100,"melee",{rush:true,final:true,series});
@@ -28946,7 +28959,7 @@ function minaFire(actor,target,special=false) {
   hold(actor,duration);
   actor.minaChargeUntil=t+duration;
   let reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
-  const sight=defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0xff7186,true);
+  const sight=defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0xff7186);
   const initialReach=reach;
   const track=()=>{
     const victim=target.alive?target:nearest(actor);
@@ -28961,15 +28974,12 @@ function minaFire(actor,target,special=false) {
   };
   if (!special) actor.defenseSight={until:t+duration,track};
   else actor.minaSiegeUntil=t+duration+.21;
-  if (special) defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3,true);
+  if (special) defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3);
   schedule(actor,duration,()=>{
     if (!special) { track(); actor.defenseSight=null; }
     const obstacle=alchemyObstacle(actor,origin,direction,reach,false,true,true);
     const length=obstacle?.distance ?? reach;
-    const endpoint={x:origin.x+direction.x*length,z:origin.z+direction.z*length};
-    defenseLine(origin,direction,length,halfWidth,.59,special?.38:.24,special?0xff6d79:0xf3758c);
-    beam(origin.x,origin.z,endpoint.x,endpoint.z,0xfff4df,special?.23:.15,special?2.9:1.1);
-    defensePulse(origin,special?3.2:1.7,special?0xff9c85:0xffbdc3);
+    minaRedBeam(actor,origin,direction,length,special);
     for (const victim of actors) {
       if (victim===actor || !victim.alive) continue;
       const x=victim.x-origin.x,z=victim.z-origin.z;
@@ -29010,21 +29020,120 @@ function defenseArc(actor,direction,radius,degrees,color) {
   effects.push({mesh:arc,life:.22,total:.22,kind:"defenseArc"});
 }
 
-function defenseLine(origin,direction,length,halfWidth,height,life,color,warning=false) {
+function defenseLine(origin,direction,length,halfWidth,height,life,color) {
   if (headless || !world || length<=0) return;
   const group=new THREE.Group();
   group.position.set(origin.x,height,origin.z);
   group.rotation.y=Math.atan2(direction.x,direction.z);
-  if (warning) {
-    for (const x of [-halfWidth,halfWidth])
-      duelPart(group,new THREE.BoxGeometry(.07,.035,length),color,x,0,length/2,.78);
-    duelPart(group,new THREE.BoxGeometry(halfWidth*2,.02,length),color,0,0,length/2,.16);
-  } else {
-    duelPart(group,new THREE.BoxGeometry(halfWidth*2,.32,length),color,0,0,length/2,.54);
-  }
+  for (const x of [-halfWidth,halfWidth])
+    duelPart(group,new THREE.BoxGeometry(.07,.035,length),color,x,0,length/2,.78);
+  duelPart(group,new THREE.BoxGeometry(halfWidth*2,.02,length),color,0,0,length/2,.16);
   world.add(group);
-  effects.push({mesh:group,life,total:life,kind:warning?"defenseAim":"defenseBeam"});
+  effects.push({mesh:group,life,total:life,kind:"defenseAim"});
   return group;
+}
+
+function defenseCrescent(actor,direction,radius,halfAngle,thickness,color,accent,crossed=false) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.name=crossed?"hoshina-cross-crescents":"kikoru-axe-crescent";
+  group.position.set(actor.x,1.10,actor.z);
+  const heading=Math.atan2(direction.x,direction.z);
+  const blades=crossed?[-1,1]:[1];
+  const layers=[];
+  for (const side of blades) {
+    const blade=new THREE.Group();
+    blade.rotation.z=side*(crossed?.32:.11);
+    blade.position.y=crossed?side*.38:0;
+    group.add(blade);
+    for (const [width,tint,opacity,height] of [
+      [thickness*1.31,color,.29,-.045],[thickness,color,.76,0],[thickness*.22,accent,.92,.04]
+    ]) {
+      const points=[],indices=[];
+      for (let i=0;i<=24;i++) {
+        const u=i/24;
+        const angle=(2*u-1)*halfAngle;
+        const taper=Math.sin(Math.PI*u)**1.18;
+        const edge=radius+Math.sin(2*Math.PI*u)*.13;
+        for (const r of [edge,edge-width*taper])
+          points.push(Math.sin(angle)*r,height,Math.cos(angle)*r);
+        if(i) indices.push(2*i-2,2*i-1,2*i,2*i,2*i-1,2*i+1);
+      }
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute("position",new THREE.Float32BufferAttribute(points,3));
+      geometry.setIndex(indices);
+      const mesh=duelPart(blade,geometry,tint,0,0,0,opacity);
+      layers.push({mesh,opacity});
+    }
+  }
+  animeEffect(group,crossed?.16:.19,"defense-crescent",p=>{
+    const extension=1-(1-Math.min(1,p/.48))**3;
+    group.rotation.y=heading-.30+.54*extension;
+    group.scale.set(.73+.31*extension,1,.76+.26*extension);
+    const fade=(1-p)**1.6;
+    for(const {mesh,opacity} of layers) mesh.userData.akiCustomOpacity=opacity*fade;
+  });
+}
+
+function minaRedBeam(actor,origin,direction,length,special) {
+  if (headless || !world || length<=.05) return;
+  const group=new THREE.Group();
+  group.name=special?"mina-keraunos-red-beam":"mina-cannon-red-beam";
+  group.position.set(origin.x,special?1.39:1.19,origin.z);
+  group.rotation.y=Math.atan2(direction.x,direction.z);
+  const lead=Math.min(special?3.7:2.3,length*.35);
+  const width=special?1.49:.66;
+  const life=special?.43:.30;
+  const layers=[];
+  for (const [r,tint,opacity] of [[1.65,0xdb0d2f,.21],[1.10,0xff294e,.64],[.44,0xffb49f,.89],[.19,0xfff2db,.93]]) {
+    const geo=new THREE.CylinderGeometry(width*r*.72,width*r,1,12,1,true);
+    const mesh=duelPart(group,geo,tint,0,0,lead,opacity);
+    mesh.rotation.x=Math.PI/2;
+    layers.push({mesh,opacity});
+  }
+  const streamers=new THREE.Group();
+  streamers.position.z=lead;
+  group.add(streamers);
+  const count=mobileGraphics()?3:5;
+  for(let i=0;i<count;i++) {
+    const vertices=[],indices=[];
+    for(let j=0;j<=16;j++) {
+      const u=j/16, angle=i*2*Math.PI/count+u*(3.4+i*.35);
+      const r=1.05+.33*Math.sin(u*17+i);
+      const crest=.12+.26*Math.sin(Math.PI*u)**.65;
+      vertices.push(Math.cos(angle)*r,Math.sin(angle)*r,u,
+        Math.cos(angle+.22)*(r-crest),Math.sin(angle+.22)*(r-crest),u);
+      if(j) indices.push(2*j-2,2*j-1,2*j,2*j,2*j-1,2*j+1);
+    }
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute("position",new THREE.Float32BufferAttribute(vertices,3));
+    geo.setIndex(indices);
+    const opacity=i%2?.52:.69;
+    layers.push({mesh:duelPart(streamers,geo,i%2?0xff384f:0xff6c63,0,0,0,opacity),opacity});
+  }
+  const flash=duelPart(group,new THREE.SphereGeometry(1,12,8),0xff8f7d,0,0,lead,.64);
+  const hot=duelPart(group,new THREE.SphereGeometry(1,12,8),0xffe7bb,0,0,lead,.81);
+  animeEffect(group,life,"mina-red-beam",p=>{
+    const fired=Math.min(1,.18+p*9);
+    const reach=(length-lead)*fired;
+    const fade=(1-p)**1.25, pulse=.93+.07*Math.sin(p*53);
+    streamers.rotation.z=p*5.1;
+    streamers.scale.set(width*pulse,width*pulse,reach);
+    for(const {mesh,opacity} of layers) {
+      if(mesh.parent===group) {
+        const spread=pulse*(.7+.3*fade);
+        mesh.scale.set(spread,reach,spread);
+        mesh.position.z=lead+reach/2;
+      }
+      mesh.userData.akiCustomOpacity=opacity*fade;
+    }
+    flash.scale.set(width*(1.24+p),width*(.95+p*.41),width*.55);
+    hot.scale.set(width*.58,width*.55,width*.85);
+    flash.userData.akiCustomOpacity=.64*(1-p)**3;
+    hot.userData.akiCustomOpacity=.81*(1-p)**4;
+  });
+  animeSonicBoom(origin.x+direction.x*lead,origin.z+direction.z*lead,direction,0xff5e6e,special?1.45:.86,group.position.y);
+  particleBurst(actor.x+direction.x*lead,group.position.y,actor.z+direction.z*lead,0xff8a80,special?18:10,width*1.4);
 }
 
 function defenseBox(group,color,x,y,z,w,h,d) {
@@ -29155,19 +29264,59 @@ function defenseFracture(point,radius) {
 function defenseLightning(point,radius) {
   if (headless || !world) return;
   const group=new THREE.Group();
-  group.position.set(point.x,.16,point.z);
-  for(let i=0;i<8;i++) {
-    const angle=i*Math.PI/4+.13, points=[[0,.3,0]];
-    for(let j=1;j<=6;j++) {
-      const a=angle+Math.sin(i+j*3.9)*.20;
-      points.push([Math.cos(a)*radius*j/6,.12+.46*Math.abs(Math.cos(j*1.7)),Math.sin(a)*radius*j/6]);
+  group.name="kikoru-branching-lightning";
+  group.position.set(point.x,.12,point.z);
+  const random=animeInkRandom(Math.round(t*1000+point.x*293+point.z*137));
+  const stages=Array.from({length:5},()=>({core:[],glow:[]}));
+  const count=mobileGraphics()?6:9;
+  const addSegment=(stage,from,to,width,endWidth)=>{
+    animeInkStrip(stages[stage].glow,[from,to],[width,endWidth],3.1);
+    animeInkStrip(stages[stage].core,[from,to],[width,endWidth],1,.026);
+  };
+  for(let i=0;i<count;i++) {
+    const angle=(i+(random()-.5)*.58)*Math.PI*2/count;
+    const reach=radius*(.74+random()*.26);
+    const pointAt=(distance,side,height)=>[
+      Math.cos(angle)*distance-Math.sin(angle)*side,height,
+      Math.sin(angle)*distance+Math.cos(angle)*side
+    ];
+    let from=[0,.24,0],width=.081;
+    for(let j=1;j<=10;j++) {
+      const u=j/10, stage=Math.floor((j-1)/2);
+      const side=(random()-.5)*radius*(.12+.11*u);
+      const to=pointAt(reach*u,side,.04+random()*(.18+.38*(1-u)));
+      const endWidth=.081*(1-u)+.013;
+      addSegment(stage,from,to,width,endWidth);
+      if(j===3 || j===6 || j===8) {
+        const turn=(random()<.5?-1:1)*radius*(.14+random()*.06);
+        const elbow=pointAt(reach*(u+.10),side+turn*.52,.14+random()*.23);
+        const tip=pointAt(reach*Math.min(1,u+.23),side+turn,.09);
+        addSegment(stage,to,elbow,endWidth*.64,endWidth*.32);
+        addSegment(Math.min(4,stage+1),elbow,tip,endWidth*.32,.009);
+      }
+      from=to; width=endWidth;
     }
-    bleachLine(group,points,0xffbc33,.10,.57);
-    bleachLine(group,points,0xfff4a2,.040,.86);
   }
-  animeEffect(group,.29,"ground-bolt",p=>{
-    const scale=Math.min(1,.20+p*1.29);
-    group.scale.set(scale,1,scale);
+  const layers=stages.flatMap(({core,glow},stage)=>
+    [[glow,0xffa51d,.42],[core,0xfff3a2,.94]].map(([vertices,color,opacity])=>{
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute("position",new THREE.Float32BufferAttribute(vertices,3));
+      const mesh=duelPart(group,geometry,color,0,0,0,opacity);
+      mesh.material.blending=THREE.AdditiveBlending;
+      return {mesh,stage,opacity};
+    }));
+  const flash=duelPart(group,new THREE.SphereGeometry(1,10,6),0xffdf73,0,.18,0,.67);
+  animeEffect(group,.37,"ground-bolt",p=>{
+    const age=p*.37;
+    flash.scale.set(.3+4.3*p,.29,.3+4.3*p);
+    flash.userData.akiCustomOpacity=.67*Math.max(0,1-age/.15)**2;
+    for(const {mesh,stage,opacity} of layers) {
+      const local=age-stage*.038;
+      mesh.visible=local>=0;
+      const decay=Math.max(0,1-local/.21);
+      const flicker=.60+.40*Math.abs(Math.cos(local*113+stage*3));
+      mesh.userData.akiCustomOpacity=opacity*(decay**1.13)*flicker;
+    }
   });
 }
 
@@ -29330,11 +29479,16 @@ function defenseAvatar(actor,root,appearance,sphere) {
     defenseBlade(avatar,.85,-.22,-.29,.47);
     const tail=new THREE.Group();
     tail.name="hoshina-numbers-ten-tail";
-    for (let i=0;i<6;i++) {
-      const x=Math.sin(i*.42)*.85,z=-.65-i*.25,y=-.27+i*.10;
-      defenseOval(tail,0x35263c,x,y,z,.19-i*.018,.17-i*.011,.23);
-      defenseBox(tail,0xd47afd,x,y+.11,z,.08,.055,.12);
+    for (let i=0;i<9;i++) {
+      const segment=new THREE.Group(), taper=1-i*.072;
+      tail.add(segment);
+      const plate=duelPart(segment,new THREE.IcosahedronGeometry(1,1),0x402552,0,0,0);
+      plate.scale.set(.29*taper,.25*taper,.48);
+      const ridge=duelPart(segment,new THREE.ConeGeometry(.18*taper,.42*taper,4),0xc26af6,0,.20*taper,-.08);
+      ridge.rotation.x=-.52;
     }
+    const tip=duelPart(tail,new THREE.ConeGeometry(.16,.70,5),0xc588fa,0,0,0);
+    tip.name="hoshina-tail-tip";
     root.add(tail);
     tail.visible=false;
     actor.hoshinaTail=tail;
@@ -29355,6 +29509,39 @@ function defenseAvatar(actor,root,appearance,sphere) {
     avatar.add(cannon);
     actor.minaCannon=cannon;
     actor.minaEmitter=emitter;
+  }
+}
+
+function updateHoshinaTailPose(actor) {
+  const tail=actor.hoshinaTail;
+  const sweep=actor.hoshinaTailSweep;
+  const age=sweep?t-sweep.from:Infinity;
+  const active=age>=0 && age<.24;
+  const swing=Math.min(1,age/.14);
+  const recovery=active?Math.max(0,(age-.14)/.10):1;
+  const ease=swing*swing*(3-2*swing);
+  const angle=(-95+190*ease)*Math.PI/180;
+  const idle=.44*Math.sin(t*18);
+  tail.rotation.y=active?Math.atan2(sweep.facing.x,sweep.facing.z)-actor.mesh.rotation.y:0;
+  const scale=1/Math.max(.01,actor.mesh.scale.x);
+  const end=tail.children.length-1;
+  for(let i=0;i<=end;i++) {
+    const part=tail.children[i],u=(i+1)/(end+1);
+    const bend=angle-(.76-.76*u)*Math.sin(Math.PI*ease);
+    const idleX=Math.sin(i*.41+idle)*.56;
+    const idleY=-.31+i*.062;
+    const idleZ=-.55-u*1.95;
+    const reach=u*6.7*scale;
+    const extendedX=Math.sin(bend)*reach;
+    const extendedY=-.32+.66*Math.sin(u*Math.PI*.7);
+    const extendedZ=Math.cos(bend)*reach-.37*(1-u);
+    part.position.set(
+      active?THREE.MathUtils.lerp(extendedX,idleX,recovery):idleX,
+      active?THREE.MathUtils.lerp(extendedY,idleY,recovery):idleY,
+      active?THREE.MathUtils.lerp(extendedZ,idleZ,recovery):idleZ
+    );
+    part.rotation.y=active?THREE.MathUtils.lerp(bend,idle*.6,recovery):idle*.6+i*.045;
+    if (i===end) part.rotation.x=active?Math.PI/2:-Math.PI/2;
   }
 }
 
@@ -29381,7 +29568,7 @@ function updateDefenseAvatar(actor) {
   }
   if (actor.hoshinaTail) {
     actor.hoshinaTail.visible=defenseActive(actor,"hoshinaTailUntil");
-    actor.hoshinaTail.rotation.y=.44*Math.sin(t*18);
+    if (actor.hoshinaTail.visible) updateHoshinaTailPose(actor);
   }
   if (actor.minaEmitter) {
     const charging=defenseActive(actor,"minaChargeUntil");
@@ -35870,7 +36057,7 @@ function publishOnlineResult(title, summary) {
 // Send world-space draw state. The guest only interpolates presentation between host samples.
 const ONLINE_SCENE_INTERVAL = 80;
 const ONLINE_SCENE_LIMIT = 16400;
-const ONLINE_SCENE_VERSION = 3;
+const ONLINE_SCENE_VERSION = 4;
 const ONLINE_EFFECT_LIMIT = 120;
 const onlineTransform = new THREE.Object3D();
 const onlineWorldPose = new THREE.Matrix4();
