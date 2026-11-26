@@ -2990,12 +2990,12 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
           <div class="home-version" aria-label="버전 정보">
-            <span>최종 수정 <time datetime="2026-11-26">2026.11.26</time></span>
+            <span>최종 수정 <time datetime="2026-11-27">2026.11.27</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
+                <strong>최신 패치 · 투과 기동과 방위대 무장</strong><p>신규 5인의 스킬 배너와 고유 타격 연출을 적용했습니다. 팬텀 메너스, 괴수화 정권, 완전 변신을 조정하고 키코루와 미나의 조준을 개선했습니다.</p><strong>이전 패치 · 밀리오와 괴수 8호 캐릭터 4명</strong>
                 <p>토오가타 밀리오, 히비노 카프카, 시노미야 키코루, 호시나 소시로, 아시로 미나를 추가했습니다. 변신과 관통, 착지 예고, 반격, 포격을 각 캐릭터의 3D 모델과 함께 구현했습니다.</p>
                 <strong>이전 패치 · 애니메이션 그래픽 4·5차</strong>
                 <p>타격 스파크의 짙은 외곽선과 명암 대비를 완화하고 반투명도를 조정했습니다. 확정된 스페셜 적중 시 연출 강도에 따라 0.05초 / 0.075초 / 0.10초의 히트스톱을 적용합니다. 연속 공격은 마지막 단계의 적중에만 적용하며 동시에 명중한 경우 가장 강한 정지를 한 번 적용합니다.</p>
@@ -3271,6 +3271,21 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
 </script><script type="application/json" id="voice-data">
 {
+  "MILIO_AMBUSH": "./assets/sfx/mirio-phase-ambush.mp3",
+  "MILIO_PHASE": "./assets/sfx/mirio-phase-dash.mp3",
+  "MILIO_PHANTOM": "./assets/sfx/mirio-phantom-menace.mp3",
+  "KAFKA_PUNCH": "./assets/sfx/kafka-kaiju-punch.mp3",
+  "KAFKA_REGEN": "./assets/sfx/kafka-regeneration.mp3",
+  "KAFKA_KAIJU": "./assets/sfx/kafka-full-transform.mp3",
+  "KIKORU_SWEEP": "./assets/sfx/kikoru-axe-slash.mp3",
+  "KIKORU_DROP": "./assets/sfx/kikoru-leap-smash.mp3",
+  "KIKORU_NUMBERS": "./assets/sfx/kikoru-numbers4.mp3",
+  "HOSHINA_CROSS": "./assets/sfx/hoshina-cross-slash.mp3",
+  "HOSHINA_COUNTER": "./assets/sfx/hoshina-shatter-counter.mp3",
+  "HOSHINA_NUMBERS": "./assets/sfx/hoshina-numbers10.mp3",
+  "MINA_CANNON": "./assets/sfx/mina-kaiju-cannon.mp3",
+  "MINA_RETREAT": "./assets/sfx/mina-retreat-shot.mp3",
+  "MINA_KERAUNOS": "./assets/sfx/mina-keraunos.mp3",
   "BUGGY_BALL": "./assets/sfx/buggy-ball.mp3",
   "BUGGY_ESCAPE": "./assets/sfx/buggy-escape.mp3",
   "BUGGY_FESTIVAL": "./assets/sfx/buggy-festival.mp3",
@@ -3497,6 +3512,21 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 }
 </script><script type="application/json" id="skill-image-data">
 {
+  "MILIO_AMBUSH": "./assets/skill-banners/mirio-phase-ambush.webp",
+  "MILIO_PHASE": "./assets/skill-banners/mirio-phase-dash.webp",
+  "MILIO_PHANTOM": "./assets/skill-banners/mirio-phantom-menace.webp",
+  "KAFKA_PUNCH": "./assets/skill-banners/kafka-kaiju-punch.webp",
+  "KAFKA_REGEN": "./assets/skill-banners/kafka-regeneration.webp",
+  "KAFKA_KAIJU": "./assets/skill-banners/kafka-full-transform.webp",
+  "KIKORU_SWEEP": "./assets/skill-banners/kikoru-axe-slash.webp",
+  "KIKORU_DROP": "./assets/skill-banners/kikoru-leap-smash.webp",
+  "KIKORU_NUMBERS": "./assets/skill-banners/kikoru-numbers4.webp",
+  "HOSHINA_CROSS": "./assets/skill-banners/hoshina-cross-slash.webp",
+  "HOSHINA_COUNTER": "./assets/skill-banners/hoshina-shatter-counter.webp",
+  "HOSHINA_NUMBERS": "./assets/skill-banners/hoshina-numbers10.webp",
+  "MINA_CANNON": "./assets/skill-banners/mina-kaiju-cannon.webp",
+  "MINA_RETREAT": "./assets/skill-banners/mina-retreat-shot.webp",
+  "MINA_KERAUNOS": "./assets/skill-banners/mina-keraunos.webp",
   "BUGGY_BALL": "./assets/skill-banners/buggy-ball.webp",
   "BUGGY_ESCAPE": "./assets/skill-banners/buggy-escape.webp",
   "BUGGY_FESTIVAL": "./assets/skill-banners/buggy-festival.webp",
@@ -8397,7 +8427,7 @@ function speedOf(e) {
     (e.jackpotUntil > t + 1e-8 ? HAKARI_CONFIG.speedBonus : 0) +
     6 * (e.projectionStacks || 0) +
     (tengenFestivalActive(e) ? 15 : 0) + 2*metalStacks(e) +
-    (defenseActive(e,"kaijuUntil") ? 3 : 0);
+    (defenseActive(e,"kaijuUntil") ? 13 : 0);
   return Math.max(0, (e.dash ? e.dash.speed : a) + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1) * (e.bankaiUntil>t?1.25:1) * (kenpachiBankaiActive(e) ? 1.2 : 1) * (opmPhasing(e)?1.5:1) * (bleachSnowSlow(e)?.75:1);
 }
 
@@ -11207,6 +11237,7 @@ function advanceActors(e) {
       a.x = a.zipTransition.x; a.z = a.zipTransition.z;
       continue;
     }
+    if (a.defenseSight?.until>t) a.defenseSight.track();
     if (advanceDefenseMotion(a)) continue;
     if (advanceZipGrab(a, e)) continue;
     if (advanceOpmPunchFlight(a,e)) continue;
@@ -12346,11 +12377,8 @@ function updateTransientEffects(e) {
         r = a.radius * (1 - Math.pow(1 - p, 2));
       a.mesh.scale.set(r, 1, r);
     }
-    if (a.kind === "defenseShockwave") {
-      const progress=(a.total-a.life)/a.total;
-      const radius=a.radius*(.2+.8*progress);
-      a.mesh.scale.set(radius,radius,1);
-    }
+
+
     if (a.kind === "doumaSweep") a.mesh.rotation.y -= e * 12;
     if (
       (a.mesh.traverse((e) => {
@@ -27475,6 +27503,7 @@ const TYPE_COLORS = Object.freeze({
 });
 
 const ANIME_COLORS = Object.freeze({
+  "괴수 8호": "#67dbbd",
   "유희왕": "#bb94f4",
   "강철의 연금술사": "#e8bb7e",
   "원펀맨":"#ffd15b",
@@ -28532,17 +28561,17 @@ addNewcomerFighters();
 const DEFENSE_SKILLS = {
   MILIO_AMBUSH:["투과 기습","0.5초간 지하로 돌진합니다. 상대 위치에서 솟아오른 뒤 첫 주먹에 95 피해를 줍니다."],
   MILIO_PHASE:["투과 돌진","5초 동안 적과 설치 지형을 관통하고 적의 공격 피해를 받지 않습니다. 적을 관통할 때마다 기본 충돌 피해를 줍니다. 같은 접촉에서는 한 번만 적중합니다."],
-  MILIO_PHANTOM:["팬텀 메너스","바닥에 예고된 세 지점에서 순서대로 솟아오릅니다. 피해는 65, 65, 95로 대상당 최대 225입니다."],
-  KAFKA_PUNCH:["괴수화 정권","팔을 괴수화해 전방에 115 피해를 주고 상대를 밀쳐냅니다."],
+  MILIO_PHANTOM:["팬텀 메너스","상대 위치에서 솟아올라 120 피해를 줍니다. 가장 가까운 벽으로 숨어들었다가 상대 방향으로 거리 15를 돌진해 적중 시 추가로 120 피해를 줍니다."],
+  KAFKA_PUNCH:["괴수화 정권","거리 10을 돌진한 뒤 상대 방향으로 괴수화된 팔을 내질러 120 피해를 주고 밀쳐냅니다."],
   KAFKA_REGEN:["조직 재생","HP가 50% 이하일 때 일반 스킬의 50% 확률로 발동합니다. 10초 동안 초당 HP 8과 MP 4를 회복합니다."],
-  KAFKA_KAIJU:["괴수 8호 완전 변신","8초간 괴수 8호가 됩니다. 받는 피해 25% 감소, 속도 +3, 기본 충돌 피해 +15. 변신 2초 뒤 거리 10 돌진을 두 번 하며 첫 적중에 170 피해를 줍니다."],
+  KAFKA_KAIJU:["괴수 8호 완전 변신","8초간 괴수 8호가 됩니다. 받는 피해 25% 감소, 속도 +13, 기본 충돌 피해 +15. 변신 2초 뒤 거리 13 돌진을 두 번 하며 첫 적중에 170 피해를 줍니다."],
   KIKORU_SWEEP:["도끼 횡베기","상대를 향해 거리 5를 돌진한 뒤 반경 6·전방 120° 부채꼴에 110 피해를 줍니다."],
   KIKORU_DROP:["도약 내려찍기","예고한 지점에 도끼를 내려찍습니다. 반경 4 이내에는 120 피해, 반경 4~7에는 65 피해를 한 번 줍니다."],
-  KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초 정지 후 예고 지점으로 뛰어내려 반경 5에 145 피해를 줍니다. 이어 반경 10까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
+  KIKORU_NUMBERS:["넘버즈 4 공중 강습","0.5초간 상대를 추적한 뒤 도약 직전에 확정한 지점으로 뛰어내려 반경 5에 145 피해를 줍니다. 이어 반경 10까지 퍼지는 충격파가 65 피해를 줍니다. 대상당 최대 210입니다."],
   HOSHINA_CROSS:["호시나류 쌍검 교차 베기","짧게 두 번 돌진해 각 55 피해를 줍니다. 대상당 최대 110 피해. 돌진 중 받는 피해가 20% 감소합니다."],
   HOSHINA_COUNTER:["파쇄 반격","5초 안에 받는 첫 적 공격의 피해를 50% 줄입니다. 생존하면 공격자 뒤로 뛰어들어 80 피해로 반격합니다."],
   HOSHINA_NUMBERS:["넘버즈 10 연계","적을 향해 거리 15씩 두 번 돌진하며 쌍검으로 각 60 피해를 줍니다. 마지막 꼬리 공격은 100 피해이며 대상당 최대 220입니다."],
-  MINA_CANNON:["대형 괴수포","0.4초간 조준선을 표시하고 고정된 직선으로 90 피해를 줍니다."],
+  MINA_CANNON:["대형 괴수포","0.4초간 상대를 조준선으로 추적한 뒤 발사 순간의 직선으로 90 피해를 줍니다."],
   MINA_RETREAT:["후퇴 사격","뒤로 거리 6을 이동하면서 세 발을 쏩니다. 발당 35 피해, 대상당 최대 105입니다."],
   MINA_KERAUNOS:["케라우노스","제자리에서 0.9초간 포격을 준비합니다. 넓은 사격선의 중심은 245, 가장자리는 135 피해를 주며 대상당 한 번 적용됩니다."],
 };
@@ -28637,9 +28666,9 @@ function defenseMotionHeight(actor) {
 }
 
 function milioAmbush(actor,target) {
-  defensePulse(actor,1.8,0xe6b17f);
+  defenseRipple(actor,2.4);
   defenseMotion(actor,target,.5,"underground",point=>{
-    defensePulse(point,2.4,0xffcc74);
+    defenseRipple(point,3);
     const victim=target.alive && Math.hypot(target.x-point.x,target.z-point.z)<=2.4 ? target
       : actors.find(other=>other!==actor && other.alive && Math.hypot(other.x-point.x,other.z-point.z)<=2.4);
     defenseHit(actor,victim,"MILIO_AMBUSH",95);
@@ -28663,7 +28692,8 @@ function milioPhaseContacts() {
       const overlap=Math.hypot(target.x-actor.x,target.z-actor.z)<=bounds;
       const crossed=segmentDistance(0,0,from.x-previous.x,from.z-previous.z,actor.x-target.x,actor.z-target.z)<=bounds;
       if (crossed && !actor.milioContacts.has(target)) {
-        defenseHit(actor,target,"MILIO_PHASE",actor.d.baseDamage);
+        const hit=defenseHit(actor,target,"MILIO_PHASE",actor.d.baseDamage);
+        if (hit) hit.onConfirmedHit=()=>defensePhaseMark(target);
       }
       if (overlap) actor.milioContacts.add(target);
       else actor.milioContacts.delete(target);
@@ -28672,38 +28702,47 @@ function milioPhaseContacts() {
 }
 
 function milioPhantom(actor,target) {
-  const heading=unit(target.x-actor.x,target.z-actor.z);
-  const series={};
-  const points=[-2.15,2.15,0].map(offset=>defenseClamp(actor,{
-    x:target.x-heading.z*offset,z:target.z+heading.x*offset
-  }));
-  const strike=index=>{
-    const point=points[index];
-    fx("warning",point.x,point.z,4,0xffd183,.29);
-    defenseMotion(actor,point,.28,"underground",()=>{
-      defenseArea(actor,point,4,"MILIO_PHANTOM",[65,65,95][index],null,{rush:true,final:index===2,series});
-      defensePulse(point,4,0xffc16e);
-      if (index<2) strike(index+1);
-    });
-  };
-  strike(0);
+  const type="MILIO_PHANTOM", series={};
+  defenseRipple(actor,2.5);
+  defenseMotion(actor,target,.5,"underground",point=>{
+    defenseRipple(point,3.2);
+    defenseArea(actor,point,2.4,type,120,null,{rush:true,series});
+    const walls=[{x:-W/2,z:point.z},{x:W/2,z:point.z},{x:point.x,z:-H/2},{x:point.x,z:H/2}];
+    const wall=walls.reduce((best,p)=>Math.hypot(p.x-point.x,p.z-point.z)<Math.hypot(best.x-point.x,best.z-point.z)?p:best);
+    hold(actor,.12);
+    schedule(actor,.12,()=>defenseMotion(actor,wall,.23,"underground",exit=>{
+      defenseRipple(exit,2.6);
+      const victim=target.alive?target:nearest(actor);
+      if (victim) defenseDash(actor,victim,15,{type,damage:120,final:true,series});
+    }));
+  },target);
 }
 
 function kafkaPunch(actor,target) {
-  actor.kaijuFistUntil=t+.5;
-  const direction=unit(target.x-actor.x,target.z-actor.z);
-  defenseFacing(actor,direction);
-  hold(actor,.18);
-  schedule(actor,.18,()=>{
-    const point={x:actor.x+direction.x*7,z:actor.z+direction.z*7};
-    beam(actor.x,actor.z,point.x,point.z,0x38efdf,.26,3);
-    defensePulse(point,2.5,0x90ffed);
-    for (const victim of actors) {
-      if (victim===actor || !oraHits(actor,victim,direction,7,40)) continue;
-      const hit=defenseHit(actor,victim,"KAFKA_PUNCH",115);
-      if (hit) hit.onConfirmedHit=()=>pushActor(victim,direction,5);
+  defenseDash(actor,target,10,{type:"KAFKA_PUNCH",onEnd:()=>{
+    const victim=target.alive?target:nearest(actor);
+    if (!victim) return;
+    const aim=unit(victim.x-actor.x,victim.z-actor.z);
+    const reach=7*1.6;
+    // Scale the forward and transverse axes of the original 40-degree sector independently.
+    defenseFacing(actor,aim);
+    actor.kaijuFistUntil=t+.32;
+    hold(actor,.15);
+    defensePunchVisual(actor,aim,reach);
+    for (const other of actors) {
+      if (other===actor) continue;
+      const x=other.x-actor.x,z=other.z-actor.z;
+      const forward=(x*aim.x+z*aim.z)/1.6, side=(z*aim.x-x*aim.z)/1.2;
+      const angle=40*Math.PI/180;
+      const radius=actorRadius(other);
+      if (Math.hypot(forward,side)>7+radius/1.6) continue;
+      if (Math.atan2(Math.abs(side),forward)>angle &&
+          segmentDistance(x*aim.x+z*aim.z,Math.abs(z*aim.x-x*aim.z),0,0,
+            reach*Math.cos(angle),7*1.2*Math.sin(angle))>radius) continue;
+      const hit=defenseHit(actor,other,"KAFKA_PUNCH",120);
+      if (hit) hit.onConfirmedHit=()=>pushActor(other,aim,5);
     }
-  });
+  }});
 }
 
 function kafkaRegularSkill(actor) {
@@ -28719,6 +28758,7 @@ function updateKafkaRegen() {
   for (const actor of actors) {
     const regen=actor.kaijuRegen;
     if (!actor.alive || !regen || t+1e-8<regen.next) continue;
+    if (!headless && world) particleBurst(actor.x,1.1,actor.z,0x73ebbe,7,.85);
     heal(actor,8);
     gainResource(actor,"mp",4,true);
     regen.next+=1;
@@ -28742,7 +28782,7 @@ function defenseDash(actor,point,distance,options) {
       else if (damage) defenseHit(actor,target,type,damage,"melee",{rush:true,final,series});
     };
     if (damage===0 && !onHit) actor.dash.fanOnly=true;
-    animeSonicBoom(actor.x,actor.z,{x:actor.dx,z:actor.dz},actor.d.color,1.15);
+    if (actor.d.id==="hoshina") defenseSwordAura(actor);
   },DEFENSE_SKILLS[type][0],type);
 }
 
@@ -28762,7 +28802,7 @@ function kafkaKaiju(actor) {
     const target=nearest(actor);
     if (!target || !defenseActive(actor,"kaijuUntil")) return;
     actor.rootUntil=t;
-    defenseDash(actor,target,10,{type:"KAFKA_KAIJU",onHit:hit,onEnd:()=>{
+    defenseDash(actor,target,13,{type:"KAFKA_KAIJU",onHit:hit,onEnd:()=>{
       if (index===0) {
         hold(actor,.12);
         schedule(actor,.12,()=>start(1));
@@ -28776,6 +28816,7 @@ function kikoruSweep(actor,target) {
   const direction=unit(target.x-actor.x,target.z-actor.z);
   defenseDash(actor,target,5,{type:"KIKORU_SWEEP",onEnd:()=>{
     defenseFacing(actor,direction);
+    actor.axeSweepUntil=t+.23;
     defenseArc(actor,direction,6,120,0xdcff89);
     for (const victim of actors)
       if (victim!==actor && oraHits(actor,victim,direction,6,60)) defenseHit(actor,victim,"KIKORU_SWEEP",110);
@@ -28783,15 +28824,16 @@ function kikoruSweep(actor,target) {
 }
 
 function kikoruLeap(actor,target,special=false) {
-  const point=defenseClamp(actor,target);
+  let point=defenseClamp(actor,target);
   const type=special?"KIKORU_NUMBERS":"KIKORU_DROP";
   const radius=special?5:4;
   const duration=special?.42:.44;
-  fx("warning",point.x,point.z,radius,0xd1fa73,duration+(special?.5:0));
+  if (special) defenseLandingSight(actor,target,.5);
+  else fx("warning",point.x,point.z,radius,0xd1fa73,duration);
   if (!special) fx("warning",point.x,point.z,7,0x91bd52,duration);
   const series={};
   const start=()=>defenseMotion(actor,point,duration,"jump",()=>{
-    defensePulse(point,radius,0xe7ff92);
+    defenseFracture(point,special?10:7);
     defenseArea(actor,point,radius,type,special?145:120,special?null:{radius:7,damage:65},
       {rush:special,final:!special,series});
     if (special) {
@@ -28803,7 +28845,11 @@ function kikoruLeap(actor,target,special=false) {
   });
   if (special) {
     hold(actor,.5);
-    schedule(actor,.5,start);
+    schedule(actor,.5,()=>{
+      point=defenseClamp(actor,target.alive?target:(nearest(actor)||point));
+      fx("warning",point.x,point.z,radius,0xffdc63,duration);
+      start();
+    });
   } else start();
 }
 
@@ -28813,16 +28859,8 @@ function defenseShockwave(actor,point,type,damage,radius,series) {
   for (let step=1;step<=5;step++) {
     schedule(actor,(step-1)*.045,()=>{
       const reach=radius*step/5;
-      if (!headless && world && step===1) {
-        const ring=new THREE.Mesh(new THREE.RingGeometry(.96,1,48),
-          new THREE.MeshBasicMaterial({color:0xc5fd78,transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false}));
-        ring.rotation.x=-Math.PI/2;
-        ring.position.set(visual.x,.16,visual.z);
-        world.add(ring);
-        const effect={mesh:ring,life:.225,total:.225,kind:"defenseShockwave",radius};
-        ring.scale.setScalar(radius/5);
-        effects.push(effect);
-      }
+      if (step===1) defenseLightning(visual,radius);
+
       for (const target of actors) {
         if (target===actor || hits.has(target) || Math.hypot(target.x-point.x,target.z-point.z)>reach) continue;
         hits.add(target);
@@ -28893,6 +28931,7 @@ function triggerHoshinaCounter(actor,attacker) {
   defenseMotion(actor,point,.11,"counter",()=>{
     const facing=unit(attacker.x-actor.x,attacker.z-actor.z);
     defenseFacing(actor,facing);
+    defenseSwordAura(actor);
     defenseArc(actor,facing,4.1,125,0xf1c7ff);
     defenseHit(actor,attacker,"HOSHINA_COUNTER",80);
   });
@@ -28902,20 +28941,35 @@ function minaFire(actor,target,special=false) {
   const type=special?"MINA_KERAUNOS":"MINA_CANNON";
   const duration=special?.9:.4, halfWidth=special?4:1.45;
   const origin={x:actor.x,z:actor.z};
-  const direction=unit(target.x-origin.x,target.z-origin.z);
+  let direction=unit(target.x-origin.x,target.z-origin.z);
   defenseFacing(actor,direction);
   hold(actor,duration);
   actor.minaChargeUntil=t+duration;
-  const reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
-  defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0x7fdfff,true);
+  let reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
+  const sight=defenseLine(origin,direction,reach,halfWidth,.25,duration,special?0xffb05b:0xff7186,true);
+  const initialReach=reach;
+  const track=()=>{
+    const victim=target.alive?target:nearest(actor);
+    if (!victim) return;
+    direction=unit(victim.x-origin.x,victim.z-origin.z);
+    defenseFacing(actor,direction);
+    reach=boundedTravel(origin,direction,Math.hypot(W,H),0);
+    if (sight) {
+      sight.rotation.y=Math.atan2(direction.x,direction.z);
+      sight.scale.z=reach/Math.max(.001,initialReach);
+    }
+  };
+  if (!special) actor.defenseSight={until:t+duration,track};
+  else actor.minaSiegeUntil=t+duration+.21;
   if (special) defenseLine(origin,direction,reach,1.55,.36,duration,0xffe6a3,true);
   schedule(actor,duration,()=>{
+    if (!special) { track(); actor.defenseSight=null; }
     const obstacle=alchemyObstacle(actor,origin,direction,reach,false,true,true);
     const length=obstacle?.distance ?? reach;
     const endpoint={x:origin.x+direction.x*length,z:origin.z+direction.z*length};
-    defenseLine(origin,direction,length,halfWidth,.59,special?.38:.24,special?0xffc067:0x60cfff);
+    defenseLine(origin,direction,length,halfWidth,.59,special?.38:.24,special?0xff6d79:0xf3758c);
     beam(origin.x,origin.z,endpoint.x,endpoint.z,0xfff4df,special?.23:.15,special?2.9:1.1);
-    defensePulse(origin,special?3.2:1.7,special?0xffca7d:0xadf3ff);
+    defensePulse(origin,special?3.2:1.7,special?0xff9c85:0xffbdc3);
     for (const victim of actors) {
       if (victim===actor || !victim.alive) continue;
       const x=victim.x-origin.x,z=victim.z-origin.z;
@@ -28937,8 +28991,10 @@ function minaRetreat(actor,target) {
     const fire=()=>{
       const aim=target.alive?unit(target.x-actor.x,target.z-actor.z):direction;
       actor.minaFacing={...aim,until:t+.12};
-      projectile(actor,actor.x,actor.z,{x:actor.x+aim.x,z:actor.z+aim.z},75,.4,42,35,0x95eaff);
-      defensePulse(actor,1,0xb7ecff,.18);
+      projectile(actor,actor.x,actor.z,{x:actor.x+aim.x,z:actor.z+aim.z},75,.4,42,35,0xff91a1);
+      const shot=shots.at(-1);
+      shot.animeSkill="MINA_RETREAT";
+      if (shot.mesh) { shot.mesh.scale.set(.65,.65,2.5); shot.mesh.rotation.y=Math.atan2(aim.x,aim.z); }
     };
     if (shot===0) fire();
     else schedule(actor,shot*.037,fire);
@@ -28968,6 +29024,7 @@ function defenseLine(origin,direction,length,halfWidth,height,life,color,warning
   }
   world.add(group);
   effects.push({mesh:group,life,total:life,kind:warning?"defenseAim":"defenseBeam"});
+  return group;
 }
 
 function defenseBox(group,color,x,y,z,w,h,d) {
@@ -28992,10 +29049,205 @@ function defenseBlade(group,x,y,z,tilt) {
   group.add(blade);
 }
 
+function defenseRipple(point,radius) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.position.set(point.x,.06,point.z);
+  const waves=[];
+  for (let i=0;i<3;i++) {
+    const geo=new THREE.PlaneGeometry(1,1,48,4);
+    const vertices=geo.attributes.position, colors=[];
+    for (let j=0;j<vertices.count;j++) {
+      const u=vertices.getX(j)+.5,v=vertices.getY(j)+.5;
+      const angle=u*Math.PI*2;
+      const r=(.68+v*.32)*(1+.026*Math.sin(angle*5+i));
+      const crest=Math.sin(Math.PI*v)**2;
+      vertices.setXYZ(j,Math.cos(angle)*r,.32*crest,Math.sin(angle)*r);
+      colors.push(.42+.58*crest,.34+.54*crest,.18+.50*crest);
+    }
+    geo.setAttribute("color",new THREE.Float32BufferAttribute(colors,3));
+    const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:.70,depthWrite:false}));
+    group.add(mesh); waves.push(mesh);
+  }
+  animeEffect(group,.58,"ground-wave",p=>waves.forEach((wave,i)=>{
+    const age=Math.min(1,Math.max(0,(p-i*.12)/.76));
+    const size=radius*(.08+.92*Math.sin(age*Math.PI/2));
+    wave.scale.set(size,.5+size*.36,size);
+    wave.userData.akiCustomOpacity=age>0?.72*Math.sin(Math.PI*age)**.65:0;
+  }));
+}
+
+function defensePhaseTrail(actor) {
+  if (t-(actor.phaseTrailAt??-Infinity)<.1-1e-8) return;
+  const here={x:actor.x,y:1.18,z:actor.z};
+  if (actor.phaseTrailPoint && t-actor.phaseTrailAt<.24)
+    animeTrailSegment(actor.phaseTrailPoint,here,[0xffcf49,.93,.24]);
+  animeGhost(actor,actor.x,actor.z,0xffd953,.30,.33);
+  actor.phaseTrailPoint=here; actor.phaseTrailAt=t;
+}
+
+function defensePhaseMark(target) {
+  if (headless || !world) return;
+  const mark=new THREE.Group();
+  for (let i=0;i<4;i++) {
+    const a=i*Math.PI/2+.785;
+    const shard=duelPart(mark,new THREE.ConeGeometry(.14,.79,4),0xffe589,Math.sin(a)*.74,0,Math.cos(a)*.74,.87);
+    shard.rotation.set(Math.PI/2,0,-a);
+  }
+  animeEffect(mark,.36,"impact-mark",p=>{
+    mark.position.set(target.x,2.1+.7*p,target.z);
+    mark.rotation.y=p*.8; mark.scale.setScalar(1.25-.46*p);
+  });
+}
+
+function defenseCarapaceArm() {
+  const arm=new THREE.Group();
+  for (let i=0;i<3;i++) {
+    const plate=duelPart(arm,new THREE.IcosahedronGeometry(1,1),i===2?0x31434a:0x233139,0,0,.56+i*.75);
+    plate.scale.set(.52+i*.11,.49+i*.10,.74);
+    for (const side of [-1,1]) {
+      const seam=defenseBox(arm,0x47e5cf,side*(.36+i*.07),.32+i*.06,.65+i*.75,.10,.07,.65);
+      seam.rotation.y=side*.22;
+    }
+  }
+  for (let i=0;i<4;i++) {
+    const knuckle=duelPart(arm,new THREE.DodecahedronGeometry(.25),0x35464c,(i-1.5)*.30,.11,2.68);
+    knuckle.scale.z=1.3;
+  }
+  return arm;
+}
+
+function defensePunchVisual(actor,aim,reach) {
+  if (headless || !world) return;
+  const arm=defenseCarapaceArm();
+  arm.position.set(actor.x-aim.z*.45,1.26,actor.z+aim.x*.45);
+  arm.rotation.y=Math.atan2(aim.x,aim.z);
+  animeEffect(arm,.31,"extended-arm",p=>{
+    const thrust=p<.34?Math.sin(p/.34*Math.PI/2):Math.cos((p-.34)/.66*Math.PI/2);
+    arm.scale.set(1.15,1.15,.42+thrust*(reach/2.95-.42));
+  });
+  animeSonicBoom(actor.x+aim.x*reach*.74,actor.z+aim.z*reach*.74,aim,0x60eddd,1.42);
+}
+
+function defenseLandingSight(actor,target,life) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  for (let i=0;i<4;i++) {
+    const marker=duelPart(group,new THREE.RingGeometry(4.74,5,10,1,i*Math.PI/2+.17,.95),0xe7d661,0,.13,0,.57);
+    marker.rotation.x=-Math.PI/2;
+  }
+  animeEffect(group,life,"landing-sight",p=>{
+    const point=defenseClamp(actor,target.alive?target:(nearest(actor)||target));
+    group.position.set(point.x,0,point.z); group.rotation.y=.53*p;
+  });
+}
+
+function defenseFracture(point,radius) {
+  if (headless || !world) return;
+  const count=mobileGraphics()?4:6;
+  for(let i=0;i<count;i++) {
+    const angle=i*Math.PI*2/count+.27;
+    alchemyGroundCracks(point.x,point.z,{x:Math.cos(angle),z:Math.sin(angle)},radius*(.78+.18*(i%2)),1.15,.64);
+  }
+  particleBurst(point.x,.40,point.z,0xdfce88,12,1.9);
+}
+
+function defenseLightning(point,radius) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  group.position.set(point.x,.16,point.z);
+  for(let i=0;i<8;i++) {
+    const angle=i*Math.PI/4+.13, points=[[0,.3,0]];
+    for(let j=1;j<=6;j++) {
+      const a=angle+Math.sin(i+j*3.9)*.20;
+      points.push([Math.cos(a)*radius*j/6,.12+.46*Math.abs(Math.cos(j*1.7)),Math.sin(a)*radius*j/6]);
+    }
+    bleachLine(group,points,0xffbc33,.10,.57);
+    bleachLine(group,points,0xfff4a2,.040,.86);
+  }
+  animeEffect(group,.29,"ground-bolt",p=>{
+    const scale=Math.min(1,.20+p*1.29);
+    group.scale.set(scale,1,scale);
+  });
+}
+
+function defenseSwordAura(actor) {
+  if (headless || !world) return;
+  const group=new THREE.Group();
+  for(const side of [-1,1]) {
+    const arc=duelPart(group,new THREE.RingGeometry(1.68,2.16,22,1,-1.23,2.25),0xb378f7,side*.58,.4,0,.5);
+    arc.rotation.set(-1.19,side*.49,side*1.04);
+    const edge=duelPart(group,new THREE.RingGeometry(2.10,2.18,22,1,-1.23,2.25),0xe7cbff,side*.58,.4,0,.74);
+    edge.rotation.copy(arc.rotation);
+  }
+  animeEffect(group,.25,"blade-aura",p=>{
+    group.position.set(actor.x,1.1,actor.z);
+    group.rotation.y=Math.atan2(actor.dx,actor.dz)+p*1.7;
+  });
+}
+
+function defenseAxe() {
+  const axe=new THREE.Group(); axe.name="kikoru-right-hand-axe";
+  defenseBox(axe,0x353d38,0,.24,0,.17,2.7,.18);
+  for(const y of [-.62,-.37,.85,1.14])
+    defenseBox(axe,0x949f86,0,y,0,.22,.13,.23);
+  const blade=new THREE.Shape();
+  blade.moveTo(.28,.94); blade.lineTo(.40,1.63); blade.lineTo(-.29,1.98);
+  blade.quadraticCurveTo(-.96,2.12,-1.87,1.60);
+  blade.quadraticCurveTo(-1.55,.94,-.87,.54);
+  blade.lineTo(-.53,.92);blade.lineTo(-.22,1.04);blade.closePath();
+  duelPart(axe,new THREE.ExtrudeGeometry(blade,{depth:.16,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.049,bevelThickness:.04}),0x6d8063,0,0,-.1);
+  const lip=new THREE.Shape();
+  lip.moveTo(-1.87,1.60); lip.quadraticCurveTo(-1.55,.94,-.87,.54);lip.lineTo(-.95,.79);lip.closePath();
+  duelPart(axe,new THREE.ShapeGeometry(lip),0xd9e4ca,0,0,.12);
+  defenseBox(axe,0xa8d477,-.25,1.42,.14,.63,.095,.08).rotation.z=.18;
+  return axe;
+}
+
+function defenseGun(siege) {
+  const g=new THREE.Group(); g.name=siege?"mina-summoned-cannon":"mina-service-rifle";
+  defenseBox(g,0x414c45,0,0,.30,.43,.44,1.42);
+  defenseBox(g,0x677564,0,.18,1.03,.48,.29,1.15);
+  defenseBox(g,0x343b3a,0,-.04,-.67,.32,.35,.64);
+  defenseBox(g,0x2f3433,0,-.27,.03,.18,.37,.24).rotation.x=.28;
+  defenseBox(g,0x56614e,0,-.28,.48,.28,.47,.30).rotation.x=-.18;
+  for(let i=0;i<4;i++) defenseBox(g,0x252d29,0,.338,.73+i*.18,.39,.049,.074);
+  const barrel=duelPart(g,new THREE.CylinderGeometry(.15,.18,.94,8),0x293331,0,.08,1.85);
+  barrel.rotation.x=Math.PI/2;
+  defenseBox(g,0x677166,0,.08,2.31,.41,.34,.34);
+  const muzzle=defenseBox(g,0xff9fa5,0,.08,2.50,.20,.13,.035);muzzle.name="muzzle";
+  if(siege) {
+    for(const side of [-1,1]) {
+      defenseBox(g,0x697763,side*.34,.02,.79,.23,.59,1.99);
+      defenseBox(g,0xdb6672,side*.36,.32,1.08,.11,.045,1.15);
+      defenseBox(g,0x353c39,side*.39,-.33,.15,.16,.56,.25).rotation.z=side*.30;
+    }
+    g.scale.set(2.2,1.9,2.35);
+  }
+  return g;
+}
+
 function defenseKaijuHead(group) {
   const form=new THREE.Group();
   form.name="kafka-kaiju-form";
-  defenseOval(form,0x212b31,0,.01,0,1.11,1.16,1.08);
+  const skull=duelPart(form,new THREE.IcosahedronGeometry(1,1),0x27333a,0,.14,-.09);
+  skull.scale.set(1.04,1.05,.96);
+  for (let i=0;i<4;i++) {
+    const spike=duelPart(form,new THREE.ConeGeometry(.21,.50-i*.04,5),0x323f43,0,1.06-i*.26,-.36-i*.16);
+    spike.rotation.x=-.7;
+  }
+  for (const side of [-1,1]) {
+    const brow=duelPart(form,new THREE.IcosahedronGeometry(1,0),0xe8e8d9,side*.34,.46,.84);
+    brow.scale.set(.49,.32,.24); brow.rotation.z=side*.41;
+    const arm=defenseCarapaceArm();
+    arm.position.set(side*.86,-.59,.12); arm.scale.setScalar(.49);
+    arm.rotation.x=1.02; form.add(arm);
+    for (let i=0;i<3;i++) {
+      const rib=duelPart(form,new THREE.IcosahedronGeometry(1,0),0x313e45,side*(.36-.052*i),-.69-i*.16,.49);
+      rib.scale.set(.42-i*.06,.18,.34);
+      defenseBox(form,0x3fe1d4,side*(.35-.05*i),-.76-i*.16,.75,.24,.038,.035).rotation.z=side*.23;
+    }
+  }
   for (const side of [-1,1]) {
     const horn=duelPart(form,new THREE.ConeGeometry(.25,.84,6),0xe0e3d9,side*.49,1.05,.44);
     horn.rotation.z=-side*.25;
@@ -29027,10 +29279,8 @@ function defenseAvatar(actor,root,appearance,sphere) {
   actor.defenseAvatar=avatar;
   const {id}=actor.d;
   if (id==="milio") {
-    const phase=defenseOval(root,0xffd18c,0,0,0,.94,.99,.94,.36);
-    phase.name="milio-phase-silhouette";
-    phase.visible=false;
-    actor.phaseAvatar=phase;
+
+
     for (let i=0;i<4;i++) {
       const flap=defenseBox(avatar,i%2?0xb92832:0xe84438,(i-1.5)*.39,-.32,-.76,.45,1.48,.09);
       flap.rotation.set(.50,0,(i-1.5)*.18);
@@ -29067,15 +29317,13 @@ function defenseAvatar(actor,root,appearance,sphere) {
       tail.rotation.z=-side*.67;
       defenseOval(avatar,0xa0bc87,side*.92,.60,-.25,.17,.13,.15);
     }
-    const axe=new THREE.Group();
-    axe.name="kikoru-axe";
-    axe.position.set(.92,-.24,-.31);
-    axe.rotation.z=-.35;
-    defenseBox(axe,0x333a33,0,0,0,.14,2.4,.13);
-    const head=duelPart(axe,new THREE.CylinderGeometry(.56,.48,.21,5,1,false,-.32,4.55),0x73876e,.13,.86,0);
-    head.rotation.x=Math.PI/2;
-    defenseBox(axe,0xb5df94,.54,.87,.06,.08,.57,.11);
+    const axe=defenseAxe();
+    axe.position.set(-1.02,-.30,.48);
+    axe.rotation.set(-.32,.08,.37);
+    defenseOval(avatar,0x485049,-.95,-.34,.45,.24,.20,.24);
+
     avatar.add(axe);
+    actor.defenseAxe=axe;
   }
   if (id==="hoshina") {
     defenseBlade(avatar,-.85,-.22,-.29,-.47);
@@ -29095,13 +29343,15 @@ function defenseAvatar(actor,root,appearance,sphere) {
     const pony=defenseOval(avatar,0x181925,0,.13,-1.02,.32,.79,.30);
     pony.rotation.x=.54;
     defenseBox(avatar,0xd1d9da,-.38,.49,.96,.17,.073,.04).rotation.z=-.42;
-    const cannon=new THREE.Group();
-    cannon.name="mina-artillery";
-    cannon.position.set(.86,-.39,-.12);
-    defenseBox(cannon,0x424b45,0,0,.31,.32,.39,1.76);
-    defenseBox(cannon,0x657169,0,.23,.01,.42,.12,1.11);
-    defenseBox(cannon,0x242d2b,0,0,1.19,.42,.48,.26);
-    const emitter=defenseBox(cannon,0x91ddff,0,0,1.334,.22,.19,.032);
+    const cannon=defenseGun(false);
+    cannon.position.set(-.96,-.36,.48);
+    defenseOval(avatar,0x414845,-.91,-.39,.49,.24,.19,.21);
+    const emitter=cannon.getObjectByName("muzzle");
+    actor.siegeGun=defenseGun(true);
+    actor.siegeGun.position.set(0,-.1,1.75);
+    actor.siegeGun.visible=false;
+    avatar.add(actor.siegeGun);
+
     avatar.add(cannon);
     actor.minaCannon=cannon;
     actor.minaEmitter=emitter;
@@ -29118,12 +29368,17 @@ function updateDefenseAvatar(actor) {
   if (!avatar) return;
   const facing=actor.minaFacing?.until>t ? actor.minaFacing : actor;
   actor.mesh.rotation.y=Math.atan2(facing.dx ?? facing.x,facing.dz ?? facing.z);
-  const phased=milioPhasing(actor);
   const kaiju=defenseActive(actor,"kaijuUntil");
-  avatar.visible=!phased && !kaiju;
-  if (actor.phaseAvatar) actor.phaseAvatar.visible=phased;
+  avatar.visible=!kaiju;
+  if (defenseActive(actor,"milioPhaseUntil") && !headless && world) defensePhaseTrail(actor);
+
   if (actor.kaijuAvatar) actor.kaijuAvatar.visible=kaiju;
   if (actor.kaijuFist) actor.kaijuFist.visible=defenseActive(actor,"kaijuFistUntil");
+  if (actor.defenseAxe) {
+    const lift=actor.defenseMotion?.kind==="jump"?defenseMotionHeight(actor)/4.8:0;
+    const sweep=Math.max(0,Math.min(1,((actor.axeSweepUntil??0)-t)/.23));
+    actor.defenseAxe.rotation.set(-.32-lift*.9,-.12+Math.sin(Math.PI*sweep)*1.75,.37+lift*.15);
+  }
   if (actor.hoshinaTail) {
     actor.hoshinaTail.visible=defenseActive(actor,"hoshinaTailUntil");
     actor.hoshinaTail.rotation.y=.44*Math.sin(t*18);
@@ -29132,6 +29387,13 @@ function updateDefenseAvatar(actor) {
     const charging=defenseActive(actor,"minaChargeUntil");
     actor.minaEmitter.material.color.setHex(charging?0xffc580:0x91ddff);
     actor.minaCannon.rotation.x=charging?-.08:0;
+    const siege=defenseActive(actor,"minaSiegeUntil");
+    actor.siegeGun.visible=siege;
+    actor.minaCannon.visible=!siege;
+    if (siege) {
+      const left=actor.minaSiegeUntil-t;
+      actor.siegeGun.position.z=1.75-(left<.21?Math.sin(Math.PI*left/.21)*.45:0);
+    }
   }
 }
 
@@ -31575,6 +31837,7 @@ function updateOpmMachineVisual(actor) {
 
 // Stage 1: visual-only, skill-specific shock rings, mesh trails and silhouettes.
 const ANIME_FLIGHT_STYLES = Object.freeze({
+  MINA_RETREAT:[0xff5776,.52,.23,.68],
   SMASH_KICK: [0xbceaff,.27,.24,1.15],
   DAYTIME_TIGER: [0xd5f7ff,1.1,.30,2.0],
   YASAKANI_MAGATAMA: [0xffdc5b,.17,.18],
@@ -31625,6 +31888,14 @@ const ANIME_FLIGHT_STYLES = Object.freeze({
 });
 
 const ANIME_DASH_STYLES = Object.freeze({
+  MILIO_PHANTOM:[0xffcf52,true,true],
+  KAFKA_PUNCH:[0x46d8c9,true,true],
+  KAFKA_KAIJU:[0x41efd4,true,true],
+  KIKORU_SWEEP:[0xc2dc74,true,true],
+  HOSHINA_CROSS:[0xad6cf8,true,true],
+  HOSHINA_NUMBERS:[0xcc78ff,true,true],
+  MINA_RETREAT:[0xef7189,true,true],
+
   THUNDERCLAP_FLASH: [0xffd94b,true,true],
   THUNDERCLAP_SIXFOLD: [0xffed7a,true,true],
   THUNDER_GOD: [0x9eeaff,true,true],
@@ -31895,7 +32166,7 @@ function animeFinishFlights(before) {
 function animeSilhouetteVertices(actor) {
   const root=actor.mesh;
   if (!root) return null;
-  const key=[root,actor.avatarGroup,!!actor.nika,actor.bankaiUntil>t,braveActive(actor),!!actor.guyGates,kenpachiBankaiActive(actor)];
+  const key=[root,actor.avatarGroup,!!actor.nika,actor.bankaiUntil>t,braveActive(actor),!!actor.guyGates,defenseActive(actor,"kaijuUntil"),kenpachiBankaiActive(actor)];
   const cached=animeSilhouetteCache.get(actor);
   if (cached && key.every((value,i)=>value===cached.key[i])) return cached.vertices;
   root.updateMatrixWorld(true);
@@ -32120,6 +32391,8 @@ function animeBlendRemoteStretch(actor,blend) {
 
 // Stage 5: character visual identity. No profile value is used by combat physics.
 const ANIME_VFX_PROFILES = Object.freeze({
+  milio:[0xffca40,0xfff3c1,1.02], kafka:[0x35cdbc,0xbafff0,1.10],
+  kikoru:[0xd2dd55,0xffe96c,1.02], hoshina:[0xa663e8,0xecbaff,.97], mina:[0xeb526e,0xffdfc0,1.05],
   tanjiro:[0xef5938,0xa5eaff,1.00], zenitsu:[0xffd243,0xd8f8ff,1.08],
   inosuke:[0x859de5,0xe5eaff,.95], naruto:[0xff983d,0xffedb5,1.00],
   sasuke:[0x8879e7,0xd3efff,1.03], luffy:[0xe45d57,0xffe2a3,1.05],
@@ -32158,6 +32431,13 @@ const ANIME_VFX_PROFILES = Object.freeze({
 });
 const ANIME_VFX_SKILLS = new Map();
 for(const [color,accent,strength,skills] of [
+  [0xffc843,0xffefad,1.02,"MILIO_AMBUSH MILIO_PHASE MILIO_PHANTOM"],
+  [0x37cebf,0xc0fff4,1.12,"KAFKA_PUNCH KAFKA_KAIJU"],
+  [0xaacf73,0xffe17c,1.02,"KIKORU_SWEEP KIKORU_DROP"],
+  [0xffd94b,0xfff3b2,1.10,"KIKORU_NUMBERS"],
+  [0xae70f6,0xf1ceff,.98,"HOSHINA_CROSS HOSHINA_COUNTER HOSHINA_NUMBERS"],
+  [0xf06880,0xffe5c7,1.04,"MINA_RETREAT MINA_CANNON"],
+  [0xf04c64,0xfff1c0,1.15,"MINA_KERAUNOS"],
   [0xffd648,0xd9f8ff,1.08,"THUNDERCLAP_FLASH THUNDERCLAP_SIXFOLD"],
   [0x81caff,0xffe09b,1.10,"THUNDER_GOD"],
   [0xeaf0ff,0xb6a0f2,1.04,"PROJECTION_BARRAGE PROJECTION_SORCERY"],
@@ -32242,6 +32522,9 @@ const ANIME_INK_PALETTES = Object.freeze([
 ]);
 const ANIME_INK_SKILLS = new Map();
 for (const [index,skills] of [
+  [7,"MILIO_AMBUSH MILIO_PHASE MILIO_PHANTOM KAFKA_PUNCH KAFKA_KAIJU"],
+  [4,"KIKORU_SWEEP HOSHINA_CROSS HOSHINA_COUNTER HOSHINA_NUMBERS"],
+  [10,"KIKORU_DROP"],[0,"KIKORU_NUMBERS"],[8,"MINA_CANNON MINA_RETREAT MINA_KERAUNOS"],
   [0,"THUNDERCLAP_FLASH THUNDERCLAP_SIXFOLD THUNDER_GOD RAIKIRI LIGHTNING_CLONE CHIDORI_AURA NIKA_LIGHTNING NUE"],
   [1,"BURNING_BONES HINOKAMI_ENBU UNKNOWING_FIRE RISING_SCORCHING_SUN RENGOKU SANJI_DIABLE RED_ROC DAI_FUNKA MEIGO RYUSEI_KAZAN FLASHFIRE_FIST ROY_PRECISION ROY_CHAIN"],
   [2,"SANJI_IFRIT SOKATSUI FLASHFREEZE_HEATWAVE"],
@@ -32577,9 +32860,9 @@ function animeRenderOnlineInk(arena,blend) {
 
 
 // Stage 4: confirmed-hit timing, separated from damage and movement.
-const CINEMA_HEAVY_SKILLS=new Set("SERIOUS_PUNCH HOLLOW_PURPLE NIGHT_GUY RENGOKU HOWITZER_IMPACT SANJI_IFRIT REZE_BOMB PSYCHOKINESIS KUROHITSUGI".split(" "));
-const CINEMA_STRONG_SKILLS=new Set("ASURA HINOKAMI_ENBU INCINERATION_UPGRADE MILLENNIUM_EMPEROR_NOVA RYUSENKA RENJI_BANKAI EDWARD_CANNON SCAR_CHAIN NIKA_GIGANT DETROIT_120 AMA_NO_MURAKUMO SANJI_DIABLE CHIBAKU_TENSEI GURASHI URYU_ANTITHESIS".split(" "));
-const CINEMA_LIGHT_FINISHERS=new Set("THUNDERCLAP_SIXFOLD PROJECTION_BARRAGE BUGGY_FESTIVAL FIERCE_WINGS_BARRAGE".split(" "));
+const CINEMA_HEAVY_SKILLS=new Set("MINA_KERAUNOS KAFKA_KAIJU SERIOUS_PUNCH HOLLOW_PURPLE NIGHT_GUY RENGOKU HOWITZER_IMPACT SANJI_IFRIT REZE_BOMB PSYCHOKINESIS KUROHITSUGI".split(" "));
+const CINEMA_STRONG_SKILLS=new Set("MILIO_PHANTOM KIKORU_NUMBERS ASURA HINOKAMI_ENBU INCINERATION_UPGRADE MILLENNIUM_EMPEROR_NOVA RYUSENKA RENJI_BANKAI EDWARD_CANNON SCAR_CHAIN NIKA_GIGANT DETROIT_120 AMA_NO_MURAKUMO SANJI_DIABLE CHIBAKU_TENSEI GURASHI URYU_ANTITHESIS".split(" "));
+const CINEMA_LIGHT_FINISHERS=new Set("HOSHINA_NUMBERS THUNDERCLAP_SIXFOLD PROJECTION_BARRAGE BUGGY_FESTIVAL FIERCE_WINGS_BARRAGE".split(" "));
 const CINEMA_FINISH_ONLY=new Set([...CINEMA_LIGHT_FINISHERS,"HINOKAMI_ENBU","RYUSENKA","RENJI_BANKAI"]);
 const CINEMA_PASSIVE_KINDS=new Set(["royBurn","magmaBurn","teachBurn","bleachDot","duelDot","burn","roomWall"]);
 const CINEMA_DIRECT_KINDS=new Set(["skill","special","rikaBeam","powerWeapon","curse","akiCounter","illusionCounter","collision","rare","uryuReturn","summon"]);
@@ -34488,7 +34771,10 @@ function matchAssetUrls(indices, track) {
     types.add(character.specialType);
     for (const skill of practiceSkills(character)) types.add(skill.type);
   }
-  for (const type of types) urls.push(skillBannerUrls?.[type], skillVoices[type]);
+  for (const type of types) {
+    urls.push(skillBannerUrls?.[type]);
+    if (!Object.hasOwn(DEFENSE_SKILLS,type)) urls.push(skillVoices[type]);
+  }
   return urls.filter(Boolean);
 }
 
@@ -34496,6 +34782,12 @@ function withMatchResources(indices, track, launch, isCurrent = () => true) {
   if (matchLoading) return;
   if (headless) return launch();
   const tasks = queueResources(matchAssetUrls(indices, track), true);
+  const upcomingVoices=indices.flatMap(index=>{
+    const fighter=CHARACTER_DATABASE[index];
+    return fighter && DEFENSE_IDS.has(fighter.id)
+      ? practiceSkills(fighter).map(skill=>skillVoices[skill.type]) : [];
+  });
+  queueResources(upcomingVoices);
   if (!tasks.length) return launch();
   matchLoading = true;
   const wasPaused = paused;
@@ -35578,7 +35870,7 @@ function publishOnlineResult(title, summary) {
 // Send world-space draw state. The guest only interpolates presentation between host samples.
 const ONLINE_SCENE_INTERVAL = 80;
 const ONLINE_SCENE_LIMIT = 16400;
-const ONLINE_SCENE_VERSION = 2;
+const ONLINE_SCENE_VERSION = 3;
 const ONLINE_EFFECT_LIMIT = 120;
 const onlineTransform = new THREE.Object3D();
 const onlineWorldPose = new THREE.Matrix4();
