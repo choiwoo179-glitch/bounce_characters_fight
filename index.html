@@ -2965,9 +2965,114 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
       @media (prefers-reduced-motion: reduce) {
         .buggy-blast-flash { display: none; }
       }
+      /* Title, mode cards, and match options */
+      body.game-home > header { display: none; }
+      #home .home-stage, #modeSelection {
+        text-align: center;
+        background: radial-gradient(ellipse at 50% 42%, #28486c 0%, #172a43 44%, transparent 78%);
+      }
+      #home .home-stage {
+        min-height: min(660px, 80svh);
+        justify-content: center;
+        gap: clamp(24px, 6vh, 56px);
+      }
+      #home #gameTitleFallback { margin: 0; font-size: clamp(2rem, 8vw, 4.8rem); line-height: 1.08; }
+      #home .start-mode {
+        width: min(320px, 78vw);
+        min-height: 62px;
+        color: #142033;
+        border: 3px solid #101a2c;
+        clip-path: none;
+        border-radius: 14px;
+        background: linear-gradient(#ffef9e, #ffcb53);
+        box-shadow: 0 7px 0 #101a2c, inset 0 2px #fff8;
+        font-size: clamp(1.125rem, 4vw, 1.5rem);
+        font-weight: 900;
+      }
+      #home .start-mode:hover { background: linear-gradient(#fff3b6, #ffd15a); }
+      #home .start-mode:active { transform: translateY(3px); box-shadow: 0 4px 0 #101a2c; }
+      #modeSelection { padding: clamp(12px, 3vw, 32px) 0 16px; }
+      #modeSelection .game-title { width: min(300px, 64%); max-height: 12svh; }
+      #modeSelection #modeTitleFallback { font-size: clamp(1rem, 5vw, 1.8rem); }
+      #modeSelection h2 { margin: 18px 0 15px; font-size: clamp(1.15rem, 4vw, 1.8rem); }
+      #modes {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: clamp(4px, 1.2vw, 15px);
+        width: min(1060px, 100%);
+        margin: 0 auto 18px;
+      }
+      #modes .mode {
+        position: relative;
+        isolation: isolate;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: clamp(4px, 1.05vw, 14px);
+        min-width: 0;
+        min-height: clamp(103px, 19vw, 190px);
+        padding: 8px 2px;
+        border: clamp(2px, .35vw, 4px) solid #101a2c;
+        clip-path: none;
+        border-radius: clamp(6px, 1.3vw, 16px);
+        background: linear-gradient(156deg, var(--mode-light), var(--mode-dark) 76%);
+        box-shadow: inset 0 2px #ffffff54, inset 0 -10px #14233835, 0 5px #101a2c;
+        color: white;
+        text-align: center;
+        text-shadow: 0 2px #102136b0;
+        overflow: hidden;
+        touch-action: manipulation;
+      }
+      #modes .mode::before {
+        position: absolute;
+        z-index: -1;
+        inset: 5% 0 auto;
+        margin-inline: auto;
+        width: 72%;
+        aspect-ratio: 1;
+        content: "";
+        background: #eaf7ff23;
+        clip-path: polygon(50% 0, 94% 25%, 94% 75%, 50% 100%, 6% 75%, 6% 25%, 50% 0, 50% 11%, 16% 31%, 16% 69%, 50% 89%, 84% 69%, 84% 31%, 50% 11%);
+      }
+      #modes .challenge-card { --mode-light: #cb7224; --mode-dark: #8c3c19; }
+      #modes .local-card { --mode-light: #2e78c8; --mode-dark: #204a87; }
+      #modes .online-card { --mode-light: #8161ca; --mode-dark: #532d89; }
+      #modes .mode b { font-size: clamp(1.2rem, 4.8vw, 3.1rem); line-height: 1; }
+      #modes .mode small { color: #fff; font-size: clamp(.66rem, 1.8vw, 1.05rem); font-weight: 800; line-height: 1.18; margin: 0; word-break: keep-all; }
+      #modes .mode:hover { filter: brightness(1.13); }
+      #modes .mode:active { transform: translateY(3px); box-shadow: inset 0 2px #ffffff54, 0 2px #101a2c; }
+      #modes .mode:focus-visible { outline: 2px solid #ffeb98; outline-offset: 2px; z-index: 1; }
+      .mode-navigation { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      #modeSelection .home-version { margin: 15px auto 0; justify-content: center; }
+      #modeSelection #resourceDetails { margin: 10px auto 0; text-align: center; }
+      #modeSelection .footer-note { margin: 12px auto; }
+      #modal .dialog { max-height: calc(100vh - 28px); max-height: calc(100dvh - 28px); overflow-y: auto; }
+      #matchOptions { margin: 18px 0; text-align: start; display: grid; gap: 12px; }
+      #matchOptions[hidden] { display: none; }
+      #matchOptions fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+      #matchOptions legend { margin-bottom: 5px; font-weight: 800; }
+      .match-options-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: 4px; padding: 4px; border-radius: 9px; background: #101c2b; }
+      .match-options-row label { position: relative; min-width: 0; cursor: pointer; }
+      .match-options-row input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+      .match-options-row span { display: grid; place-items: center; padding: 6px 4px; min-height: 38px; border-radius: 6px; text-align: center; color: #dbe7f8; font-weight: 700; font-size: clamp(.74rem, 3vw, .92rem); }
+      .match-options-row input:checked + span { background: #ffcf61; color: #18253a; }
+      .match-options-row input:focus-visible + span { outline: 2px solid #a5e7ff; outline-offset: 1px; }
+      #matchOptions p { margin: 5px 0 0; }
+      #modal:has(#matchOptions:not([hidden])) .result-icon,
+      #modal:has(#matchOptions:not([hidden])) #modalText:empty { display: none; }
+      #modal:has(#matchOptions:not([hidden])) h2 { margin: 7px 0; font-size: clamp(1.4rem, 5vw, 2rem); }
+      .result-portraits { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+      #battleResult .result-portraits img { width: clamp(32px, 11vw, 59px); height: clamp(32px, 11vw, 59px); margin: 0; object-fit: cover; }
+      #modeSelection .game-title[hidden], #modeTitleFallback[hidden] { display: none !important; }
+      @media (max-width: 540px) {
+        #modes .mode small { max-width: 3.1em; }
+        #modal:has(#matchOptions:not([hidden])) { padding: 12px; }
+        #modal:has(#matchOptions:not([hidden])) .dialog { padding: 15px; }
+      }
+      #hud .fighter-avatar img { image-rendering: pixelated; }
     </style>
   </head>
-  <body class="startup-loading">
+  <body class="startup-loading game-home">
     <section id="startupScreen" aria-labelledby="startupTitle">
       <div class="startup-card">
         <h1 id="startupTitle">바운스 캐릭터즈 파이트</h1>
@@ -2993,13 +3098,33 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
         <div class="home-stage">
           <h1 id="gameTitleFallback">바운스 캐릭터즈 파이트</h1>
           <img class="game-title" id="gameTitle" data-src="./assets/ui/game-title.webp" alt="바운스 캐릭터즈 파이트" hidden />
+          <button type="button" id="startMode" class="start-mode">모드 선택</button>
+        </div>
+      </section>
+      <section id="modeSelection" class="hidden" aria-labelledby="modeSelectionTitle">
+        <span id="modeTitleFallback">바운스 캐릭터즈 파이트</span>
+        <img class="game-title" id="modeGameTitle" alt="바운스 캐릭터즈 파이트" hidden />
+        <h2 id="modeSelectionTitle">모드 선택</h2>
+        <div id="modes" role="group" aria-labelledby="modeSelectionTitle">
+          <button type="button" class="mode challenge-card" data-mode="1"><b>1P</b><small>챌린지</small></button>
+          <button type="button" class="mode local-card" data-mode="2"><b>2P</b><small>로컬 대전</small></button>
+          <button type="button" class="mode local-card" data-mode="3"><b>3P</b><small>로컬 대전</small></button>
+          <button type="button" class="mode local-card" data-mode="4"><b>4P</b><small>로컬 대전</small></button>
+          <button type="button" class="mode online-card" id="onlineMode"><b>2P</b><small>온라인 대전</small></button>
+        </div>
+        <div class="mode-navigation">
+          <button type="button" id="modeBack" class="quiet">← 처음 화면</button>
+          <button type="button" id="practiceMode" class="quiet">연습 모드</button>
+        </div>
           <div class="home-version" aria-label="버전 정보">
             <span>최종 수정 <time datetime="2026-11-27">2026.11.27</time></span>
             <span>캐릭터 <span id="homeCharacterCount"></span>명</span>
             <details>
               <summary>세부 정보</summary>
               <div class="home-patch-notes">
-                <strong>최신 패치 · 방위대 전투 밸런스</strong>
+                <strong>최신 패치 · 모드 선택과 파워 아이템</strong>
+                <p>대전 전 배속과 스킬 조작, 아이템 모드를 선택할 수 있습니다. 파워 아이템은 7초마다 등장합니다.</p>
+                <strong>이전 패치 · 방위대 전투 밸런스</strong>
                 <p>키코루의 도끼 사거리와 착지 추적, 호시나의 돌진과 반격, 미나의 포격과 조준을 강화했습니다.</p>
                 <strong>이전 패치 · 방위대 스킬 연출</strong>
                 <p>호시나의 초승달 검기와 꼬리 휘두르기, 미나의 붉은 포격, 키코루의 도끼 검기와 갈라지는 번개를 개선했습니다. 키코루의 일반 스킬을 맞으면 3초간 이동 속도가 20 감소합니다.</p>
@@ -3088,24 +3213,6 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
             <ul id="resourceProblems" hidden></ul>
             <button type="button" id="resourceRetry" hidden>실패한 파일 다시 받기</button>
           </details>
-          <div class="preview" id="preview" role="img" aria-label="무작위 캐릭터 8명 미리보기"></div>
-          
-          <div class="home-controls"><div class="modes" id="modes"></div>
-          <button type="button" id="onlineMode" class="mode"><b>온라인 2P</b><small>방 코드로 대전</small></button>
-            <div class="options">
-              <button type="button" id="startMode" class="start-mode">시작하기</button>
-              <label class="skill-mode-switch">
-                <input id="manual" type="checkbox" role="switch" checked aria-label="스킬 직접 사용 모드" aria-describedby="skillModeHint" />
-                <span class="skill-mode-options" aria-hidden="true">
-                  <span class="skill-mode-auto">스킬 자동 사용 모드</span>
-                  <span class="skill-mode-manual">스킬 직접 사용 모드</span>
-                </span>
-              </label>
-              <p class="hint" id="skillModeHint" aria-live="polite"></p>
-            </div>
-            <p class="hint" id="modeHint"></p>
-          </div>
-        </div>
         <p class="footer-note game-notice">
           본 게임은 팬메이드 게임이며, 수익을 창출하지 않습니다.<br />
           게임에 등장하는 모든 캐릭터 및 효과음 등의 저작물에 대한 권리는 원 저작권자에게 있습니다.<br />
@@ -3254,6 +3361,31 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
         <div id="battleResult" class="battle-result hidden" aria-label="전투 결과"></div>
         <p id="modalText"></p>
         <p id="topSkillDamage" hidden></p>
+        <div id="matchOptions" hidden>
+          <fieldset>
+            <legend>배속 선택</legend>
+            <div class="match-options-row">
+              <label><input type="radio" name="match-speed" value="1" checked><span>1x</span></label>
+              <label><input type="radio" name="match-speed" value="1.5"><span>1.5x</span></label>
+              <label><input type="radio" name="match-speed" value="2"><span>2x</span></label>
+            </div>
+          </fieldset>
+          <fieldset aria-describedby="skillModeHint">
+            <legend>스킬 사용</legend>
+            <div class="match-options-row">
+              <label><input id="manual" type="radio" name="match-skill" value="manual" checked><span>스킬 직접 사용</span></label>
+              <label><input type="radio" name="match-skill" value="auto"><span>스킬 자동 사용</span></label>
+            </div>
+            <p class="hint" id="skillModeHint" aria-live="polite"></p>
+          </fieldset>
+          <fieldset>
+            <legend>아이템 모드</legend>
+            <div class="match-options-row">
+              <label><input type="radio" name="match-items" value="basic" checked><span>기본 모드</span></label>
+              <label><input type="radio" name="match-items" value="power"><span>파워 아이템 모드</span></label>
+            </div>
+          </fieldset>
+        </div>
         <div class="actions" id="modalActions"></div>
         <pre id="testReport" class="hidden"></pre>
       </div>
@@ -4638,6 +4770,7 @@ const BATTLE_STATE_FIELDS = [
   ["damageQueue", () => damageQueue, (value) => (damageQueue = value), () => []],
   ["healQueue", () => healQueue, (value) => (healQueue = value), () => []],
   ["manual", () => manual, (value) => (manual = value), () => manual],
+  ["matchOptions", () => matchOptions, (value) => (matchOptions = value), () => DEFAULT_MATCH_OPTIONS],
   ["mode", () => mode, (value) => (mode = value), () => mode],
   ["lastLog", () => lastLog, (value) => (lastLog = value), () => lastLog],
   ["nextStorm", () => nextStorm, (value) => (nextStorm = value), () => nextStorm],
@@ -4771,7 +4904,7 @@ function clearBattleObjects() {
   damageQueue = [];
   healQueue = [];
   potions = [];
-  nextPotion = ENVIRONMENT_CONFIG.potionInterval;
+  nextPotion = potionInterval();
   for (const effect of effects) if (effect.animeFamily) removeMesh(effect.mesh);
   effects = [];
   clearStormVisual();
@@ -5102,7 +5235,7 @@ function useProjectionBarrage(e) {
 
 function advanceReflectingDash(e, a) {
   const o = e.dash;
-  let n = Math.min(o.remaining, applyKikoruSlow(e,o.speed + iceSpeedOffset(e)) * a);
+  let n = Math.min(o.remaining, itemAdjustedSpeed(e,o.speed + iceSpeedOffset(e)) * a);
   /* ponytail: cap 16 reflections per frame to avoid a loop between touching barriers; carry remaining dash distance to next frame. */ for (
     let bounce = 0;
     n > 1e-8 && bounce < 16;
@@ -8493,8 +8626,9 @@ function nearest(e) {
   return nearestOpponent(e);
 }
 
-function applyKikoruSlow(actor,speed) {
-  return Math.max(0,speed-(defenseActive(actor,"kikoruSlowUntil")?20:0));
+function itemAdjustedSpeed(actor, speed) {
+  return Math.max(0, speed + (powerItemActive(actor, "itemBootsUntil") ? 30 : 0) -
+    (defenseActive(actor, "kikoruSlowUntil") ? 20 : 0));
 }
 
 function speedOf(e) {
@@ -8504,11 +8638,11 @@ function speedOf(e) {
   if (e.guyTransformUntil > t) return 0;
   if (ballFrozen(e)) return 0;
   if (e.rootUntil > t || teachLocked(e)) return 0;
-  if (e.bleachDash) return applyKikoruSlow(e,e.bleachDash.speed * (bleachSnowSlow(e)?.75:1));
-  if (e.teachJump) return applyKikoruSlow(e,e.teachJump.speed);
-  if (e.akazaFlurryUntil > t) return applyKikoruSlow(e,10);
+  if (e.bleachDash) return itemAdjustedSpeed(e,e.bleachDash.speed * (bleachSnowSlow(e)?.75:1));
+  if (e.teachJump) return itemAdjustedSpeed(e,e.teachJump.speed);
+  if (e.akazaFlurryUntil > t) return itemAdjustedSpeed(e,10);
   if (e.giyuThrust?.active && t < e.giyuThrust.until - 1e-8)
-    return applyKikoruSlow(e,Math.max(0, 15 + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1));
+    return itemAdjustedSpeed(e,Math.max(0, 15 + iceSpeedOffset(e)) * (e.slow > t ? 0.8 : 1));
   const a =
     (e.nika
       ? 65
@@ -8521,7 +8655,7 @@ function speedOf(e) {
   const movementSpeed=Math.max(0, (e.dash ? e.dash.speed : a) + iceSpeedOffset(e)) *
     (e.slow > t ? 0.8 : 1) * (e.bankaiUntil>t?1.25:1) *
     (kenpachiBankaiActive(e) ? 1.2 : 1) * (opmPhasing(e)?1.5:1) * (bleachSnowSlow(e)?.75:1);
-  return applyKikoruSlow(e,movementSpeed);
+  return itemAdjustedSpeed(e,movementSpeed);
 }
 
 function reduction(e) {
@@ -8864,6 +8998,7 @@ function applyQueuedDamage() {
     e.calmMp && e.b.alive && mpGain(e.b, e.calmMp, true);
     if (!guaranteed) applyAlchemyGuard(e);
     const counterAttacker = consumeHoshinaCounter(e);
+    if (!e.guyRecoil && powerItemActive(e.b, "itemShieldUntil")) e.n *= .5;
     const a = e.b.hp,
       o = Math.min(e.b.hp, e.n);
     ((e.b.hp = Math.max(0, e.b.hp - e.n)),
@@ -10808,7 +10943,7 @@ function advanceExtraDashSegment(e,a) {
   const o = e.dash,
     n = { x: e.dx, z: e.dz },
     s = { x: e.x, z: e.z },
-    speed = applyKikoruSlow(e,o.speed + iceSpeedOffset(e)),
+    speed = itemAdjustedSpeed(e,o.speed + iceSpeedOffset(e)),
     i = Math.min(o.remaining, speed * a),
     arenaReach = boundedTravel(e, n, i),
     obstruction = milioPhasing(e) ? null : alchemyObstacle(e,s,n,arenaReach,o.breakAlchemyObstacle),
@@ -11078,52 +11213,197 @@ function resolveBallCollision(e, a) {
   ((n.touch = !0), pairs.set(o, n));
 }
 
-function spawnPotion() {
-  const e = [
-      ["hp", 16729441],
-      ["sp", 12417279],
-      ["mp", 4378623],
-    ],
-    a = e[Math.floor(Math.random() * e.length)],
-    o = {
-      type: a[0],
-      x: (Math.random() - 0.5) * (W - 4),
-      z: (Math.random() - 0.5) * (H - 4),
-      until: t + 10,
-      mesh: null,
-    };
-  if (!headless && world) {
-    const e = new THREE.Group(),
-      n = new THREE.Mesh(
-        new THREE.SphereGeometry(0.7 * R, 16, 12),
-        celMaterial({
-          color: a[1],
-          emissive: a[1],
-          emissiveIntensity: 0.42,
-        }),
-      ),
-      s = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.24, 0.28, 0.48, 10),
-        celMaterial({ color: 14215149, metalness: 0.35, roughness: 0.3 }),
-      );
-    ((s.position.y = 0.72 * R),
-      e.add(n, s),
-      celDecoratePotion(e, n, a[1]),
-      e.position.set(o.x, 0.9, o.z),
-      world.add(e),
-      (o.mesh = e));
-  }
-  potions.push(o);
+const BASIC_POTIONS = [
+  ["hp", 0xff4561], ["sp", 0xbd78ff], ["mp", 0x42cfff],
+];
+const POWER_ITEMS = [
+  ...BASIC_POTIONS,
+  ["powerHp", 0xff4e39], ["powerMp", 0x347dff], ["powerSp", 0xa854ff],
+  ["shield", 0x47baff], ["boots", 0xf9d66f],
+];
+const POWER_ITEM_NAMES = {
+  powerHp: "파워 체력 포션", powerMp: "파워 MP 포션", powerSp: "파워 SP 포션",
+  shield: "보호막", boots: "속력 강화 신발",
+};
+const POWER_ITEM_INTERVAL = 7;
+const POWER_ITEM_DURATION = 4;
+
+function potionInterval() {
+  return !practiceActive && matchOptions.items === "power" ? POWER_ITEM_INTERVAL : ENVIRONMENT_CONFIG.potionInterval;
 }
 
-function takePotion(e, a) {
-  ("hp" === a.type
-    ? heal(e, 0.1 * e.maxHp)
-    : "mp" === a.type
-      ? gainResource(e, "mp", 0.1 * e.d.maxMp, true)
-      : spGain(e, 0.1 * e.d.maxSp),
-    removeMesh(a.mesh),
-    potions.splice(potions.indexOf(a), 1));
+function spawnPotion() {
+  const powered = matchOptions.items === "power";
+  const pool = powered ? POWER_ITEMS : BASIC_POTIONS;
+  const [type, color] = pool[Math.floor(Math.random() * pool.length)];
+  const item = {
+    type,
+    x: (Math.random() - 0.5) * (W - 4),
+    z: (Math.random() - 0.5) * (H - 4),
+    until: t + (powered ? POWER_ITEM_INTERVAL : 10),
+    mesh: null,
+  };
+  if (!headless && world) {
+    item.mesh = POWER_ITEM_NAMES[type] ? powerItemModel(type, color) : basicPotionModel(color);
+    item.mesh.position.set(item.x, 0.9, item.z);
+    world.add(item.mesh);
+  }
+  potions.push(item);
+}
+
+function basicPotionModel(color) {
+  const model = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.7 * R, 16, 12),
+    celMaterial({ color, emissive: color, emissiveIntensity: 0.42 }));
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.48, 10),
+    celMaterial({ color: 14215149, metalness: 0.35, roughness: 0.3 }));
+  cap.position.y = 0.72 * R;
+  model.add(body, cap);
+  celDecoratePotion(model, body, color);
+  return model;
+}
+
+function itemWings(color, opacity = 1) {
+  const group = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Group();
+    for (let feather = 0; feather < 4; feather++) {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({
+        color: feather % 2 ? 0xfff0ae : color, opacity, transparent: opacity < 1, depthWrite: opacity === 1,
+      }));
+      mesh.position.set(side * (.25 + feather * .12), .2 - feather * .12, 0);
+      mesh.rotation.z = -side * (.60 + feather * .30);
+      mesh.scale.set(.105, .48 - feather * .064, .065);
+      wing.add(mesh);
+    }
+    wing.position.x = side * .29;
+    group.add(wing);
+  }
+  return group;
+}
+
+function powerItemModel(type, color) {
+  const model = new THREE.Group();
+  const gold = celMaterial({ color: 0xffcf66, emissive: 0xa65b17, emissiveIntensity: .35 });
+  const glass = celMaterial({ color, emissive: color, emissiveIntensity: .6 });
+  const silver = celMaterial({ color: 0xc7e5ff, emissive: 0x5376b9, emissiveIntensity: .23 });
+  const add = (geometry, material, x, y, z) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    model.add(mesh);
+    return mesh;
+  };
+  if (type === "shield") {
+    add(new THREE.IcosahedronGeometry(.93, 2), new THREE.MeshBasicMaterial({
+      color, transparent: true, opacity: .27, depthWrite: false,
+    }), 0, .35, 0);
+    add(new THREE.IcosahedronGeometry(.91, 1), new THREE.MeshBasicMaterial({
+      color: 0x8bdfff, wireframe: true, transparent: true, opacity: .46, depthWrite: false,
+    }), 0, .35, 0);
+    add(new THREE.SphereGeometry(.32, 16, 10), glass, 0, .35, .37);
+    add(new THREE.TorusGeometry(.43, .085, 8, 24), silver, 0, .35, .45);
+    add(new THREE.OctahedronGeometry(.13), silver, 0, .84, .46);
+  } else if (type === "boots") {
+    const leather = celMaterial({ color: 0x233e71, emissive: 0x26477c, emissiveIntensity: .25 });
+    add(new THREE.BoxGeometry(.65, .28, 1.20), silver, 0, -.23, .22);
+    add(new THREE.SphereGeometry(.45, 16, 10), leather, 0, -.05, .52).scale.set(.75, .50, 1);
+    add(new THREE.CylinderGeometry(.34, .32, .86, 10), leather, 0, .36, -.03).rotation.x = -.15;
+    add(new THREE.TorusGeometry(.33, .075, 8, 20), silver, 0, .79, -.09).rotation.x = Math.PI / 2;
+    add(new THREE.BoxGeometry(.67, .15, .27), gold, 0, .05, .37).rotation.x = -.3;
+    add(new THREE.OctahedronGeometry(.15), new THREE.MeshBasicMaterial({ color: 0x8defff }), 0, .16, .55);
+    const wings = itemWings(0x75eaff);
+    wings.position.set(0, .48, -.18);
+    model.add(wings);
+  } else {
+    add(new THREE.SphereGeometry(.69, 20, 14), glass, 0, .18, 0).scale.set(.9, 1.02, .72);
+    add(new THREE.CylinderGeometry(.24, .37, .40, 12), glass, 0, .79, 0);
+    add(new THREE.CylinderGeometry(.32, .28, .26, 10), gold, 0, 1.07, 0);
+    add(new THREE.TorusGeometry(.28, .055, 8, 20), silver, 0, .93, 0).rotation.x = Math.PI / 2;
+    add(new THREE.TorusGeometry(.44, .065, 6, 24), gold, 0, -.23, 0).rotation.x = Math.PI / 2;
+    for (const side of [-1, 1]) {
+      add(new THREE.OctahedronGeometry(.25), gold, 0, .18, .49 * side).scale.set(.92, 1, .24);
+      add(new THREE.OctahedronGeometry(.16), glass, 0, .18, .55 * side).scale.z = .32;
+      add(new THREE.SphereGeometry(.12, 9, 6), silver, -.25 * side, .53, .36 * side).scale.set(.55, 1.3, .32);
+    }
+  }
+  const marker = add(new THREE.TorusGeometry(.97, .047, 5, 30), new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: .78, depthWrite: false,
+  }), 0, -.57, 0);
+  marker.rotation.x = Math.PI / 2;
+  return model;
+}
+
+function powerItemActive(actor, key) {
+  return actor[key] > t + 1e-8;
+}
+
+function takePotion(actor, item) {
+  switch (item.type) {
+    case "hp": heal(actor, .1 * actor.maxHp); break;
+    case "mp": gainResource(actor, "mp", .1 * actor.d.maxMp, true); break;
+    case "sp": spGain(actor, .1 * actor.d.maxSp); break;
+    case "powerHp": heal(actor, .2 * actor.maxHp); break;
+    case "powerMp": gainResource(actor, "mp", .4 * opmResourceMax(actor, "mp"), true); break;
+    case "powerSp": gainResource(actor, "sp", .4 * opmResourceMax(actor, "sp"), true); break;
+    case "shield": actor.itemShieldUntil = t + POWER_ITEM_DURATION; break;
+    case "boots": actor.itemBootsUntil = t + POWER_ITEM_DURATION; break;
+  }
+  if (!headless && POWER_ITEM_NAMES[item.type]) {
+    const label = item.type === "shield" ? "보호막 · 피해 50% 감소" :
+      item.type === "boots" ? "속력 강화 · 이동 속도 +30" : POWER_ITEM_NAMES[item.type];
+    note(actor.d.short + " · " + label);
+  }
+  removeMesh(item.mesh);
+  potions.splice(potions.indexOf(item), 1);
+}
+
+function updatePowerItemVisuals() {
+  for (const actor of actors) {
+    for (const [timer, key] of [["itemShieldUntil", "itemShield"], ["itemBootsUntil", "itemWings"]]) {
+      if (!actor.alive || !powerItemActive(actor, timer)) {
+        if (actor[key]) {
+          removeMesh(actor[key]);
+          actor[key] = null;
+        }
+        continue;
+      }
+      if (!actor[key]) {
+        if (key === "itemShield") {
+          const material = new THREE.MeshBasicMaterial({
+            color: 0x49b9ff, transparent: true, opacity: .24, depthWrite: false,
+          });
+          actor[key] = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), material);
+        } else {
+          actor[key] = itemWings(0x8eeeff, .76);
+        }
+        world.add(actor[key]);
+      }
+      const visual = actor[key];
+      visual.visible = !!actor.mesh?.visible && !milioPhasing(actor) && !kamuiHidden(actor);
+      if (!visual.visible) continue;
+      visual.position.copy(actor.mesh.position);
+      if (key === "itemShield") {
+        visual.scale.set(actorRadius(actor) + .42, actorRadius(actor) + .61, actorRadius(actor) + .42);
+        visual.material.opacity = .22 + .045 * Math.sin(9 * t);
+      } else {
+        visual.position.y += .15;
+        visual.rotation.y = Math.atan2(actor.dx, actor.dz);
+        visual.scale.setScalar(2.1);
+        for (const [index, wing] of visual.children.entries()) {
+          wing.position.x = (index ? 1 : -1) * actorRadius(actor) * .52;
+          wing.rotation.y = (index ? 1 : -1) * Math.sin(13 * t) * .47;
+        }
+      }
+    }
+  }
+}
+
+function updatePowerItemPickups() {
+  for (const actor of actors) {
+    if (!actor.alive || milioPhasing(actor) || kamuiHidden(actor)) continue;
+    const item = potions.find(item => Math.hypot(actor.x - item.x, actor.z - item.z) <= 0.7 * R + actorRadius(actor));
+    if (item) takePotion(actor, item);
+  }
 }
 
 function step(dt = STEP, allowAutomaticCasts = true) {
@@ -11151,6 +11431,7 @@ function step(dt = STEP, allowAutomaticCasts = true) {
   updateDuelCards();
   pinDuelCards();
   advanceActors(dt);
+  if (!practiceActive && matchOptions.items === "power") updatePowerItemPickups();
   constrainAlchemyActors();
   advanceSkillObjects(dt);
   pinDuelCards();
@@ -11245,9 +11526,16 @@ function steerStorm(e, a) {
 
 function updatePotionSchedule() {
   if(practiceActive)return;
-  t + 1e-8 >= nextPotion && (spawnPotion(), (nextPotion += ENVIRONMENT_CONFIG.potionInterval));
-  for (const e of [...potions])
-    t >= e.until && (removeMesh(e.mesh), potions.splice(potions.indexOf(e), 1));
+  const power = matchOptions.items === "power";
+  for (const item of [...potions])
+    if (t + (power ? 1e-8 : 0) >= item.until) {
+      removeMesh(item.mesh);
+      potions.splice(potions.indexOf(item), 1);
+    }
+  if (t + 1e-8 >= nextPotion) {
+    spawnPotion();
+    nextPotion += potionInterval();
+  }
 }
 
 function updateStormSchedule() {
@@ -11404,8 +11692,10 @@ function advanceActors(e) {
             : !headless && Math.random() < 0.45 && beam(o, n, a.x, a.z, a.d.color, 0.18, 0.35);
     }
     (checkWallBounce(a), a.dash && a.dash.remaining <= 1e-8 && endDash(a));
-    const r = potions.find((e) => Math.hypot(a.x - e.x, a.z - e.z) <= 0.7 * R + actorRadius(a));
-    r && takePotion(a, r);
+    if (matchOptions.items !== "power") {
+      const item = potions.find(item => Math.hypot(a.x - item.x, a.z - item.z) <= 0.7 * R + actorRadius(a));
+      if (item) takePotion(a, item);
+    }
   }
   animeActorMotionFinish(animeMotion);
 }
@@ -11753,6 +12043,7 @@ function previewFighter(e) {
   if (onlineSession && (onlineSession.picks[onlineSession.slot] || onlineSession.savingPick)) return;
   ((selectionClick = null),
     (selectionChoices[selectionSlot] = e),
+    queueResources(matchAssetUrls([e]), ASSET_PRIORITY.preview),
     (chosen[selectionSlot] = void 0),
     drawSelection(),
     $("roster")
@@ -11775,9 +12066,9 @@ function confirmFighter(e) {
   if (
     ((selectionClick = null), (chosen[e] = selectionChoices[e]), chosen.every((e) => void 0 !== e))
   ) {
-    chosen=chosen.map(resolveSelection);
+    chosen = chosen.map(resolveSelection);
     if (mode === 1) opponents = randomRoster(5, chosen);
-    startBattle();
+    localMatchSetup(e);
   } else
     ((selectionSlot = chosen.findIndex((e) => void 0 === e)),
       drawSelection(),
@@ -11882,7 +12173,7 @@ function warmSelectedModels(id) {
 function drawSelection() {
   previewLayoutDirty = true;
   const selected = selectionChoices.filter(index => index >= 0);
-  queueResources(matchAssetUrls(selected), true);
+  prepareMatchAssets(chosen.filter(index => index >= 0));
   for (const index of new Set(selected)) warmSelectedModels(CHARACTER_DATABASE[index].id);
   for (const index of selectionChoices) if(index!==RANDOM_PICK) preloadFighterBanners(CHARACTER_DATABASE[index]);
   const e = chosen.length,
@@ -11962,10 +12253,12 @@ function drawSelection() {
     resize());
 }
 
-function startBattle() {
+function startBattle(track = randomBattleTrack(), cancel, options = matchOptions) {
   const indices = mode === 1 ? [chosen[0], opponents[stage - 1]] : chosen;
-  const track = randomBattleTrack();
-  return withMatchResources(indices, track, () => startBattleNow(track));
+  return withMatchResources(indices, track, () => {
+    matchOptions = options;
+    startBattleNow(track);
+  }, cancel);
 }
 
 function startBattleNow(track) {
@@ -11973,6 +12266,7 @@ function startBattleNow(track) {
   practiceActive=false;document.body.classList.remove("practice-mode");
   arenaZoom = 1;
   clearWorld();
+  manual = matchOptions.manual;
   setArenaSize(mode);
   const e = [0.8, 0.9, 1, 1.12, 1.25][stage - 1];
   (resetState(
@@ -11986,7 +12280,7 @@ function startBattleNow(track) {
     $("arena").append(renderer.domElement),
     actors.forEach(actor => { model(actor, true); preloadFighterBanners(actor.d); }),
     ($("battleMode").textContent =
-      1 === mode ? "CHALLENGE / STAGE " + stage + " OF 5" : mode + " PLAYER / LOCAL BATTLE"),
+      battleOptionsLabel(1 === mode ? "CHALLENGE / STAGE " + stage + " OF 5" : mode + " PLAYER / LOCAL BATTLE")),
     $("modal").classList.add("hidden"),
     (paused = !1),
     (running = !0),
@@ -12121,7 +12415,6 @@ function trainShutterPanel(e) {
 function clearWorld() {
   clearBattleObjects();
   if (world) for (const child of [...world.children]) removeMesh(child);
-  ambientBalls = [];
 }
 
 function fx(e, a, o, n, s, i) {
@@ -17293,14 +17586,48 @@ function guyBeastModel(...args) {
   return reusableModel("guyBeastModel", args, buildReusable_guyBeastModel, false);
 }
 
-function hudPortrait(actor) {
-  if (actor.d.id === "kafka" && defenseActive(actor,"kaijuUntil") && readyPortrait("kafka_kaiju"))
-    return readyPortrait("kafka_kaiju");
-  if (actor.d.id === "kenpachi" && kenpachiBankaiActive(actor) && readyPortrait("kenpachi_bankai"))
-    return readyPortrait("kenpachi_bankai");
-  return (
-    (actor.nika && readyPortrait("emperor_nika")) || fighterPortrait(actor.d)
-  );
+function fighterPortraitForm(actor) {
+  if (actor.nika) return "emperor_nika";
+  if (actor.d.id === "kenpachi" && kenpachiBankaiActive(actor)) return "kenpachi_bankai";
+  if (actor.d.id === "kafka" && defenseActive(actor, "kaijuUntil")) return "kafka_kaiju";
+  return "";
+}
+
+function renderResultPortraits(fighters, hud) {
+  const winner = hud.fighters.findIndex(row => row.alive);
+  const groups = winner >= 0
+    ? [[winner], fighters.map((_, slot) => slot).filter(slot => slot !== winner)]
+    : [fighters.map((_, slot) => slot)];
+  const result = $("battleResult");
+  for (const [index, slots] of groups.entries()) {
+    const panel = document.createElement("div");
+    const won = winner >= 0 && index === 0;
+    panel.className = "result-side " + (won ? "result-winner" : "result-loser") + (slots.length > 1 ? " multiple" : "");
+    const portraits = document.createElement("div");
+    portraits.className = "result-portraits";
+    for (const slot of slots) {
+      const fighter = fighters[slot];
+      const image = document.createElement("img");
+      const form = hud.fighters[slot]?.portrait;
+      image.dataset.portrait = fighter.id;
+      if (Object.hasOwn(officialPortraits, form)) image.dataset.form = form;
+      image.src = readyPortrait(image.dataset.form) || fighterPortrait(fighter);
+      image.alt = fighter.name;
+      portraits.append(image);
+    }
+    const copy = document.createElement("div");
+    copy.className = "result-copy";
+    const status = document.createElement("strong");
+    status.className = "result-status";
+    status.textContent = winner < 0 ? "무승부" : won ? "승리" : "패배";
+    const names = document.createElement("span");
+    names.className = "result-name";
+    names.textContent = slots.map(slot => fighters[slot].short).join(" · ");
+    copy.append(status, names);
+    panel.append(portraits, copy);
+    result.append(panel);
+  }
+  result.classList.remove("hidden");
 }
 
 function makeExtraShotMesh(e) {
@@ -17780,8 +18107,6 @@ function initScene() {
   rebuildArenaBoard();
   ((world = new THREE.Group()),
     scene.add(world),
-    $("preview").append(renderer.domElement),
-    resize(),
     window.addEventListener("resize", resize));
   if (window.ResizeObserver)
     new ResizeObserver(() => {
@@ -17791,8 +18116,9 @@ function initScene() {
 
 function resize() {
   if (!renderer) return;
-  const e = renderer.domElement.parentElement,
-    a = e.clientWidth,
+  const e = renderer.domElement.parentElement;
+  if (!e) return;
+  const a = e.clientWidth,
     o = e.clientHeight;
   if (!a || !o) return;
   if ((renderer.setSize(a, o, !1), "selectionCanvas" === e.id)) return void drawSelectionRoster();
@@ -17802,10 +18128,7 @@ function resize() {
   camera.zoom = e.id === "arena" ? arenaZoom : 1;
   if (arenaBoard?.userData.width !== W || arenaBoard?.userData.height !== H) rebuildArenaBoard();
   const n = Math.tan((camera.fov * Math.PI) / 360);
-  if ("preview" === e.id) {
-    const e = ((2.6 * Math.min(8, CHARACTER_DATABASE.length)) / 2 + 1.5) / (n * camera.aspect);
-    (camera.position.set(0, 4.6, Math.max(5, e)), camera.lookAt(0, 2.8, 0));
-  } else {
+  {
     let fit = 0;
     const tilt = Math.PI / 3,
       up = Math.sin(tilt),
@@ -17871,6 +18194,7 @@ function renderFrame(e) {
     updateDuelVisuals();
     updateNewcomerVisuals();
     updateActorMeshes(timeStop ? 0 : e);
+    if (!practiceActive && matchOptions.items === "power") updatePowerItemVisuals();
     updateStormMesh();
     updatePotionMeshes(timeStop ? 0 : e);
     updateTransientEffects(e);
@@ -17895,18 +18219,15 @@ function frame(timestamp) {
     hudTick += realDt;
     if (hudTick > .1) { updateHud(); hudTick=0; }
   } else accumulator=0;
-  if (!running && !$("home").classList.contains("hidden"))
-    for (const [i,ball] of ambientBalls.entries()) {
-      ball.mesh.position.y=2.8+.05*Math.sin(timestamp/900+i);
-      ball.mesh.rotation.y=.2*Math.sin(timestamp/2500+i);
-    }
   if (!running && !$("selection").classList.contains("hidden")) {
     renderSelectionPreviews(timestamp);requestAnimationFrame(frame);return;
   }
 
-  updateCinemaCamera(running&&!paused ? cinema.animationDt : 0);
-  renderFrame(visualDt);
-  publishOnlineScene(timestamp);
+  if (!$("battle").classList.contains("hidden")) {
+    updateCinemaCamera(running&&!paused ? cinema.animationDt : 0);
+    renderFrame(visualDt);
+    publishOnlineScene(timestamp);
+  }
   requestAnimationFrame(frame);
 }
 
@@ -19592,7 +19913,9 @@ function setScreen(e, battleTrack) {
   document.body.classList.toggle("practice-mode",e==="battle"&&practiceActive);
   document.body.classList.toggle("four-player-battle", e === "battle" && !practiceActive && actors.length === 4);
   "selection" !== e && clearSelectionPreviews();
-  for (const a of ["home", "selection", "battle"]) $(a).classList.toggle("hidden", a !== e);
+  document.body.classList.toggle("game-home", e === "home");
+  for (const a of ["home", "modeSelection", "selection", "battle"]) $(a).classList.toggle("hidden", a !== e);
+  document.querySelector("main").scrollTop = 0;
   if(!reducedGraphics())$(e).animate?.([{translate:"12px 0",opacity:.5},{translate:"0 0",opacity:1}],{duration:170,easing:"ease-out"});
   setMusicScreen(e, battleTrack);
 }
@@ -19612,24 +19935,73 @@ function updateSkillModeHint() {
     $("skillModeHint").textContent = "전투 화면에서 내 캐릭터의 기술명 버튼을 터치하세요.";
     return;
   }
+  if (onlineSession) {
+    $("skillModeHint").textContent = "각 플레이어는 Q/W 또는 화면의 스킬 버튼을 사용합니다.";
+    return;
+  }
   const keys = Array.from({length: Math.max(1, mode)}, (_, slot) =>
     (slot + 1) + "P " + SKILL_KEYS[slot * 2].toUpperCase() + "/" + SKILL_KEYS[slot * 2 + 1].toUpperCase());
   $("skillModeHint").textContent = "스킬을 플레이어가 직접 키보드를 눌러 사용합니다. " +
     keys.join(" · ") + " (일반/스페셜)";
 }
 
-function chooseMode(players) {
-  mode = players;
-  document.querySelectorAll(".mode").forEach(button => {
-    const selected = +button.dataset.mode === mode;
-    button.classList.toggle("active", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
-  $("modeHint").textContent = mode === 0
-    ? "시작하기를 누르면 연습 모드로 들어갑니다."
-    : (mode === 1 ? "5명의 무작위 상대와 연속 대전" : mode + "명이 한 기기에서 대전") +
-      " · 시작하기를 눌러 캐릭터를 선택하세요.";
+const DEFAULT_MATCH_OPTIONS = Object.freeze({ speed: 1, manual: true, items: "basic" });
+let matchOptions = DEFAULT_MATCH_OPTIONS;
+
+function matchOptionsFrom(value) {
+  return {
+    speed: [1, 1.5, 2].includes(value?.speed) ? value.speed : 1,
+    manual: value?.manual !== false,
+    items: value?.items === "power" ? "power" : "basic",
+  };
+}
+
+function showMatchOptions(start, cancel) {
+  showModal("MATCH SETUP", "전투 설정", "", [
+    ["전투 시작", () => start(matchOptionsFrom({
+      speed: Number($("matchOptions").querySelector('[name="match-speed"]:checked').value),
+      manual: $("manual").checked,
+      items: $("matchOptions").querySelector('[name="match-items"]:checked').value,
+    })), true],
+    ["취소", cancel, false],
+  ]);
+  const options = $("matchOptions");
+  for (const [name, value] of [
+    ["match-speed", String(matchOptions.speed)],
+    ["match-skill", matchOptions.manual ? "manual" : "auto"],
+    ["match-items", matchOptions.items],
+  ]) {
+    options.querySelector(`[name="${name}"][value="${value}"]`).checked = true;
+  }
+  options.hidden = false;
   updateSkillModeHint();
+  options.querySelector('[name="match-speed"]:checked').focus();
+}
+
+function localMatchSetup(slot) {
+  const indices = mode === 1 ? [chosen[0], opponents[stage - 1]] : chosen;
+  const track = randomBattleTrack();
+  prepareMatchAssets(indices, track);
+  const cancel = () => {
+    $("matchOptions").hidden = true;
+    $("modal").classList.add("hidden");
+    chosen[slot] = undefined;
+    selectionSlot = slot;
+    drawSelection();
+    $("fighterWindows").querySelectorAll(".confirm-fighter")[slot].focus({ preventScroll: true });
+  };
+  showMatchOptions(options => startBattle(track, cancel, options), cancel);
+}
+
+function modeMenu() {
+  home("modeSelection");
+  $("modes").querySelector("button").focus();
+}
+
+function battleOptionsLabel(label) {
+  if (matchOptions.speed !== 1) label += " · " + matchOptions.speed + "x";
+  if (matchOptions.items === "power") label += " · 파워 아이템";
+  return label;
 }
 
 function setRosterGrouping(grouping) {
@@ -19658,7 +20030,7 @@ function selection(snapshot) {
     (selectionChoices = returning ? snapshot.choices : Array.from({ length: e }, (_, index) => index)),
     (selectionSlot = returning ? snapshot.slot : onlineSession?.slot ?? 0),
     (selectionClick = null),
-    (manual = returning ? snapshot.manual : $("manual").checked),
+    (manual = returning ? snapshot.manual : matchOptions.manual),
     clearWorld(),
     clearSelectionPreviews(),
     setScreen("selection"),
@@ -19918,6 +20290,8 @@ const HUD_STATUS_NAMES = Object.freeze({
   LOTUS_ICE: "연잎 얼음",
   SCATTERING_LOTUSES: "흩날리는 연꽃",
   MAHORAGA: "마허라",
+  ITEM_SHIELD: "보호막 · 피해 50% 감소",
+  ITEM_BOOTS: "속력 강화 · 이동 속도 +30",
 });
 
 function fighterStatusEffects(actor) {
@@ -19930,6 +20304,8 @@ function fighterStatusEffects(actor) {
     if (until > t + 1e-8) add(banner);
   };
 
+  timed(actor.itemShieldUntil, "ITEM_SHIELD");
+  timed(actor.itemBootsUntil, "ITEM_BOOTS");
   add("AMATERASU", actor.burns.length);
   timed(actor.teachBurn?.until, "TEACH_BLACK_HOLE");
   timed(actor.denjiBleed?.until, "DENJI_BLEED");
@@ -19983,7 +20359,7 @@ function fighterStatusEffects(actor) {
 function statusCategory(id) {
   if (["AMATERASU","TEACH_BLACK_HOLE","DAI_FUNKA","MEIGO","RYUSEI_KAZAN","DENJI_BLEED","ROY_INFERNO","DUEL_BLACK_MAGICIAN"].includes(id)) return ["지속 피해","↓","#ff867a"];
   if (["URYU_ANTITHESIS","HAKARI_JACKPOT","MAHORAGA","CRESCENT_SLASH","DESTRUCTIVE_DEATH_AIR_TYPE","LOTUS_ICE","SCATTERING_LOTUSES"].includes(id)) return ["회복","＋","#72eab1"];
-  if (["BUGGY_ESCAPE","ALPHONSE_GUARD","BANG_GUARD","SUSANOO","BLACK_ANKH","DEAD_CALM","STONE_WHIRLWIND"].includes(id)) return ["방어","◇","#8dcaff"];
+  if (["BUGGY_ESCAPE","ALPHONSE_GUARD","BANG_GUARD","SUSANOO","BLACK_ANKH","DEAD_CALM","STONE_WHIRLWIND","ITEM_SHIELD"].includes(id)) return ["방어","◇","#8dcaff"];
   return ["강화","↑","#ffd883"];
 }
 function renderFighterStatuses(slot, statuses) {
@@ -20041,12 +20417,12 @@ function buildHud(fighters = actors, remote = false) {
       return `<div class="fighter-hud fighter-hud-${right ? "right" : "left"}" data-slot="${e.slot}">
     <section class="fighter ${right ? "fighter-right" : "fighter-left"}" id="f${e.slot}" style="--accent:${hex(e.d.color)}" aria-label="${e.slot + 1}P ${e.d.short} 상태">
       <div class="fighter-vitals">
-        <div class="fighter-avatar"><img id="fighterPortrait${e.slot}" src="${remote ? fighterPortrait(e.d) : hudPortrait(e)}" alt="${e.d.name}" draggable="false"></div>
+        <div class="fighter-avatar"><img id="fighterPortrait${e.slot}" src="${rosterPortrait(e.d)}" alt="${e.d.name}" draggable="false"></div>
         <div class="fighter-gauges">${["hp", "mp", "sp"].map((a) => `<div class="gauge gauge-${a}"><div class="track"><div class="fill" id="${a + e.slot}"></div><span class="gauge-label">${a.toUpperCase()}</span><output id="${a}v${e.slot}"></output></div></div>`).join("")}</div>
       </div>
       <div class="fighter-copy">
         <div class="fighter-head"><b><span class="player-number">${e.slot + 1}P</span> ${e.d.short} <span class="fighter-speed" id="speed${e.slot}"></span></b><small>${mode === 1 && e.slot === 1 ? "AI" : manual ? "수동" : "AUTO"}</small></div>
-        <div class="cast-buttons">${["mp", "sp"].map((a, i) => `<button id="${a}b${e.slot}" title="${i ? e.d.special : e.d.skill}"><span class="skill-kind" aria-hidden="true">${SKILL_KEYS[e.slot * 2 + i].toUpperCase()}</span><span class="skill-name" id="${a}name${e.slot}"></span><span class="skill-ready-label" aria-hidden="true">준비</span></button>`).join("")}</div>
+        <div class="cast-buttons">${["mp", "sp"].map((a, i) => `<button id="${a}b${e.slot}" title="${i ? e.d.special : e.d.skill}"><span class="skill-kind" aria-hidden="true">${SKILL_KEYS[(onlineSession ? 0 : e.slot * 2) + i].toUpperCase()}</span><span class="skill-name" id="${a}name${e.slot}"></span><span class="skill-ready-label" aria-hidden="true">준비</span></button>`).join("")}</div>
       </div>
     </section>
       <div class="fighter-statuses" id="fighterStatuses${e.slot}" role="list" aria-label="지속 효과" hidden></div>
@@ -20126,8 +20502,7 @@ function fighterHudState(actor) {
     });
     return {alive:actor.alive, speed:"속도 "+speedOf(actor).toFixed(1), statuses:running?fighterStatusEffects(actor):[], gauges, skills,
       rare:!!(running && !paused && !cinema.ending && cinema.stop <= 0 && rareAvailable),
-      portrait:actor.nika?"emperor_nika":actor.d.id==="kenpachi" && kenpachiBankaiActive(actor)?"kenpachi_bankai":
-        actor.d.id==="kafka" && defenseActive(actor,"kaijuUntil")?"kafka_kaiju":""};
+      portrait:fighterPortraitForm(actor)};
 }
 function updateHud(){
   if(practiceActive)return practiceUpdateHud();
@@ -20156,6 +20531,7 @@ function renderTopSkillDamage(record, fighters = actors.map(actor => actor.d)) {
 
 function showModal(e, a, o, n) {
   $("topSkillDamage").hidden = true;
+  $("matchOptions").hidden = true;
   $('modal').classList.toggle('result-fade-in', e === 'BATTLE RESULT');
   ($("battleResult").classList.add("hidden"),
     $("battleResult").replaceChildren(),
@@ -20233,7 +20609,7 @@ function finish() {
         },
         !0,
       ]),
-    a || s.splice(0, 1, [mode === 1 ? "현재 스테이지 재시도" : "다시 대전", startBattle, !0]),
+    a || s.splice(0, 1, [mode === 1 ? "현재 스테이지 재시도" : "다시 대전", () => startBattle(), !0]),
     (!(o && stage < 5) && s.push(["새 조합", startNewCombination, !1])),
     s.push([
       "캐릭터 선택",
@@ -20250,39 +20626,7 @@ function finish() {
         (a ? "남은 HP " + Math.ceil(a.hp) + " / " + a.maxHp : "모든 전사가 동시에 쓰러졌습니다."),
       s,
     ));
-  const i = $("battleResult"),
-    r = a
-      ? [
-          { group: [a], label: "승리", style: "result-winner" },
-          { group: actors.filter((e) => e !== a), label: "패배", style: "result-loser" },
-        ]
-      : [
-          { group: actors.slice(0, 1), label: "무승부", style: "result-loser" },
-          { group: actors.slice(1), label: "무승부", style: "result-loser" },
-        ];
-  for (const e of r) {
-    const a = document.createElement("div");
-    a.className = "result-side " + e.style + (e.group.length > 1 ? " multiple" : "");
-    const o = e.group[0];
-    if (o) {
-      const n = document.createElement("img");
-      ((n.src =
-        hudPortrait(o)),
-        (n.alt = e.group.map((e) => e.d.name).join(", ")),
-        a.append(n));
-    }
-    const n = document.createElement("div");
-    n.className = "result-copy";
-    const s = document.createElement("strong");
-    ((s.className = "result-status"), (s.textContent = e.label));
-    const r = document.createElement("span");
-    ((r.className = "result-name"),
-      (r.textContent = e.group.map((e) => e.d.short).join(" · ")),
-      n.append(s, r),
-      a.append(n),
-      i.append(a));
-  }
-  i.classList.remove("hidden");
+  renderResultPortraits(actors.map(actor => actor.d), collectOnlineHud());
   renderTopSkillDamage(highestSkillDamage());
 }
 
@@ -20295,67 +20639,35 @@ function togglePause() {
   }
 }
 
-let homeGeneration = 0;
-function home() {
+function home(screen = "home") {
   selectionBeforePractice = null;
   $("exit").textContent = "나가기";
-  practiceActive=false;practiceSelectedType="";document.body.classList.remove("practice-mode");
-  running = false;
-  paused = false;
+  practiceActive = false;
+  practiceSelectedType = "";
+  running = paused = matchLoading = false;
   $("modal").classList.add("hidden");
-  setScreen("home");
+  setScreen(screen);
   clearWorld();
   setArenaSize(0);
   actors = [];
-  $("preview").append(renderer.domElement);
-  const available = CHARACTER_DATABASE.map((_, index) => index);
-  const count = Math.min(8, available.length);
-  const generation = ++homeGeneration;
-  let index = 0;
-  function addHomeModel() {
-    if (generation !== homeGeneration || $("home").classList.contains("hidden") || index >= count) return;
-    const pick = index + Math.floor(Math.random() * (available.length - index));
-    [available[index], available[pick]] = [available[pick], available[index]];
-    const actor = makeActor(available[index], index % 4);
-    actor.x = 2.6 * (index - (count - 1) / 2);
-    actor.z = 0;
-    model(actor);
-    actor.mesh.scale.setScalar(0.75);
-    actor.mesh.traverse((part) => {
-      if (part.isSprite) part.visible = false;
-    });
-    ambientBalls.push(actor);
-    index++;
-    requestAnimationFrame(addHomeModel);
-  }
-  requestAnimationFrame(() => requestAnimationFrame(addHomeModel));
-  resize();
+  renderer.domElement.remove();
 }
 
 function initUI() {
   $("homeCharacterCount").textContent = CHARACTER_DATABASE.length;
-  (($("modes").innerHTML = [1, 2, 3, 4, 0]
-    .map(
-      (e) =>
-        '<button class="mode" data-mode="' +
-        e +
-        '"><b>' +
-        (e===0?"연습":e+"P") +
-        "</b><small>" +
-        (e===0?"연습 모드":1===e?"챌린지":"로컬 대전") +
-        "</small></button>",
-    )
-    .join("")),
-    $("modes").querySelectorAll("button").forEach(button => {
-      const players = +button.dataset.mode;
-      button.onclick = () => chooseMode(players);
-    }),
-    ($("startMode").onclick = selection),
-    $("manual").addEventListener("change", updateSkillModeHint),
-    window.matchMedia?.("(any-pointer: coarse)").addEventListener?.("change", updateSkillModeHint),
-    chooseMode(1),
-    ($("onlineMode").onclick = onlineRoomMenu),
-    ($("back").onclick = () => onlineSession ? closeOnlineRoom() : home()),
+  $("startMode").onclick = modeMenu;
+  $("modeBack").onclick = () => { home(); $("startMode").focus(); };
+  $("practiceMode").onclick = () => startPractice();
+  $("onlineMode").onclick = onlineJoinMenu;
+  $("modes").querySelectorAll("[data-mode]").forEach(button => {
+    button.onclick = () => {
+      mode = Number(button.dataset.mode);
+      selection();
+    };
+  });
+  $("matchOptions").addEventListener("change", updateSkillModeHint);
+  window.matchMedia?.("(any-pointer: coarse)").addEventListener?.("change", updateSkillModeHint);
+  (($("back").onclick = () => onlineSession ? closeOnlineRoom() : modeMenu()),
     ($("pause").onclick = togglePause),
     ($("exit").onclick = () => {
       if (onlineSession) return closeOnlineRoom();
@@ -20370,13 +20682,14 @@ function initUI() {
             },
             !0,
           ],
-          ["모드 선택", home, !1],
+          ["모드 선택", modeMenu, !1],
         ]));
     }),
     document.addEventListener("keydown", (e) => {
       if (!$("modal").classList.contains("hidden")) {
         if ("Tab" === e.key) {
-          const a = [...$("modalActions").querySelectorAll("button, input")];
+          const targets = $("matchOptions").hidden ? [] : [...$("matchOptions").querySelectorAll("input:checked")];
+          const a = [...targets, ...$("modalActions").querySelectorAll("button, input")];
           if (!a.length) return;
           const o =
             (a.indexOf(document.activeElement) + (e.shiftKey ? -1 : 1) + a.length) % a.length;
@@ -20388,9 +20701,9 @@ function initUI() {
         running &&
         "BUTTON" !== e.target.tagName &&
         (e.preventDefault(), togglePause());
-      const a = void 0,
-        o = SKILL_KEYS.indexOf(e.key.toLowerCase());
-      o >= 0 && !e.repeat && requestCast(onlineSession && o < 2 ? onlineSession.slot : Math.floor(o / 2), o % 2 == 1);
+      const key = SKILL_KEYS.indexOf(e.key.toLowerCase());
+      if (key < 0 || e.repeat || (onlineSession && key > 1)) return;
+      requestCast(onlineSession ? onlineSession.slot : Math.floor(key / 2), key % 2 === 1);
     }),
     document.addEventListener("visibilitychange", () => {
       document.hidden && running && !paused && togglePause();
@@ -25129,7 +25442,6 @@ let W = BASE_ARENA_SIZE,
   scene,
   camera,
   world,
-  ambientBalls = [],
   hudTick = 0,
   stormMesh = null,
   nextStorm = ENVIRONMENT_CONFIG.stormInterval,
@@ -31414,7 +31726,7 @@ function practiceFromSelection() {
 function exitPractice() {
   const snapshot = selectionBeforePractice;
   selectionBeforePractice = null;
-  if (!snapshot) return home();
+  if (!snapshot) return modeMenu();
   practiceActive = false;
   practiceSelectedType = "";
   $("exit").textContent = "나가기";
@@ -33389,7 +33701,7 @@ function tickCinemaBattle(realDt,wallDt=realDt) {
     if(practiceActive)practiceCast(type);
   }
   let elapsed = 0;
-  accumulator += clock.dt;
+  accumulator += clock.dt * (practiceActive ? 1 : matchOptions.speed);
   while (accumulator + 1e-10 >= STEP && running) {
     step();
     accumulator = Math.max(0,accumulator-STEP);
@@ -34833,16 +35145,7 @@ BATTLE_STATE_FIELDS.push(
 const startupAssets = new Map();
 const assetJobs = new Map();
 const assetQueue = [];
-let loadingAssets = 0;
-let activeAssetGroup = -1;
-const assetLoadOrder = ["ui", "portraits", "music", "backgrounds", "skill-banners", "sfx"];
 const firstScreenAssets = [];
-
-function assetGroup(url) {
-  const folder = /(?:^|\/)assets\/([^/]+)\//.exec(url)?.[1];
-  const group = assetLoadOrder.indexOf(folder);
-  return group < 0 ? assetLoadOrder.length : group;
-}
 let matchLoading = false;
 
 function startupAssetUrl(url) {
@@ -34924,9 +35227,7 @@ function registerAssets() {
   skillBannerUrls = consumeAssetData("skill-image-data");
   const add = (url, kind) => {
     if (typeof url === "string" && url && !assetJobs.has(url)) {
-      const group = assetGroup(url);
-      assetJobs.set(url, { url, kind, group, state: "idle" });
-      if (group < 2) firstScreenAssets.push(url);
+      assetJobs.set(url, { url, kind, state: "idle" });
     }
   };
   for (const url of Object.values(skillVoices)) add(url, "audio");
@@ -34936,14 +35237,15 @@ function registerAssets() {
     add(track.audio, "audio");
     add(track.image, "image");
   }
-  add($("gameTitle").dataset.src, "image");
+  const title = $("gameTitle").dataset.src;
+  add(title, "image");
+  firstScreenAssets.push(title, musicAssets.select.audio);
 }
 
 function updateResourceStatus() {
-  const jobs = [...assetJobs.values()];
-  const done = startupAssets.size;
-  const failed = jobs.filter(job => job.state === "failed");
-  $("resourceStatus").textContent = `리소스 준비 ${done}/${jobs.length}${failed.length ? " · 실패 " + failed.length : ""}`;
+  const requested = [...assetJobs.values()].filter(job => job.state !== "idle");
+  const failed = requested.filter(job => job.state === "failed");
+  $("resourceStatus").textContent = `리소스 준비 ${startupAssets.size}/${requested.length}${failed.length ? " · 실패 " + failed.length : ""}`;
   $("resourceRetry").hidden = !failed.length;
   const problems = $("resourceProblems");
   if ($("resourceDetails").open) problems.replaceChildren(...failed.map(job => {
@@ -34953,39 +35255,54 @@ function updateResourceStatus() {
   }));
   problems.hidden = !failed.length;
   if (!$("startupScreen").hidden) {
-    const ready = firstScreenAssets.filter(url => assetJobs.get(url).state === "ready").length;
+    const done = firstScreenAssets.filter(url => ["ready", "failed"].includes(assetJobs.get(url)?.state)).length;
     $("startupProgress").max = firstScreenAssets.length || 1;
-    $("startupProgress").value = ready;
-    if ($("startupRetry").hidden) {
-      const label = activeAssetGroup === 0 ? "UI" : "캐릭터 초상화";
-      $("startupStatus").textContent = `${label} 준비 중 · ${ready}/${firstScreenAssets.length}`;
-    }
+    $("startupProgress").value = done;
+    $("startupStatus").textContent = `시작 화면 준비 중 · ${done}/${firstScreenAssets.length}`;
   }
 }
 
+// Reserve two parallel requests for the final roster if previews are already in flight.
+const ASSET_PRIORITY = { immediate: 0, selected: 1, preview: 2, portrait: 3, background: 4 };
+const assetLoads = { foreground: 0, background: 0 };
+
 function runAssetQueue() {
-  if (!loadingAssets) activeAssetGroup = assetQueue[0]?.group ?? -1;
-  while (loadingAssets < 6 && assetQueue[0]?.group === activeAssetGroup) {
-    const job = assetQueue.shift();
+  assetQueue.sort((a, b) => a.priority - b.priority);
+  for (let i = 0; i < assetQueue.length;) {
+    const job = assetQueue[i];
+    const foreground = job.priority <= ASSET_PRIORITY.preview;
+    const lane = foreground ? "foreground" : "background";
+    const limit = !foreground ? 2 : job.priority === ASSET_PRIORITY.immediate ? 6 : 4;
+    if (assetLoads[lane] >= limit) {
+      i++;
+      continue;
+    }
+    assetQueue.splice(i, 1);
     job.state = "loading";
-    loadingAssets++;
+    assetLoads[lane]++;
     loadStartupAsset(job.url, job.kind).then(() => {
       job.state = "ready";
-      const title = $("gameTitle");
-      if (job.url === title.dataset.src) {
-        title.src = startupAssetUrl(job.url);
-        title.hidden = false;
-        $("gameTitleFallback").hidden = true;
+      if (job.url === $("gameTitle").dataset.src) {
+        for (const [id, fallback] of [["gameTitle", "gameTitleFallback"], ["modeGameTitle", "modeTitleFallback"]]) {
+          $(id).src = startupAssetUrl(job.url);
+          $(id).hidden = false;
+          $(fallback).hidden = true;
+        }
       }
       const track = musicAssets[musicKey];
       if (job.url === track?.audio || job.url === track?.image) {
         setMusicScreen(musicKey === "select" ? "home" : "battle", musicKey, true);
       }
+      for (const image of $("battleResult").querySelectorAll("[data-portrait]")) {
+        if (job.url === officialPortraits[image.dataset.portrait] || job.url === officialPortraits[image.dataset.form]) {
+          image.src = readyPortrait(image.dataset.form) || readyPortrait(image.dataset.portrait);
+        }
+      }
     }, error => {
       job.state = "failed";
       job.error = error.message;
     }).finally(() => {
-      loadingAssets--;
+      assetLoads[lane]--;
       job.resolve();
       runAssetQueue();
       updateResourceStatus();
@@ -34993,39 +35310,23 @@ function runAssetQueue() {
   }
 }
 
-function queueResources(urls, prioritize = false, retry = false) {
+function queueResources(urls, priority = ASSET_PRIORITY.background, retry = false) {
   const pending = [];
-  const promoted = [];
   for (const url of new Set(urls)) {
     const job = assetJobs.get(url);
     if (!job || job.state === "ready" || (job.state === "failed" && !retry)) continue;
     if (job.state === "idle" || job.state === "failed") {
       job.task = new Promise(resolve => { job.resolve = resolve; });
+      job.priority = priority;
       job.state = "queued";
       assetQueue.push(job);
+    } else if (job.state === "queued") {
+      job.priority = Math.min(job.priority, priority);
     }
-    if (prioritize && job.state === "queued") promoted.push(job);
     pending.push(job.task);
   }
-  for (const job of promoted) assetQueue.splice(assetQueue.indexOf(job), 1);
-  assetQueue.unshift(...promoted);
-  // A match or retry can promote a file only within its folder.
-  assetQueue.sort((a, b) => a.group - b.group);
   runAssetQueue();
   return pending;
-}
-
-async function waitForResources(tasks, budget) {
-  if (!tasks.length) return;
-  let timer;
-  try {
-    await Promise.race([
-      Promise.all(tasks),
-      new Promise(resolve => { timer = setTimeout(resolve, budget); }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 function randomBattleTrack() {
@@ -35047,16 +35348,12 @@ const MATCH_VOICE_VARIANTS = {
   yuji: ["BLACK_FLASH"],
 };
 
-function matchAssetUrls(indices, track) {
-  const urls = [skillVoices.BATTLE_END, musicAssets[track]?.audio, musicAssets[track]?.image];
+function matchAssetUrls(indices) {
+  const urls = [];
   const types = new Set();
   for (const index of indices) {
     const character = CHARACTER_DATABASE[index];
     if (!character) continue;
-    urls.push(officialPortraits[character.id]);
-    if (character.id === "kenpachi") urls.push(officialPortraits.kenpachi_bankai);
-    if (character.id === "emperor_luffy") urls.push(officialPortraits.emperor_nika);
-    if (character.id === "kafka") urls.push(officialPortraits.kafka_kaiju);
     if (character.id === "aki_gun_fiend") types.add("AKI_HEADSHOT");
     if (character.id === "kira") types.add("BITES_TIME");
     const additionalVoices = MATCH_VOICE_VARIANTS[character.id] || [];
@@ -35069,30 +35366,45 @@ function matchAssetUrls(indices, track) {
   }
   for (const type of types) {
     urls.push(skillBannerUrls?.[type]);
-    if (!Object.hasOwn(DEFENSE_SKILLS,type)) urls.push(skillVoices[type]);
+    urls.push(skillVoices[type]);
   }
   return urls.filter(Boolean);
 }
 
-function withMatchResources(indices, track, launch, isCurrent = () => true) {
+function matchPortraitUrls(indices) {
+  const alternates = { kenpachi: "kenpachi_bankai", emperor_luffy: "emperor_nika", kafka: "kafka_kaiju" };
+  return indices.flatMap(index => {
+    const id = CHARACTER_DATABASE[index]?.id;
+    return [officialPortraits[id], officialPortraits[alternates[id]]].filter(Boolean);
+  });
+}
+
+function prepareMatchAssets(indices, track, priority = ASSET_PRIORITY.selected) {
+  const tasks = queueResources(matchAssetUrls(indices), priority);
+  queueResources(matchPortraitUrls(indices), ASSET_PRIORITY.portrait);
+  queueResources([musicAssets[track]?.audio, musicAssets[track]?.image, skillVoices.BATTLE_END]);
+  return tasks;
+}
+
+function withMatchResources(indices, track, launch, cancel) {
   if (matchLoading) return;
   if (headless) return launch();
-  const tasks = queueResources(matchAssetUrls(indices, track), true);
-  const upcomingVoices=indices.flatMap(index=>{
-    const fighter=CHARACTER_DATABASE[index];
-    return fighter && DEFENSE_IDS.has(fighter.id)
-      ? practiceSkills(fighter).map(skill=>skillVoices[skill.type]) : [];
-  });
-  queueResources(upcomingVoices);
+  const tasks = prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate);
   if (!tasks.length) return launch();
-  matchLoading = true;
+  const loading = Symbol();
+  matchLoading = loading;
   const wasPaused = paused;
   paused = true;
-  showModal("LOADING", "대전 리소스 준비 중", "최대 5초 후 전투를 시작하며, 남은 리소스는 계속 불러옵니다.", []);
-  $("modal").focus();
-  return waitForResources(tasks, 5000).then(() => {
+  const actions = cancel ? [["취소", () => {
     matchLoading = false;
-    if (!isCurrent()) return;
+    paused = wasPaused;
+    cancel();
+  }, false]] : [];
+  showModal("LOADING", "스킬 리소스 준비 중", "참가 캐릭터의 스킬 배너와 효과음을 불러오고 있습니다.", actions);
+  if (!actions.length) $("modal").focus();
+  return Promise.all(tasks).then(() => {
+    if (matchLoading !== loading) return;
+    matchLoading = false;
     paused = wasPaused;
     $("modal").classList.add("hidden");
     launch();
@@ -35106,23 +35418,12 @@ async function startGameAfterLoading() {
     $("resourceDetails").ontoggle = updateResourceStatus;
     $("resourceRetry").onclick = () => {
       const failed = [...assetJobs.values()].filter(job => job.state === "failed").map(job => job.url);
-      queueResources(failed, true, true);
+      queueResources(failed, ASSET_PRIORITY.background, true);
       updateResourceStatus();
     };
-    const retry = $("startupRetry");
-    while (true) {
-      const tasks = queueResources(firstScreenAssets, false, true);
-      updateResourceStatus();
-      await Promise.all(tasks);
-      const failures = firstScreenAssets.filter(url => assetJobs.get(url).state !== "ready");
-      if (!failures.length) break;
-      $("startupStatus").textContent = `UI·초상화 ${failures.length}개를 불러오지 못했습니다. ${failures[0]}`;
-      retry.hidden = false;
-      retry.focus();
-      await new Promise(resolve => { retry.onclick = resolve; });
-      retry.hidden = true;
-      retry.onclick = null;
-    }
+    const tasks = queueResources(firstScreenAssets, ASSET_PRIORITY.immediate);
+    updateResourceStatus();
+    await Promise.all(tasks);
     initScene();
     observeSelectionLayout();
     initUI();
@@ -35131,7 +35432,6 @@ async function startGameAfterLoading() {
     home();
     document.body.classList.remove("startup-loading");
     $("startupScreen").hidden = true;
-    queueResources([musicAssets.select.audio, ...assetJobs.keys()]);
     if (new URLSearchParams(location.search).has("test")) showSelfTestReport();
     requestAnimationFrame(frame);
   } catch (error) {
@@ -35696,15 +35996,6 @@ function onlinePermissionDenied(error) {
   return /permission.denied/i.test(error?.code || error?.message || "");
 }
 
-function onlineRoomMenu() {
-  if (onlineSession) return;
-  showModal("온라인 2P", "친구와 대전", "방 코드를 공유해 1대1로 대전하세요.", [
-    ["방 만들기", () => openOnlineRoom("host"), true],
-    ["상대방 방 들어가기", onlineJoinMenu, false],
-    ["취소", () => $("modal").classList.add("hidden"), false],
-  ]);
-}
-
 function onlineJoinMenu() {
   const input = document.createElement("input");
   input.className = "online-code-input";
@@ -35724,7 +36015,8 @@ function onlineJoinMenu() {
     openOnlineRoom("guest", code);
   };
   showModal("온라인 2P", "상대방 방 들어가기", "호스트에게 받은 4자리 코드를 입력하세요.", [
-    ["입장", join, true], ["취소", onlineRoomMenu, false],
+    ["입장", join, true], ["방 만들기", () => openOnlineRoom("host"), false],
+    ["취소", () => { $("modal").classList.add("hidden"); $("onlineMode").focus(); }, false],
   ]);
   $("modalActions").prepend(input);
   input.addEventListener("keydown", event => {
@@ -35746,7 +36038,7 @@ function onlineError(session, error) {
   }
   closeOnlineRoom(session);
   showModal("온라인 2P", "연결 종료", message, [
-    ["다시 시도", onlineRoomMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
+    ["다시 시도", onlineJoinMenu, true], ["닫기", () => $("modal").classList.add("hidden"), false],
   ]);
 }
 
@@ -35886,6 +36178,7 @@ function writeOnlineRoom(session, key, value) {
 function closeOnlineRoom(session = onlineSession) {
   if (!session || onlineSession !== session) return;
   onlineSession = null;
+  session.onGuestReady?.();
   for (const unsubscribe of session.unsubscribers) unsubscribe();
   if (session.roomGone) {
     session.disconnect?.cancel().catch(() => {});
@@ -35897,7 +36190,7 @@ function closeOnlineRoom(session = onlineSession) {
   document.body.classList.remove("online-battle", "online-guest", "time-stopped");
   $("pause").hidden = false;
   $("onlineStatus").hidden = true;
-  home();
+  modeMenu();
 }
 
 function enterOnlineSelection(session) {
@@ -35907,8 +36200,8 @@ function enterOnlineSelection(session) {
   selection();
   const other = 1 - session.slot;
   listenOnlineRoom(session, other === 0 ? "hostPick" : "guestPick", fighter => {
-    const index = fighter===randomChoice.id?RANDOM_PICK:onlineFighterIndex(fighter);
-    if (session.phase !== "selection" || (fighter!==randomChoice.id && index < 0) || session.picks[other]) return;
+    const index = onlineFighterIndex(fighter);
+    if (session.phase !== "selection" || index < 0 || session.picks[other]) return;
     session.picks[other] = fighter;
     chosen[other] = selectionChoices[other] = index;
     drawSelection();
@@ -35916,6 +36209,11 @@ function enterOnlineSelection(session) {
   });
   if (session.slot === 0) {
     listenOnlineRoom(session, "guestInput", input => {
+      if (session.phase === "loading" && input?.seq === 1 && input.skill === "rare" && input.matchReady === true) {
+        session.lastInputSeq = 1;
+        session.onGuestReady?.();
+        return;
+      }
       if (session.phase !== "battle" || !Number.isSafeInteger(input?.seq) ||
           input.seq <= (session.lastInputSeq ?? 0) || !["mp", "sp"].includes(input.skill)) return;
       session.lastInputSeq = input.seq;
@@ -35927,24 +36225,7 @@ function enterOnlineSelection(session) {
   } else {
     listenOnlineRoom(session, "match", match => {
       if (!match || session.phase !== "selection") return;
-      if (match.arenaRenderer !== ONLINE_SCENE_VERSION)
-        throw new Error("호스트가 이전 버전을 사용하고 있습니다. 두 기기에서 페이지를 새로고침하고 새 방을 만들어 주세요.");
-      const picks = [match.p1, match.p2];
-      if (picks.some(id => onlineFighterIndex(id) < 0)) throw new Error("선택된 캐릭터를 찾을 수 없습니다.");
-      session.picks = picks;
-      const track = typeof match.track === "string" && Object.hasOwn(musicAssets, match.track) ? match.track : undefined;
-      openOnlineViewer(session, track);
-      listenOnlineRoom(session, "state", state => applyOnlineState(session, state));
-      listenOnlineRoom(session, "result", result => {
-        if (!result || typeof result.title !== "string" || typeof result.summary !== "string") return;
-        if (result.frame) applyOnlineScene(session, result.frame, performance.now(), true);
-        if (result.hud) applyOnlineHud(result.hud);
-        session.phase = "result";
-        showModal("온라인 2P · 경기 결과", result.title, result.summary,
-          [["모드 선택", () => closeOnlineRoom(session), true]]);
-        const fighters = session.picks.map(id => CHARACTER_DATABASE[onlineFighterIndex(id)]);
-        renderTopSkillDamage(result.topSkill, fighters);
-      });
+      prepareOnlineViewer(session, match).catch(error => onlineError(session, error));
     });
   }
 }
@@ -35956,8 +36237,8 @@ function onlineFighterIndex(id) {
 async function confirmOnlineFighter(slot) {
   const session = onlineSession;
   if (session.phase !== "selection" || slot !== session.slot || session.picks[slot] || session.savingPick) return;
-  const index = selectionChoices[slot];
-  const fighter = selectionRecord(index)?.id;
+  const index = resolveSelection(selectionChoices[slot]);
+  const fighter = CHARACTER_DATABASE[index]?.id;
   if (!fighter) return;
   session.savingPick = true;
   drawSelection();
@@ -35984,7 +36265,7 @@ async function confirmOnlineFighter(slot) {
 function updateOnlineSelectionStatus() {
   const status = $("onlineStatus");
   const session = onlineSession;
-  status.hidden = !session || !["selection", "loading"].includes(session.phase);
+  status.hidden = !session || !["selection", "settings", "loading", "ready"].includes(session.phase);
   if (status.hidden) return;
   status.textContent = [
     ("방 " + session.code) + " · " + (session.slot + 1) + "P",
@@ -35994,41 +36275,95 @@ function updateOnlineSelectionStatus() {
 }
 
 function startOnlineMatchIfReady(session) {
-  if (onlineSession !== session || session.slot !== 0 || session.phase !== "selection" ||
-      !session.picks[0] || !session.picks[1]) return;
-  session.phase = "loading";
-  updateOnlineSelectionStatus();
+  if (onlineSession !== session || session.phase !== "selection" || !session.picks[0] || !session.picks[1]) return;
+  const indices = session.picks.map(onlineFighterIndex);
+  if (session.slot === 1) {
+    onlineProgress(session, "전투 설정 대기 중", "호스트가 배속, 스킬 사용, 아이템 모드를 선택하고 있습니다.");
+    return;
+  }
+  session.phase = "settings";
   const track = randomBattleTrack();
-  const indices = session.picks.map(id=>id===randomChoice.id?resolveSelection(RANDOM_PICK):onlineFighterIndex(id));
-  const launch = async () => {
+  prepareMatchAssets(indices, track);
+  updateOnlineSelectionStatus();
+  showMatchOptions(options => launchOnlineMatch(session, indices, track, options), () => closeOnlineRoom(session));
+}
+
+async function launchOnlineMatch(session, indices, track, options) {
+  if (onlineSession !== session || session.phase !== "settings") return;
+  session.phase = "loading";
+  const guestReady = new Promise(resolve => { session.onGuestReady = resolve; });
+  const tasks = prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate);
+  onlineProgress(session, "스킬 리소스 준비 중", "두 기기에서 참가 캐릭터의 스킬 배너와 효과음을 불러옵니다.");
+  try {
+    await onlineDeadline(writeOnlineRoom(session, "match", {
+      p1: session.picks[0], p2: session.picks[1], track, arenaRenderer: ONLINE_SCENE_VERSION, options,
+    }), "Firebase가 경기 준비에 응답하지 않았습니다.");
+    await Promise.all(tasks);
     if (onlineSession !== session) return;
-    try {
-      session.picks=indices.map(i=>CHARACTER_DATABASE[i].id);
-      chosen = indices;
-      manual = true;
-      document.body.classList.add("online-battle");
-      $("pause").hidden = true;
-      startBattleNow(track);
-      initOnlineArena(session);
-      running = false;
-      $("battleMode").textContent = "온라인 2P · 1P 호스트";
-      await onlineDeadline(writeOnlineRoom(session, "match", {
-        p1: session.picks[0], p2: session.picks[1], track, arenaRenderer: ONLINE_SCENE_VERSION,
-      }), "Firebase가 경기 시작에 응답하지 않았습니다.");
-      if (onlineSession !== session) return;
-      session.phase = "battle";
-      running = true;
-    } catch (error) {
-      onlineError(session, error);
+    await onlineDeadline(guestReady, "상대방의 경기 준비 시간이 초과됐습니다.", 60000);
+    if (onlineSession !== session) return;
+    session.onGuestReady = null;
+    matchOptions = options;
+    chosen = indices;
+    document.body.classList.add("online-battle");
+    $("pause").hidden = true;
+    startBattleNow(track);
+    initOnlineArena(session);
+    $("battleMode").textContent = battleOptionsLabel("온라인 2P · 1P 호스트");
+    session.phase = "battle";
+  } catch (error) {
+    onlineError(session, error);
+  }
+}
+
+async function prepareOnlineViewer(session, match) {
+  if (match.arenaRenderer !== ONLINE_SCENE_VERSION)
+    throw new Error("호스트가 이전 버전을 사용하고 있습니다. 두 기기에서 페이지를 새로고침하고 새 방을 만들어 주세요.");
+  const picks = [match.p1, match.p2];
+  const indices = picks.map(onlineFighterIndex);
+  if (indices.some(index => index < 0)) throw new Error("선택된 캐릭터를 찾을 수 없습니다.");
+  const track = typeof match.track === "string" && Object.hasOwn(musicAssets, match.track) ? match.track : undefined;
+  const options = matchOptionsFrom(match.options);
+  session.picks = picks;
+  session.phase = "loading";
+  onlineProgress(session, "스킬 리소스 준비 중", "참가 캐릭터의 스킬 배너와 효과음을 불러오고 있습니다.");
+  await Promise.all(prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate));
+  if (onlineSession !== session) return;
+  session.phase = "ready";
+  onlineProgress(session, "전투 시작 대기 중", "상대방도 준비되면 전투를 시작합니다.");
+  listenOnlineRoom(session, "state", state => {
+    if (session.phase === "ready" && state?.frame) {
+      matchOptions = options;
+      openOnlineViewer(session, track);
     }
-  };
-  withMatchResources(indices, track, launch, () => onlineSession === session);
+    applyOnlineState(session, state);
+  });
+  listenOnlineRoom(session, "result", result => {
+    if (!result || typeof result.title !== "string" || typeof result.summary !== "string") return;
+    if (session.phase === "ready") {
+      matchOptions = options;
+      openOnlineViewer(session, track);
+    }
+    if (result.frame) applyOnlineScene(session, result.frame, performance.now(), true);
+    if (result.hud) applyOnlineHud(result.hud);
+    session.phase = "result";
+    showModal("온라인 2P · 경기 결과", result.title, result.summary,
+      [["모드 선택", () => closeOnlineRoom(session), true]]);
+    const fighters = indices.map(index => CHARACTER_DATABASE[index]);
+    if (result.hud?.fighters?.length === fighters.length) renderResultPortraits(fighters, result.hud);
+    renderTopSkillDamage(result.topSkill, fighters);
+  });
+  // The deployed room rules already permit the retired "rare" input. Use sequence
+  // one for a readiness signal before any battle input, without a new database path.
+  session.inputSeq = 1;
+  await onlineDeadline(writeOnlineRoom(session, "guestInput", { seq: 1, skill: "rare", matchReady: true }),
+    "Firebase가 준비 신호에 응답하지 않았습니다.");
 }
 
 function openOnlineViewer(session, track) {
   session.phase = "battle";
   running = paused = false;
-  manual = true;
+  manual = matchOptions.manual;
   arenaZoom = 1;
   clearWorld();
   setArenaSize(2);
@@ -36037,7 +36372,7 @@ function openOnlineViewer(session, track) {
   t = 0;
   document.body.classList.add("online-battle", "online-guest");
   $("pause").hidden = true;
-  $("battleMode").textContent = "온라인 2P · 2P 게스트";
+  $("battleMode").textContent = battleOptionsLabel("온라인 2P · 2P 게스트");
   $("exit").textContent = "나가기";
   $("modal").classList.add("hidden");
   setScreen("battle", track);
@@ -36055,7 +36390,6 @@ function openOnlineViewer(session, track) {
   }
   $("battle").parentElement.scrollTop = 0;
   resize();
-  queueResources(matchAssetUrls(indices, track), true);
 }
 
 function routeOnlineCast(slot, skill) {
@@ -36093,8 +36427,7 @@ function applyOnlineHud(msg, remote=true) {
       Array.isArray(row) && Object.hasOwn(HUD_STATUS_NAMES, row[0]) && Number.isSafeInteger(row[1]) && row[1] > 0
     ));
     if (typeof fighter.speed === "string") $("speed" + slot).textContent = fighter.speed;
-    const alternate = ["emperor_nika", "kenpachi_bankai", "kafka_kaiju"].includes(fighter.portrait) && readyPortrait(fighter.portrait);
-    const portrait = alternate || fighterPortrait(data);
+    const portrait = rosterPortrait(data);
     if ($("fighterPortrait" + slot).getAttribute("src") !== portrait) $("fighterPortrait" + slot).src = portrait;
     ["hp", "mp", "sp"].forEach((resource, index) => {
       const gauge = fighter.gauges[index];
@@ -36111,7 +36444,7 @@ function applyOnlineHud(msg, remote=true) {
       if (!Array.isArray(skill) || typeof skill[0] !== "string") return;
       const button = $(resource + "b" + slot);
       button.title = $(resource + "name" + slot).textContent = skill[0];
-      button.disabled = skill[1] !== true || (remote && slot !== 1);
+      button.disabled = skill[1] !== true || (!!onlineSession && slot !== onlineSession.slot);
       button.setAttribute("aria-label",(slot+1)+"P "+(index?"스페셜":"일반")+" 스킬 · "+skill[0]+(skill[1]?" · 준비":""));
       button.classList.toggle("skill-ready", skill[1] === true);
     });
@@ -36154,11 +36487,13 @@ function publishOnlineResult(title, summary) {
   updateHud();
   session.phase = "result";
   const topSkill = highestSkillDamage();
+  const hud = collectOnlineHud();
   writeOnlineRoom(session, "result", {
-    title, summary, topSkill, hud: collectOnlineHud(), frame: collectOnlineScene(session)
+    title, summary, topSkill, hud, frame: collectOnlineScene(session)
   })
     .catch(error => console.warn("Online result:", error));
   showModal("온라인 2P · 경기 결과", title, summary, [["모드 선택", () => closeOnlineRoom(session), true]]);
+  renderResultPortraits(actors.map(actor => actor.d), hud);
   renderTopSkillDamage(topSkill);
   return true;
 }
@@ -36166,7 +36501,7 @@ function publishOnlineResult(title, summary) {
 // Send world-space draw state. The guest only interpolates presentation between host samples.
 const ONLINE_SCENE_INTERVAL = 80;
 const ONLINE_SCENE_LIMIT = 16400;
-const ONLINE_SCENE_VERSION = 4;
+const ONLINE_SCENE_VERSION = 5;
 const ONLINE_EFFECT_LIMIT = 120;
 const onlineTransform = new THREE.Object3D();
 const onlineWorldPose = new THREE.Matrix4();
@@ -36297,7 +36632,7 @@ function onlineEffectMaterial(node) {
   return [color, onlineRound(material.isShaderMaterial ? Math.min(material.opacity, .38) : material.opacity),
     +material.transparent, material.side, +material.depthWrite, +material.depthTest,
     +(material.blending === THREE.AdditiveBlending), +!!material.map,
-    +(material.isMeshStandardMaterial || material.isMeshToonMaterial || material.isMeshPhongMaterial)];
+    +(material.isMeshStandardMaterial || material.isMeshToonMaterial || material.isMeshPhongMaterial), +!!material.wireframe];
 }
 
 function onlineSceneEffects(arena, roomBudget) {
@@ -36472,6 +36807,7 @@ function onlineDrawMaterial(kind, style) {
   if (kind === "sprite") return new THREE.SpriteMaterial({ ...params, map: onlineEffectGlow() });
   if (kind === "points") return new THREE.PointsMaterial({ ...params, size: .2 });
   if (kind === "line" || kind === "segments") return new THREE.LineBasicMaterial(params);
+  params.wireframe = style[9] === 1;
   if (style[7]) return new THREE.MeshBasicMaterial({ ...params, map: onlineEffectGlow() });
   return style[8] ? celMaterial(params) : new THREE.MeshBasicMaterial(params);
 }
@@ -36482,7 +36818,7 @@ function onlineVector(values, length) {
 }
 
 function onlineStyle(style) {
-  return Array.isArray(style) && style.length === 9 && style.every(Number.isFinite) &&
+  return Array.isArray(style) && style.length === 10 && style.every(Number.isFinite) && [0, 1].includes(style[9]) &&
     Number.isInteger(style[0]) && style[0] >= 0 && style[0] <= 0xffffff &&
     style[1] >= 0 && style[1] <= 1 && [0, 1, 2].includes(style[3]);
 }
@@ -37031,7 +37367,7 @@ function renderCombatFeedback(now = performance.now()) {
   document.addEventListener("pointerdown", unlockGameAudio),
   document.addEventListener("keydown", unlockGameAudio),
   (window.BallFight = {
-    presentation: () => ({ speed:cinema.pace, hitstop:cinema.stop, zoom:cinema.zoom,
+    presentation: () => ({ speed:cinema.pace * (practiceActive ? 1 : matchOptions.speed), hitstop:cinema.stop, zoom:cinema.zoom,
       ending:!!cinema.ending, configuration:CINEMA_CONFIG }),
     practice:{start:startPractice,select:selectPracticeFighter,cast:practiceCast,reset:resetPractice},
     runBleachTests,
