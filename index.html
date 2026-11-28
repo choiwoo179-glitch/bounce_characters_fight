@@ -434,7 +434,7 @@ p {
 }
 .battle-result {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin: 18px 0;
 }
@@ -442,19 +442,10 @@ p {
   display: none;
 }
 .result-side {
-  position: relative;
-  min-height: 230px;
+  min-width: 0;
   overflow: hidden;
   border-radius: 14px;
   background: #101723;
-}
-.result-side img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  opacity: 0.84;
 }
 .result-copy {
   position: absolute;
@@ -490,9 +481,6 @@ p {
   text-shadow:
     0 0 7px white,
     0 2px 5px #000;
-}
-.result-side.multiple img {
-  opacity: 0.6;
 }
 .error {
   background: #532826;
@@ -2375,15 +2363,6 @@ header .audio-control-row {
   min-height: 0;
   background: radial-gradient(ellipse at center, #293b4b, #101723);
 }
-.result-side img {
-  position: static;
-  display: block;
-  width: 100%;
-  height: 190px;
-  object-fit: contain;
-  opacity: 1;
-  mix-blend-mode: lighten;
-}
 .result-copy {
   position: static;
   padding: 14px 8px;
@@ -2436,9 +2415,6 @@ header .audio-control-row {
   }
   #hud .fighter-head {
     font-size: 12px;
-  }
-  .result-side img {
-    height: 140px;
   }
 }
 
@@ -3061,8 +3037,39 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
       #modal:has(#matchOptions:not([hidden])) .result-icon,
       #modal:has(#matchOptions:not([hidden])) #modalText:empty { display: none; }
       #modal:has(#matchOptions:not([hidden])) h2 { margin: 7px 0; font-size: clamp(1.4rem, 5vw, 2rem); }
-      .result-portraits { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
-      #battleResult .result-portraits img { width: clamp(32px, 11vw, 59px); height: clamp(32px, 11vw, 59px); margin: 0; object-fit: cover; }
+      #modal:has(#battleResult:not(.hidden)) .dialog {
+        width: min(740px, 100%);
+        padding: clamp(12px, 3.2vw, 26px);
+      }
+      .result-portrait {
+        display: grid;
+        place-items: center;
+        grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+        min-width: 0;
+        height: clamp(170px, 34svh, 300px);
+        padding: 6px;
+      }
+      .battle-result:has(> .result-side:nth-child(3)) .result-portrait {
+        height: clamp(145px, 25svh, 220px);
+      }
+      .result-portrait img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: contain;
+        image-rendering: auto;
+      }
+      .result-portrait [hidden] { display: none; }
+      .result-portrait-unavailable { margin: 0; font-size: .8rem; }
+      .result-draw .result-status { color: #ffdc87; }
+      #battleResult .result-name { overflow-wrap: anywhere; }
+      @media (max-width: 540px) {
+        #modal:has(#battleResult:not(.hidden)) { padding: 8px; }
+        #battleResult { gap: 8px; }
+        #battleResult .result-status { font-size: clamp(18px, 5vw, 25px); }
+        #battleResult .result-name { font-size: clamp(13px, 4vw, 17px); }
+      }
       #modeSelection .game-title[hidden], #modeTitleFallback[hidden] { display: none !important; }
       @media (max-width: 540px) {
         #modes .mode small { max-width: 3.1em; }
@@ -3985,6 +3992,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
   }
 }
 </script>
+    <!-- For each new fighter, embed a 48 × 48 pixel-art face under the fighter ID for the roster and HUD.
+         Keep the full-size source in the result portrait assets and register it separately. -->
     <script type="application/json" id="roster-pixel-portraits">
 {
   "aizen": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAXVBMVEX//////v/9//////7//v7+/v7+//X//9L9/f37+/v7+eHt7ez26rn03Kbb2tPbzLDMtJS5lnizgWOnb1SOd22OZFKHVkNyUUZwQDJYOTM5IyAWDg4QCAcEAgEAAADAG8ATAAAAH3RSTlP///////////////////////////////////////8AzRl2EAAAA3pJREFUeNqFVQly4yAQZKOVECDuG4n/f3MbnE0qieVMWS4d03TPwUDIF1twCTVv95X8avtOlA7eRq3EePzNf2VE1VqKSy2lHNhviDdCVIq5lmRj8b5kRdjbut4oGx+YiiXlXIp3ITmbCiNsXe8hxJQEy0B572N0KYsXqnai4/BPiKE47523xhVFbnP1l9g0ENHm6ItxLhp+xHBLgYVicinVWl3x0UnrvNlMZeQ2Ap0gJCOnFUiP5Q1kFXsDWImyxlqTLaWupOi95VzalOyNpp2YaLQ1yVB6jEzF5KXUttwBViJyQT6LoQdFBWJC7axF9cjb3+cMCkUouVgATPEjXQWh5GKeU6BLsVqN1XC+yQZtFsktOddAbhhEzmCABa1j1DVX3CPLzxnQR7mMLrLWpRK20KJ3rmSXq3oKQF8EC0UyBKwZTXauVmvPmG4ZhNK1te2gisusgqFaa9OhytwWQtVWLdx0tkRWcxwH2KrZb7p75LWig1BtI9EW1uEulnC/UXcSSqbDDrnJg4+bml5sCFCgCvQ4qJSLlnwUsBZ2vx9GKVqcC6MNJ0OqVr3ccqomzTmn0km+cBDkV/4LESEnp7k+pNEHfq7E12NGvKlgPZdmGnU2Bv0iBHzaRUA2NzAgSyOvgrEX7mOmNmO8IRul3CRpwybI7Q4lu9JEXFJivEjstWSlzUQr8gQyas+UUhvRHdGaxxQDtGF2KsW+QdY54JXYxUJsNyibhL9HL+ULCwkxB/kXyHDHv2AkdnNwKQ/rPXrvHAA1vn8JRTxImVh3UjtKfEiKiUSl7ifeC7Z8gwg2o2B4tZw9b6PzJEYBD70LLLQtjxDFOJMek3ydG4jh6r0RjW6FKqna1dVgfhxFUwjc1/9MAscVRHRsuGk8nAOwj1zAcX/X9dFaWIghSWcPoJCSyq2BQRO2iH2eNkPL1PUZCSOhX2cj4sBUxdwAg8HLR4wPHQhl/wTsJANwWlBQLc4GOvsADOnD9o8jeSjCGvC52qDQSwbB0Mfmp3fAoHnvRjH2rrguAC5LjOat9k/A+6G5rp/lm4pUP89BocwSzgZ0zwDs4lm/zphNv66rtzNvvLV+AV4J+zOj/m5D50jSCcTVugpgunpFyvb1FoAknRMwVJ2DAM9zTLMng3UC6hAyEGACoOWzbwiNiR+ARcx51WqdoiC+Xw+A+gn4B3plTd55q8rTAAAAAElFTkSuQmCC",
@@ -12258,7 +12267,7 @@ function startBattle(track = randomBattleTrack(), cancel, options = matchOptions
   return withMatchResources(indices, track, () => {
     matchOptions = options;
     startBattleNow(track);
-  }, cancel);
+  }, { cancel });
 }
 
 function startBattleNow(track) {
@@ -17593,41 +17602,59 @@ function fighterPortraitForm(actor) {
   return "";
 }
 
+function updateResultPortrait(frame) {
+  const src = readyPortrait(frame.dataset.form) || readyPortrait(frame.dataset.portrait);
+  const image = frame.querySelector("img");
+  if (src && image.getAttribute("src") !== src) image.src = src;
+  image.hidden = !src;
+  frame.querySelector(".result-portrait-unavailable").hidden = !!src;
+}
+
 function renderResultPortraits(fighters, hud) {
   const winner = hud.fighters.findIndex(row => row.alive);
-  const groups = winner >= 0
-    ? [[winner], fighters.map((_, slot) => slot).filter(slot => slot !== winner)]
-    : [fighters.map((_, slot) => slot)];
+  const slots = fighters.map((_, slot) => slot);
+  if (winner >= 0) {
+    slots.splice(winner, 1);
+    slots.unshift(winner);
+  }
   const result = $("battleResult");
-  for (const [index, slots] of groups.entries()) {
-    const panel = document.createElement("div");
-    const won = winner >= 0 && index === 0;
-    panel.className = "result-side " + (won ? "result-winner" : "result-loser") + (slots.length > 1 ? " multiple" : "");
-    const portraits = document.createElement("div");
-    portraits.className = "result-portraits";
-    for (const slot of slots) {
-      const fighter = fighters[slot];
-      const image = document.createElement("img");
-      const form = hud.fighters[slot]?.portrait;
-      image.dataset.portrait = fighter.id;
-      if (Object.hasOwn(officialPortraits, form)) image.dataset.form = form;
-      image.src = readyPortrait(image.dataset.form) || fighterPortrait(fighter);
-      image.alt = fighter.name;
-      portraits.append(image);
-    }
+  const cards = slots.map(slot => {
+    const fighter = fighters[slot];
+    const form = hud.fighters[slot]?.portrait;
+    const state = winner < 0 ? "draw" : slot === winner ? "winner" : "loser";
+    const card = document.createElement("div");
+    card.className = "result-side result-" + state;
+
+    const frame = document.createElement("div");
+    frame.className = "result-portrait";
+    frame.dataset.portrait = fighter.id;
+    if (Object.hasOwn(officialPortraits, form)) frame.dataset.form = form;
+    const image = document.createElement("img");
+    image.alt = fighter.name;
+    image.draggable = false;
+    const unavailable = document.createElement("p");
+    unavailable.className = "result-portrait-unavailable";
+    unavailable.textContent = "초상화를 불러오지 못했습니다.";
+    frame.append(image, unavailable);
+    updateResultPortrait(frame);
+
     const copy = document.createElement("div");
     copy.className = "result-copy";
     const status = document.createElement("strong");
     status.className = "result-status";
-    status.textContent = winner < 0 ? "무승부" : won ? "승리" : "패배";
-    const names = document.createElement("span");
-    names.className = "result-name";
-    names.textContent = slots.map(slot => fighters[slot].short).join(" · ");
-    copy.append(status, names);
-    panel.append(portraits, copy);
-    result.append(panel);
-  }
+    status.textContent = state === "draw" ? "무승부" : state === "winner" ? "승리" : "패배";
+    const name = document.createElement("span");
+    name.className = "result-name";
+    name.textContent = `${slot + 1}P · ${fighter.short}`;
+    copy.append(status, name);
+    card.append(frame, copy);
+    return card;
+  });
+  result.replaceChildren(...cards);
   result.classList.remove("hidden");
+  const modal = $("modal");
+  modal.focus({ preventScroll: true });
+  modal.querySelector(".dialog").scrollTop = 0;
 }
 
 function makeExtraShotMesh(e) {
@@ -31735,20 +31762,20 @@ function exitPractice() {
 
 function startPractice(index = practiceIndex) {
   const track = randomBattleTrack();
-  return withMatchResources([index], track, () => startPracticeNow(index, track));
+  return withMatchResources([index], track, () => startPracticeNow(index, track), { resultPortraits: false });
 }
 
 function startPracticeNow(index, track){practiceActive=true;mode=0;setArenaSize(mode);manual=true;paused=false;running=false;arenaZoom=1;setScreen('battle',track);$('exit').textContent=selectionBeforePractice?'← 캐릭터 선택으로':'나가기';document.body.classList.add('practice-mode');$('arena').append(renderer.domElement);$('modal').classList.add('hidden');$('battleMode').textContent='PRACTICE · 연습 모드';$('pause').textContent='일시정지';practiceSelectedType='';practiceSetup(index);running=true;drawPracticeRoster();renderPracticePanel();resize();}
 function selectPracticeFighter(index) {
   index=resolveSelection(index);
   if (!Number.isInteger(index) || index < 0 || index >= CHARACTER_DATABASE.length) return;
-  return withMatchResources([index], musicKey, () => selectPracticeFighterNow(index));
+  return withMatchResources([index], musicKey, () => selectPracticeFighterNow(index), { resultPortraits: false });
 }
 function selectPracticeFighterNow(index){practiceSelectedType='';practiceSetup(index);paused=false;running=true;if(!headless){$('pause').textContent='일시정지';drawPracticeRoster();renderPracticePanel();}}
 function drawPracticeRoster(){const root=$('practiceRoster');if(!root.children.length){root.innerHTML='<button type="button" class="roster-orb random-orb" data-practice-index="-1" aria-label="랜덤 캐릭터 연습"><b>?</b><span class="orb-name">랜덤</span></button>'+CHARACTER_DATABASE.map((c,i)=>`<button type="button" class="roster-orb" data-practice-index="${i}" aria-label="${c.name} 선택" aria-pressed="false" style="--fighter-tint:${hex(c.color)}"><img class="roster-portrait" src="${rosterPortrait(c)}" width="48" height="48" alt="" loading="lazy" decoding="async" draggable="false"><span class="orb-name">${c.short}</span></button>`).join('');root.querySelectorAll('button').forEach(button=>button.onclick=()=>selectPracticeFighter(+button.dataset.practiceIndex));}for(const button of root.querySelectorAll('button')){const selected=+button.dataset.practiceIndex===practiceIndex;button.classList.toggle('orb-active',selected);button.setAttribute('aria-pressed',String(selected));}}
 const practiceArtCache=new Map();
 function practiceArtwork(type,c){preloadSkillBanner(type);if(bannerAssets[type]?.src)return bannerAssets[type].src;const key=c.id+':'+type;if(practiceArtCache.has(key))return practiceArtCache.get(key);const canvas=document.createElement('canvas');canvas.width=650;canvas.height=150;const ctx=canvas.getContext('2d'),name=practiceName(type,c);let font=56;ctx.font='900 '+font+'px sans-serif';while(ctx.measureText(name).width>600&&font>22){font--;ctx.font='900 '+font+'px sans-serif';}ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.shadowColor=hex(c.color);ctx.shadowBlur=18;ctx.strokeStyle='#080d17';ctx.lineWidth=11;ctx.strokeText(name,325,75);const gradient=ctx.createLinearGradient(0,40,0,110);gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.5,'#f5f6ff');gradient.addColorStop(1,hex(c.color));ctx.fillStyle=gradient;ctx.fillText(name,325,75);const url=canvas.toDataURL();practiceArtCache.set(key,url);return url;}
-function renderPracticePanel(){if(!practiceActive||headless)return;const c=CHARACTER_DATABASE[practiceIndex],a=actors[0];$('practicePortrait').src=fighterPortrait(c);$('practicePortrait').alt=c.name;$('practiceName').textContent=c.name;$('practiceRole').textContent=c.role||c.battleType;const skills=practiceSkills(c);$('practiceSkills').innerHTML=skills.map(s=>{const url=practiceArtwork(s.type,c);return `<button type="button" class="practice-skill${s.type===practiceSelectedType?' active':''}" data-practice-skill="${s.type}" aria-label="${s.name} 사용" aria-pressed="${s.type===practiceSelectedType}" title="${s.name}">${url?`<img src="${url}" alt="${s.name}" draggable="false">`:`<strong>${s.name}</strong>`}<span>${s.special?'스페셜':'일반 기술'}</span></button>`;}).join('');$('practiceSkills').querySelectorAll('button').forEach(button=>button.onclick=()=>practiceCast(button.dataset.practiceSkill));renderPracticeDamageInfo();}
+function renderPracticePanel(){if(!practiceActive||headless)return;const c=CHARACTER_DATABASE[practiceIndex],a=actors[0];$('practicePortrait').src=rosterPortrait(c);$('practicePortrait').alt=c.name;$('practiceName').textContent=c.name;$('practiceRole').textContent=c.role||c.battleType;const skills=practiceSkills(c);$('practiceSkills').innerHTML=skills.map(s=>{const url=practiceArtwork(s.type,c);return `<button type="button" class="practice-skill${s.type===practiceSelectedType?' active':''}" data-practice-skill="${s.type}" aria-label="${s.name} 사용" aria-pressed="${s.type===practiceSelectedType}" title="${s.name}">${url?`<img src="${url}" alt="${s.name}" draggable="false">`:`<strong>${s.name}</strong>`}<span>${s.special?'스페셜':'일반 기술'}</span></button>`;}).join('');$('practiceSkills').querySelectorAll('button').forEach(button=>button.onclick=()=>practiceCast(button.dataset.practiceSkill));renderPracticeDamageInfo();}
 function practiceCast(type){
  if(!practiceActive||!running)return false;const c=CHARACTER_DATABASE[practiceIndex],entry=practiceSkills(c).find(s=>s.type===type);if(!entry)return false;
  if(cinema.stop>0&&!paused){cinema.practiceBuffered=type;return true;}
@@ -35156,15 +35183,11 @@ function readyPortrait(id) {
   return startupAssetUrl(officialPortraits[id]);
 }
 
-function rosterPortrait(character) {
-  return rosterPixelPortraits[character.id] ?? fighterPortrait(character);
-}
-
 const fallbackPortraitUrls = new Map();
 
-function fighterPortrait(character) {
-  const ready = readyPortrait(character.id);
-  if (ready) return ready;
+function rosterPortrait(character) {
+  const pixelPortrait = rosterPixelPortraits[character.id];
+  if (pixelPortrait) return pixelPortrait;
   if (!fallbackPortraitUrls.has(character.id)) {
     fallbackPortraitUrls.set(character.id, portrait(character).toDataURL());
   }
@@ -35263,7 +35286,7 @@ function updateResourceStatus() {
 }
 
 // Reserve two parallel requests for the final roster if previews are already in flight.
-const ASSET_PRIORITY = { immediate: 0, selected: 1, preview: 2, portrait: 3, background: 4 };
+const ASSET_PRIORITY = { immediate: 0, selected: 1, preview: 2, resultPortrait: 3, portrait: 4, background: 5 };
 const assetLoads = { foreground: 0, background: 0 };
 
 function runAssetQueue() {
@@ -35272,7 +35295,9 @@ function runAssetQueue() {
     const job = assetQueue[i];
     const foreground = job.priority <= ASSET_PRIORITY.preview;
     const lane = foreground ? "foreground" : "background";
-    const limit = !foreground ? 2 : job.priority === ASSET_PRIORITY.immediate ? 6 : 4;
+    const limit = foreground
+      ? job.priority === ASSET_PRIORITY.immediate ? 6 : 4
+      : job.priority === ASSET_PRIORITY.resultPortrait ? 4 : 2;
     if (assetLoads[lane] >= limit) {
       i++;
       continue;
@@ -35293,9 +35318,9 @@ function runAssetQueue() {
       if (job.url === track?.audio || job.url === track?.image) {
         setMusicScreen(musicKey === "select" ? "home" : "battle", musicKey, true);
       }
-      for (const image of $("battleResult").querySelectorAll("[data-portrait]")) {
-        if (job.url === officialPortraits[image.dataset.portrait] || job.url === officialPortraits[image.dataset.form]) {
-          image.src = readyPortrait(image.dataset.form) || readyPortrait(image.dataset.portrait);
+      for (const frame of $("battleResult").querySelectorAll("[data-portrait]")) {
+        if (job.url === officialPortraits[frame.dataset.portrait] || job.url === officialPortraits[frame.dataset.form]) {
+          updateResultPortrait(frame);
         }
       }
     }, error => {
@@ -35379,17 +35404,20 @@ function matchPortraitUrls(indices) {
   });
 }
 
-function prepareMatchAssets(indices, track, priority = ASSET_PRIORITY.selected) {
+function prepareMatchAssets(indices, track, { priority = ASSET_PRIORITY.selected, resultPortraits = true } = {}) {
   const tasks = queueResources(matchAssetUrls(indices), priority);
-  queueResources(matchPortraitUrls(indices), ASSET_PRIORITY.portrait);
+  if (resultPortraits) {
+    const portraitPriority = priority === ASSET_PRIORITY.immediate ? ASSET_PRIORITY.resultPortrait : ASSET_PRIORITY.portrait;
+    tasks.push(...queueResources(matchPortraitUrls(indices), portraitPriority));
+  }
   queueResources([musicAssets[track]?.audio, musicAssets[track]?.image, skillVoices.BATTLE_END]);
   return tasks;
 }
 
-function withMatchResources(indices, track, launch, cancel) {
+function withMatchResources(indices, track, launch, { cancel, resultPortraits = true } = {}) {
   if (matchLoading) return;
   if (headless) return launch();
-  const tasks = prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate);
+  const tasks = prepareMatchAssets(indices, track, { priority: ASSET_PRIORITY.immediate, resultPortraits });
   if (!tasks.length) return launch();
   const loading = Symbol();
   matchLoading = loading;
@@ -35400,7 +35428,9 @@ function withMatchResources(indices, track, launch, cancel) {
     paused = wasPaused;
     cancel();
   }, false]] : [];
-  showModal("LOADING", "스킬 리소스 준비 중", "참가 캐릭터의 스킬 배너와 효과음을 불러오고 있습니다.", actions);
+  showModal("LOADING", "전투 리소스 준비 중", resultPortraits
+    ? "참가 캐릭터의 스킬 배너, 효과음, 결과용 초상화를 불러오고 있습니다."
+    : "연습 캐릭터의 스킬 배너와 효과음을 불러오고 있습니다.", actions);
   if (!actions.length) $("modal").focus();
   return Promise.all(tasks).then(() => {
     if (matchLoading !== loading) return;
@@ -36292,8 +36322,8 @@ async function launchOnlineMatch(session, indices, track, options) {
   if (onlineSession !== session || session.phase !== "settings") return;
   session.phase = "loading";
   const guestReady = new Promise(resolve => { session.onGuestReady = resolve; });
-  const tasks = prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate);
-  onlineProgress(session, "스킬 리소스 준비 중", "두 기기에서 참가 캐릭터의 스킬 배너와 효과음을 불러옵니다.");
+  const tasks = prepareMatchAssets(indices, track, { priority: ASSET_PRIORITY.immediate });
+  onlineProgress(session, "전투 리소스 준비 중", "두 기기에서 스킬 배너, 효과음, 결과용 초상화를 불러옵니다.");
   try {
     await onlineDeadline(writeOnlineRoom(session, "match", {
       p1: session.picks[0], p2: session.picks[1], track, arenaRenderer: ONLINE_SCENE_VERSION, options,
@@ -36326,8 +36356,8 @@ async function prepareOnlineViewer(session, match) {
   const options = matchOptionsFrom(match.options);
   session.picks = picks;
   session.phase = "loading";
-  onlineProgress(session, "스킬 리소스 준비 중", "참가 캐릭터의 스킬 배너와 효과음을 불러오고 있습니다.");
-  await Promise.all(prepareMatchAssets(indices, track, ASSET_PRIORITY.immediate));
+  onlineProgress(session, "전투 리소스 준비 중", "참가 캐릭터의 스킬 배너, 효과음, 결과용 초상화를 불러오고 있습니다.");
+  await Promise.all(prepareMatchAssets(indices, track, { priority: ASSET_PRIORITY.immediate }));
   if (onlineSession !== session) return;
   session.phase = "ready";
   onlineProgress(session, "전투 시작 대기 중", "상대방도 준비되면 전투를 시작합니다.");
