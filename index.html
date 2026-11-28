@@ -3015,7 +3015,6 @@ body.startup-loading { overflow: hidden; }
 }
 </style>
 <style id="online-style">
-  #onlineMode { width: 100%; margin: 0 0 12px; min-height: 48px; border-color: #81b7ff; }
   #onlineStatus { color: #d2e8ff; margin: 0; }
   .online-code-input { min-height: 44px; width: 100%; text-align: center; color: #fff;
     background: #13202c; border: 1px solid #81b7ff; border-radius: 8px;
@@ -3218,6 +3217,7 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
         gap: clamp(4px, 1.05vw, 14px);
         min-width: 0;
         min-height: clamp(103px, 19vw, 190px);
+        margin: 0;
         padding: 8px 2px;
         border: clamp(2px, .35vw, 4px) solid #101a2c;
         clip-path: none;
@@ -3249,7 +3249,42 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
       #modes .mode:hover { filter: brightness(1.13); }
       #modes .mode:active { transform: translateY(3px); box-shadow: inset 0 2px #ffffff54, 0 2px #101a2c; }
       #modes .mode:focus-visible { outline: 2px solid #ffeb98; outline-offset: 2px; z-index: 1; }
-      .mode-navigation { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .mode-navigation {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: min(310px, 100%);
+        margin: 0 auto 4px;
+      }
+      .mode-navigation > button {
+        display: grid;
+        place-items: center;
+        min-height: 44px;
+        padding: 8px 10px;
+        border: 2px solid #111c2d;
+        border-radius: 10px;
+        clip-path: none;
+        background: linear-gradient(156deg, #364b63, #223249 76%);
+        box-shadow: inset 0 1px #d7e8fa38, inset 0 -4px #121e2e38, 0 3px #111c2d;
+        color: #e0e9f4;
+        font-size: clamp(.80rem, 2.6vw, .95rem);
+        font-weight: 700;
+        line-height: 1.25;
+        text-shadow: 0 1px 2px #101b2c;
+        touch-action: manipulation;
+      }
+      .mode-navigation > button:hover {
+        filter: brightness(1.15);
+        transform: none;
+      }
+      .mode-navigation > button:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 1px #d7e8fa38, 0 1px #111c2d;
+      }
+      .mode-navigation > button:focus-visible {
+        outline: 2px solid #a9c4e6;
+        outline-offset: 2px;
+      }
       #modeSelection .home-version { margin: 15px auto 0; justify-content: center; }
       #modeSelection #resourceDetails { margin: 10px auto 0; text-align: center; }
       #modeSelection .footer-note { margin: 12px auto; }
@@ -3351,8 +3386,8 @@ body.battle-theme:not(.practice-mode) #hud.multi-hud {
           <button type="button" class="mode online-card" id="onlineMode"><b>2P</b><small>온라인 대전</small></button>
         </div>
         <div class="mode-navigation">
-          <button type="button" id="modeBack" class="quiet">← 처음 화면</button>
-          <button type="button" id="practiceMode" class="quiet">연습 모드</button>
+          <button type="button" id="modeBack">← 처음 화면</button>
+          <button type="button" id="practiceMode">연습 모드</button>
         </div>
           <div class="home-version" aria-label="버전 정보">
             <span>최종 수정 <time datetime="2026-11-27">2026.11.27</time></span>
